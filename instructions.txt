@@ -1,0 +1,86 @@
+In commonSettings.m check parameter settings in the area marked with "Things to asjust"
+Check outputFolder and keyboard settings specifically!
+
+Required start script (can be found in gripforce sub folder):
+* script1 - startup gripforce data streaming via fieldtrip buffer (cubicle)
+    !) you might need to change the output data folder where fieldtrip saves the
+       raw force data. It defaults to the home folder as indicated below:
+          set savfld=%USERPROFILE%\saving_buffer\raw
+       change that line in start_recording_buffer.bat to save raw gripforce data
+    in a different folder.
+    !) you might also need to change the COM port setting for the gripforce, it 
+       is currently set to COM9, change to the correct port in start_gripforce.bat
+
+Required Matlab sessions:
+* Matlab session - startup scanner pulse logging (fmri)
+* Matlab session - startup "Apple tree" (both cubicle and fmri)
+
+- Start both script1a batch file and "Apple tree" Matlab session
+
+From "Apple tree" Matlab session command window:
+- Make sure to be in the folder that contains the "Apple tree" Matlab code, type:
+     cd <folder with apple tree code>    
+
+- start calibration, type: 
+     MVC
+  It will ask to specify subject identifier (remember this for subsequent experiment stages)
+  If given summary of information is correct, confirm by typing 'yes' or 'y'
+  Follow instructions and complete the task
+
+- start Familiarisation, type:
+     FamiliariseTaskOnly()
+  Specify same subject identifier, confirm, follow instructions and complete task
+  
+- Copy content of specified outputFolder to medium (usb-stick or network folder) 
+  for transportation to fmri computer.
+
+- Make sure to check outputFolder setting on that different stimulus computer.
+  and transfer information if needed.
+  
+* First start both 'Apple tree" experiment and scanner pulse logging Matlab sessions.
+
+- From "scanner pulse logging" Matlab session command window:
+  Make sure to be in the folder that contains the "Apple tree" Matlab code, type:
+     cd <folder with apple tree code>    
+  then type (specify correct arguments!):
+     log_scan_trigger(identifier, outfolder) 
+
+- From "Apple tree" Matlab session command window:
+  Make sure to be in the folder that contains the "Apple tree" Matlab code, type:
+     cd <folder with apple tree code>    
+  Start choice task
+  type:
+     ChoiceTaskOnly()
+  Specify subject identifier. If correct, confirm by typing 'yes' or 'y'
+  Wait for incoming scanner pulses
+  
+* Start the scanner. The experiment should only start after 5 incoming scans.
+ 
+  Proceed/follow instructions and complete task
+
+- Copy content of specified outputFolder to medium for transportation.
+
+- Make sure to retrieve information and to check/adapt outputFolder setting on
+  stimulus computer dependent of environment.
+  type:
+     PerformTaskOnly(<specify path to output matlab file from decision fmri task>)
+  Specify same subject identifier, confirm, follow instructions and complete task
+
+- Transfer experiment information for this subject to proper location.
+
+Produced output files in output folder:
+<identifier>_<number>_<task>.mat
+    contains all trial information in a Matlab structure
+<identifier>_<number>_<task>.txt
+    contains readable trial output for apple tree task
+<identifier_payout.txt
+    information about total number of gathered apples during performed task
+<identifier>_scannerpuls.log
+    timing information for each incoming scanner pulse, combine this with the
+    timing information in the first column of the txt-files above. They are referenced
+    against the computer system startup time. Since the scanner pulse logging session
+    and the Matlab "Apple tree" session run on the same stimulus computer, they
+    use the same reference.
+    This file is being monitored for incoming scanner pulses by the "Apple tree" 
+    Matlab session.
+
