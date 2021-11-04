@@ -152,11 +152,11 @@ result = AGT_CoreProtocol_RU_BSI(params,ex);
 % .........................................................................
 % Get process ID
 if ispc
-    [~,result] = system('netstat -ano | findstr :1972');
+    [~,pinfo] = system('netstat -ano | findstr :1972');
 elseif isunix
-    [~,result] = system('netstat -anp | grep :1972');
+    [~,pinfo] = system('netstat -anp | grep :1972');
 end
-pid = textscan(result, '%[^\n\r]');
+pid = textscan(pinfo, '%[^\n\r]');
 pid = strsplit(pid{1}{1}, ' ');
 if isunix
     pid = strsplit(pid, '/');

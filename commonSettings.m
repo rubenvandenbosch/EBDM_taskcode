@@ -298,11 +298,11 @@ ex.simulateGripforce = false;  % For testing without a gripforce
 if ismember(ex.stage, {'practice','perform'})
     % First determine whether the gripforce buffer is already on
     if ispc
-        [~,result] = system('netstat -ano | findstr :1972');
+        [~,pinfo] = system('netstat -ano | findstr :1972');
     elseif isunix
-        [~,result] = system('netstat -anp | grep :1972');
+        [~,pinfo] = system('netstat -anp | grep :1972');
     end
-    if isempty(result)
+    if isempty(pinfo)
         % Calls system command to start gripforce with '&' to send to a
         % separate process instead of running the command within matlab
         if ispc
