@@ -12,6 +12,9 @@ ex.type = 'Food-related effort-based decision making task';
 % Language of instructions ('NL' OR 'EN')
 ex.language = 'NL';
 
+% Run in debug mode?  debug mode: 1 block of 2 trials, for testing
+ex.DEBUG = false;
+
 % Directories and files
 % =========================================================================
 % Required directories for recording gripforce input
@@ -27,10 +30,90 @@ ex.gripforceDir = fullfile(ex.rootDir,'gripforce');
 % last one must be fixationcross!
 ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
 
-% Trial and block structure setup
+% Trial structure settings
 % =========================================================================
-% Block settings depending on experiment stage
+% Effort and reward levels specification
 % -------------------------------------------------------------------------
+% 4 x 4 effort x reward
+
+% What are the different levels of rewards that will be used. Make sure jpgs of apple tree match this.
+% Change to something that makes sense for our stimuli
+ex.applesInStake = [1 3 6 9];  % [1 3 6 9 12]; 
+
+% Effort levels corresponding to the variable 'force' in 'drawTree'.
+ex.effortIndex   = 1:4; % [1 2 3 4 5];
+
+% Define effort level as proportion of MVC
+ex.effortLevel   = [0.2 0.4 0.6 0.8]; % [0.16 0.32 0.48 0.64 0.80];
+
+% Order of familiarizing with force levels.
+% true = use force levels 1 1 2 2 3 3 etc, false = 1...6,1...6
+ex.practiceAscending    = false; 
+
+% Elements to vary over trials or blocks
+% -------------------------------------------------------------------------
+%   ex.blockVariables.<var> = <list or vector with possible values>
+%   ex.trialVariables.<var> = <list or vector with possible values>
+
+% Vary block types?
+ex.blockVariables.blocktype = 1;   % Force all blocks same = 1
+
+% Allow unequal number of trials per trial type within one block
+ex.allowUnequalTrials  = true;
+
+% We probably want to use this option to specify reward type, reward
+% magnitude and effort level.
+% ....................................
+%   ex.trialVariables.reward_type = {'lowCal','highCal'};
+%   ex.trialVariables.reward_magn = {'low','high'};
+%   ex.trialVariables.effort = 1:4;
+% Having two varying reward variables might make things complicated.
+% Instead use a 4-level reward coding? 
+%   1=lowCal_lowMag, 2=lowCal_highMag, 3=highCal_lowMag, 4=highCal_highMag
+ex.trialVariables.reward = 1:numel(ex.effortIndex);
+ex.trialVariables.effort = 1:numel(ex.applesInStake);
+
+% Vary whether Yes/No response option is on the left
+% ex.trialVariables.yesIsLeft = [true false];
+
+% Force Yes response option on the left. Not sure if this works without
+% fixed trial orders; to be tested I suppose
+% ex.yesIsLeft = false;
+
+% There are HARDCODED 5x5 effort x reward levels later on!!
+% -------------------------------------------------------------------------
+% Use 5x5 for now to test, then change hardcoded elements to implement 4x4
+% or other designs
+        ex.yesIsLeft            = false;
+        ex.applesInStake        = [1 3 6 9 12];% What are the different levels of rewards that will be used. Make sure jpgs of apple tree match this.
+        ex.effortIndex          = [1 2 3 4 5];  % Effort levels corresponding to the variable 'force' in 'drawTree'.
+        %16/7/18     ...
+        ex.effortLevel          = [0.16 0.32 0.48 0.64 0.80]; % Effort - Proportion of MVC
+        %effort required on each trial (column vector of 100 trials)
+        ex.order_effort= [
+            4 5 5 5 3 3 2 4 1 3 4 4 5 3 5 1 2 2 4 1 1 2 3 1 2 ... % each row is one block
+            4 5 3 2 1 5 5 5 2 3 2 2 5 1 4 4 3 4 1 3 4 3 1 2 1 ...
+            2 3 3 5 4 4 5 1 2 4 2 3 5 5 4 2 1 1 1 5 3 4 2 1 3 ...
+            5 3 4 5 1 1 2 1 4 2 5 5 4 3 4 4 3 1 5 2 1 3 3 2 2 
+            ]';
+        %    3 2 4 4 1 2 5 5 3 4 2 2 3 4 5 4 5 1 1 1 3 1 5 3 2
+        % Offered reward on each trial
+        % one fifth of each of the levels 1 to 5
+        % 25 x 4 trials
+        ex.order_reward =[
+            4 2 1 5 4 2 2 5 5 3 1 3 4 5 3 2 5 1 2 3 1 3 1 4 4 ...
+            4 2 3 2 1 5 1 3 1 2 5 3 4 3 5 1 4 3 2 5 2 1 4 4 5 ...
+            5 3 5 2 2 4 1 4 3 3 1 2 3 4 5 2 5 3 1 5 1 1 4 2 4 ...
+            3 1 4 4 5 1 3 3 2 4 1 2 1 4 3 5 5 2 5 2 4 2 3 5 1 
+            ]';
+        %    2 4 1 2 4 3 2 3 1 5 5 1 4 3 4 4 1 2 5 3 5 1 5 3 2
+        % trial set to use for practice (i.e. drawn form the above list)
+        ex.practiceTrialIndex   = [ 1;2;3;4;5 ]; 
+        ex.last_trial           = [];
+% -------------------------------------------------------------------------
+
+% Block settings depending on experiment stage
+% =========================================================================
 switch ex.stage
     case 'practice'
         % Practice stage: 
@@ -51,7 +134,7 @@ switch ex.stage
         ex.numFamiliarise       = 5; %12;
         
         % Number of practice decisions about X effort for X reward
-        ex.numPracticeChoices   = 8;
+        ex.numPracticeChoices   = 5;
         
         % Set total number of trials based on the above
         ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices;
@@ -71,11 +154,11 @@ switch ex.stage
         % Number of blocks and trials per block
         %   NB: with a 4x4 design, a block length of 16 or 32 allows for 
         %       equal number of occurance per trial type within a block
-        ex.blocks   = 8;   % Number of blocks
+        ex.blocks   = 1;   % Number of blocks
         ex.blockLen = 16;  % number of  trials within each block
 
         % Include this number of practice choice trials at the beginning?
-        ex.numPracticeChoices   = 5;  % Change to 0?
+        ex.numPracticeChoices   = 0;
         
         % Set the block number on which people are asked to actually 
         % perform selected effort for reward options during the choice task
@@ -90,7 +173,7 @@ switch ex.stage
         
         % Set total number of practice trials based on the above
         ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices; 
-        assert(~ex.practiceTrials > ex.blockLen,'Set parameter "blockLen >= "practiceTrials"');
+        assert(~(ex.practiceTrials > ex.blockLen),'Set parameter "blockLen >= "practiceTrials"');
         
     case 'perform'
         % Perform stage:
@@ -116,7 +199,7 @@ switch ex.stage
         % in the choice stage
         % .................................................................
         % Get choices output mat file and assert it exists
-        choices_file = fullfile(ex.outputFolder, sprintf('subject-%.3d_visit-%d_stage-choice.mat', ex.subjectId,ex.visit));
+        choices_file = fullfile(ex.outputFolder, sprintf('subject-%.3d_visit-%d_stage-choice_ses-%d.mat', ex.subjectId,ex.visit,ex.session));
         assert(exist(choices_file,'file') == 2, 'The choices output file does not exist: %s',choices_file);
         
         % Load choices data
@@ -125,13 +208,13 @@ switch ex.stage
 
         % Assert that the number of perform trials is not greater than the
         % number of decisions made in the choice stage
-        assert(ex.resultsChoiceTask.result.params.blockLen * ex.resultsChoiceTask.result.params.blocks >= ex.blockLen, ...
+        assert(ex.resultsChoiceTask.result.params.blockLen * ex.resultsChoiceTask.result.params.blocks >= ex.blockLen || ex.DEBUG, ...
             'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ...
-            ex.resultsChoiceTask.result.params.blockLen * ex.resultsChoiceTask.result.params.blocks, es.blocks * ex.blockLen);
+            ex.blocks * ex.blockLen, ex.resultsChoiceTask.result.params.blockLen * ex.resultsChoiceTask.result.params.blocks);
         
         % Pseudorandomly select trials where force to be performed after 
         % all choices
-        % This function uses HARDCODED 5x5 effort x reward levels!! CHANGE!
+        %       This function uses HARDCODED 5x5 effort x reward levels!! CHANGE!
         allCombinationsOnce = combinationsEffortReward(ex.order_effort,ex.order_reward,1);
         ex.last_trial = allCombinationsOnce;
                 
@@ -143,65 +226,12 @@ switch ex.stage
         
         % Set total number of practice trials based on the above
         ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices; 
-        assert(~ex.practiceTrials > ex.blockLen,'Set parameter "blockLen >= "practiceTrials"');
+        assert(ex.practiceTrials <= ex.blockLen,'Set parameter "blockLen >= "practiceTrials"');
 end
 
-% Effort and reward levels specification
-% -------------------------------------------------------------------------
-% 4 x 4 effort x reward
-
-% What are the different levels of rewards that will be used. Make sure jpgs of apple tree match this.
-% Change to something that makes sense for our stimuli
-ex.applesInStake = [1 3 6 9];  % [1 3 6 9 12]; 
-
-% Effort levels corresponding to the variable 'force' in 'drawTree'.
-ex.effortIndex   = 1:4; % [1 2 3 4 5];
-
-% Define effort level as proportion of MVC
-ex.effortLevel   = [0.2 0.4 0.6 0.8]; % [0.16 0.32 0.48 0.64 0.80];
-
-% Order of familiarizing with force levels.
-% true = use force levels 1 1 2 2 3 3 etc, false = 1...6,1...6
-ex.practiceAscending    = false; 
-
-% Elements to vary over trials or blocks
-% -------------------------------------------------------------------------
-%   ex.blockVariables.<var> = <list or vector with possible values>
-%   ex.trialVariables.<var> = <list or vector with possible values>
-
-% Vary block types?
-ex.blocktype = 1;   % Force all blocks same = 1
-
-% variable trial type was specified as 0, but probably was not used, as a
-% fixed trial order was prespecified, and thus seems like createTrials.m
-% was not run. 
-ex.trialVariables.trialtype = 0; 
-
-% Allow unequal number of trials per trial type within one block
-ex.allowUnequalTrials  = true;
-
-% We probably want to use this option to specify reward type, reward
-% magnitude and effort level.
-% ....................................
-%   ex.trialVariables.reward_type = {'lowCal','highCal'};
-%   ex.trialVariables.reward_magn = {'low','high'};
-%   ex.trialVariables.effort = 1:4;
-% Having two varying reward variables might make things complicated.
-% Instead use a 4-level reward coding? 
-%   1=lowCal_lowMag, 2=lowCal_highMag, 3=highCal_lowMag, 4=highCal_highMag
-ex.trialVariables.reward = 1:4;
-ex.trialVariables.effort = 1:4;
-
-% Vary whether Yes/No response option is on the left
-ex.trialVariables.yesIsLeft = [true false];
-
-% Force Yes response option on the left. Not sure if this works without
-% fixed trial orders (i.e. not using creatTrials.m); to be tested I suppose
-% ex.yesIsLeft = false;
-
-% Other?
+% Other trial/block settings?
 % Not sure yet what these do or whether we can just leave this out
-% -------------------------------------------------------------------------
+% =========================================================================
 ex.maxNumRepeatedTrials = Inf; % How many retries are allowed (>=0 or Inf for endless retries)
 
 % Fatiguing added exercise
@@ -258,7 +288,7 @@ switch ex.stage
     case {'practice','perform'}
         ex.useBitsiBB = false;
     case 'choice'
-        ex.useBitsiBB = true;
+        ex.useBitsiBB = false; % For testing with keyboard, set to false
 end
 
 % fMRI scanner options
@@ -287,48 +317,57 @@ ex.extraWidth        = 20;              % How much wider is the force-level indi
 
 % Gripforce options
 % -------------------------------------------------------------------------
-ex.useGripforce      = true;   % Change to 1 to use GripForce device (manufactured by TSG department, Radboud University)
-ex.useSqueezy        = false;  % Change to 1 to use handles! whether or not to use the squeezy devices
-ex.channel           = 1;      % Which data channel are you using for the handle?
-ex.simulateGripforce = false;  % For testing without a gripforce
-
-% Start recording gripforce input
-% .........................................................................
 % Only for the practice and perform stages
-if ismember(ex.stage, {'practice','perform'})
-    % First determine whether the gripforce buffer is already on
-    if ispc
-        [~,pinfo] = system('netstat -ano | findstr :1972');
-    elseif isunix
-        [~,pinfo] = system('netstat -anp | grep :1972');
-    end
-    if isempty(pinfo)
-        % Calls system command to start gripforce with '&' to send to a
-        % separate process instead of running the command within matlab
+switch ex.stage
+    case {'practice','perform'}
+        ex.useGripforce      = true;   % Change to 1 to use GripForce device (manufactured by TSG department, Radboud University)
+        ex.useSqueezy        = false;  % Change to 1 to use handles! whether or not to use the squeezy devices
+        ex.simulateGripforce = false;  % For testing without a gripforce
+        ex.channel           = 1;      % Which data channel are you using for the handle?
+        
+        % Start recording gripforce input
+        % .................................................................
+        % First determine whether the gripforce buffer is already on
         if ispc
-            system([fullfile('gripforce','start_gripforce.bat') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+            [~,pinfo] = system('netstat -ano | findstr :1972');
         elseif isunix
-            system([fullfile('gripforce','start_gripforce.sh') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+            [~,pinfo] = system('netstat -anp | grep :1972');
         end
-    else
-        disp('Gripforce fieldtrip buffer is running. Not starting anew')
-    end
-end
+        % If not running yet, call system command to start gripforce with 
+        % '&' to start a separate process instead of running the command 
+        % within matlab
+        if isempty(pinfo)
+            if ispc
+                system([fullfile('gripforce','start_gripforce.bat') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+            elseif isunix
+                system([fullfile('gripforce','start_gripforce.sh') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+            end
+        else
+            disp('Gripforce fieldtrip buffer is running. Not starting anew')
+        end
+        
+        % Initialize gripforce and store sampling rate of gripforce
+        if ex.useGripforce && ~ex.simulateGripforce
+            ex = initGripforce(ex);
+        elseif ex.useGripforce && ex.simulateGripforce
+            % If simulated gripforce, set sampling rate to 500 Hz
+            ex.MP_SAMPLE_RATE=500;
+        elseif ex.useSqueezy
+            % NB: also configured in RunExperiment!!
+            if ~isfield(ex, 'MP_SAMPLE_RATE'), ex.MP_SAMPLE_RATE=500; end
+        end
+        
+        % Set the required number of gripforce samples above threshold for 
+        % success, based on setting specified above.
+        ex.minimumAcceptableSqueezeTime = ex.MP_SAMPLE_RATE * ex.minSqueezeTime;
 
-% Initialize gripforce and store sampling rate of gripforce
-if ex.useGripforce && ~ex.simulateGripforce
-    ex = initGripforce(ex);
-elseif ex.useGripforce && ex.simulateGripforce
-    % If simulated gripforce, set sampling rate to 500 Hz
-    ex.MP_SAMPLE_RATE=500;
-elseif ex.useSqueezy
-    % NB: also configured in RunExperiment!!
-    if ~isfield(ex, 'MP_SAMPLE_RATE'), ex.MP_SAMPLE_RATE=500; end
+    case 'choice'
+        % Don't use gripforce during choice stage
+        ex.useGripforce      = false;
+        ex.useSqueezy        = false;
+        ex.simulateGripforce = false;
+        ex.channel           = 1;
 end
-
-% Set the required number of gripforce samples above threshold for success,
-% based on setting specified above.
-ex.minimumAcceptableSqueezeTime = ex.MP_SAMPLE_RATE * ex.minSqueezeTime;
 
 % Eye tracker options
 % -------------------------------------------------------------------------
@@ -336,47 +375,14 @@ ex.useEyelink = false;
 
 % Debugging options
 % =========================================================================
-ex.DEBUG             = false; % debug mode - 2 trials per block, for testing
 ex.rethrowErrors     = true;  % Rethrow actual error instead of printing message only
 
 % Trial and block structure to use when debugging
 if ex.DEBUG
-    ex.order_effort     = [ 5;5; 3;2; 4;4; 3;5; 2;4 ];
-    ex.order_reward     = [ 5;3; 2;4; 5;3; 3;5; 3;4 ];
-    ex.blockLen         = 2;
-    ex.last_trial       = [ 1;2; 3;4; 5;6 ];
+    ex.order_effort = [ 5;5; 3;2; 4;4; 3;5; 2;4 ];
+    ex.order_reward = [ 5;3; 2;4; 5;3; 3;5; 3;4 ];
+    ex.blocks       = 1;
+    ex.blockLen     = 2;
+    ex.last_trial   = [ 1;2; 3;4; 5;6 ];
 end
-
-% There are HARDCODED 5x5 effort x reward levels later on!!
-% -------------------------------------------------------------------------
-% Use 5x5 for now to test, then change hardcoded elements to implement 4x4
-% or other designs
-        ex.yesIsLeft            = false;
-        ex.applesInStake        = [1 3 6 9 12];% What are the different levels of rewards that will be used. Make sure jpgs of apple tree match this.
-        ex.effortIndex          = [1 2 3 4 5];  % Effort levels corresponding to the variable 'force' in 'drawTree'.
-        %16/7/18     ...
-        ex.effortLevel          = [0.16 0.32 0.48 0.64 0.80]; % Effort - Proportion of MVC
-        %effort required on each trial (column vector of 100 trials)
-        ex.order_effort= [
-            4 5 5 5 3 3 2 4 1 3 4 4 5 3 5 1 2 2 4 1 1 2 3 1 2 ... % each row is one block
-            4 5 3 2 1 5 5 5 2 3 2 2 5 1 4 4 3 4 1 3 4 3 1 2 1 ...
-            2 3 3 5 4 4 5 1 2 4 2 3 5 5 4 2 1 1 1 5 3 4 2 1 3 ...
-            5 3 4 5 1 1 2 1 4 2 5 5 4 3 4 4 3 1 5 2 1 3 3 2 2 
-            ]';
-        %    3 2 4 4 1 2 5 5 3 4 2 2 3 4 5 4 5 1 1 1 3 1 5 3 2
-        % Offered reward on each trial
-        % one fifth of each of the levels 1 to 5
-        % 25 x 4 trials
-        ex.order_reward =[
-            4 2 1 5 4 2 2 5 5 3 1 3 4 5 3 2 5 1 2 3 1 3 1 4 4 ...
-            4 2 3 2 1 5 1 3 1 2 5 3 4 3 5 1 4 3 2 5 2 1 4 4 5 ...
-            5 3 5 2 2 4 1 4 3 3 1 2 3 4 5 2 5 3 1 5 1 1 4 2 4 ...
-            3 1 4 4 5 1 3 3 2 4 1 2 1 4 3 5 5 2 5 2 4 2 3 5 1 
-            ]';
-        %    2 4 1 2 4 3 2 3 1 5 5 1 4 3 4 4 1 2 5 3 5 1 5 3 2
-        % trial set to use for practice (i.e. drawn form the above list)
-        ex.practiceTrialIndex   = [ 1;2;3;4;5 ]; 
-        ex.last_trial           = [];
-% -------------------------------------------------------------------------
-
 end
