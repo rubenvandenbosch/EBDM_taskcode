@@ -32,13 +32,17 @@ assert(nargin < 4, 'Too many input arguments');
 % directory of task code, same as run_ebdm_fmri.m)
 start_apple_task();
 
-% Define output directory
+% Main directories
 % -------------------------------------------------------------------------
-% For now, the same as was ("output" one level up from root task code dir)
-fld = fileparts(mfilename('fullpath'));
-ex.outputFolder = fullfile(fld,'..','output');
+% Root directory of task code
+ex.rootDir = fileparts(mfilename('fullpath'));
 
-% Create if it does not exist
+% Output directory for result files
+%       For now, use the same as it was (i.e. "output" one level up from 
+%       root task code dir)
+ex.outputFolder = fullfile(ex.rootDir,'..','output');
+
+% Create output directory if it does not exist
 if ~exist(ex.outputFolder,'dir')
     mkdir(ex.outputFolder); 
 end
@@ -131,14 +135,39 @@ if ~ismember(accept,{'y', 'yes', 'ja', 'j'})
     error('\nExperiment settings not accepted. Run %s again to specify different settings.', mfilename);
 end
 
-% Load common settings
+% Load common settings and initialize gripforce (if applicable)
 % -------------------------------------------------------------------------
 ex = commonSettings(ex);
 
 % Start task
+% -------------------------------------------------------------------------
 params = []; % Empty now. Possible to implement such that it can be used to restore options from earlier sessions
 
 % Display instructions?
 
+% Start task
 result = AGT_CoreProtocol_RU_BSI(params,ex);
+
+% Stop gripforce buffer after task is complete
+% .........................................................................
+% Get process ID
+if ispc
+    [~,result] = system('netstat -ano | findstr :1972');
+elseif isunix
+    [~,result] = system('netstat -anp | grep :1972');
+end
+pid = textscan(result, '%[^\n\r]');
+pid = strsplit(pid{1}{1}, ' ');
+if isunix
+    pid = strsplit(pid, '/');
+    pid = pid{1};
+end
+pid = str2double(pid{end});
+
+% Kill process
+if ispc
+    system(sprintf('taskkill /PID %d /F', pid));
+elseif isunix
+    system(sprintf('kill -9 %d', pid));
+end
 end

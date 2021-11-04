@@ -14,6 +14,14 @@ ex.language = 'NL';
 
 % Directories and files
 % =========================================================================
+% Required directories for recording gripforce input
+% -------------------------------------------------------------------------
+% Full path to conda environment to activate
+ex.condaEnv = 'C:\Users\rubvdbos\AppData\Local\Continuum\anaconda3\envs\flair';
+
+% Full path to directory with gripforce recording code
+ex.gripforceDir = fullfile(ex.rootDir,'gripforce');
+
 % Stimulus image files
 % -------------------------------------------------------------------------
 % last one must be fixationcross!
@@ -284,10 +292,34 @@ ex.useSqueezy        = false;  % Change to 1 to use handles! whether or not to u
 ex.channel           = 1;      % Which data channel are you using for the handle?
 ex.simulateGripforce = false;  % For testing without a gripforce
 
-% Store/set sampling rate of gripforce
+% Start recording gripforce input
+% .........................................................................
+% Only for the practice and perform stages
+if ismember(ex.stage, {'practice','perform'})
+    % First determine whether the gripforce buffer is already on
+    if ispc
+        [~,result] = system('netstat -ano | findstr :1972');
+    elseif isunix
+        [~,result] = system('netstat -anp | grep :1972');
+    end
+    if isempty(result)
+        % Calls system command to start gripforce with '&' to send to a
+        % separate process instead of running the command within matlab
+        if ispc
+            system([fullfile('gripforce','start_gripforce.bat') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+        elseif isunix
+            system([fullfile('gripforce','start_gripforce.sh') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+        end
+    else
+        disp('Gripforce fieldtrip buffer is running. Not starting anew')
+    end
+end
+
+% Initialize gripforce and store sampling rate of gripforce
 if ex.useGripforce && ~ex.simulateGripforce
     ex = initGripforce(ex);
 elseif ex.useGripforce && ex.simulateGripforce
+    % If simulated gripforce, set sampling rate to 500 Hz
     ex.MP_SAMPLE_RATE=500;
 elseif ex.useSqueezy
     % NB: also configured in RunExperiment!!

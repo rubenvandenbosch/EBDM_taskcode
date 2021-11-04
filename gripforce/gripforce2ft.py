@@ -131,7 +131,7 @@ def main(url='buffer://localhost:1972', serialdevice='COM5', samplerate=50, simu
         simulation = sys.argv[4] == 'True'
 
     print('url = '+url)
-    print('serial devic e= ' + serialdevice)
+    print('serial device = ' + serialdevice)
     print('sample rate = ' + str(samplerate))
     print('simulation = ' + str(simulation))
     try:
