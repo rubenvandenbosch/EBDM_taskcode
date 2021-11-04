@@ -141,33 +141,35 @@ ex = commonSettings(ex);
 
 % Start task
 % -------------------------------------------------------------------------
-params = []; % Empty now. Possible to implement such that it can be used to restore options from earlier sessions
-
 % Display instructions?
 
 % Start task
+params = []; % Empty now. Possible to implement such that it can be used to restore options from earlier sessions
 result = AGT_CoreProtocol_RU_BSI(params,ex);
 
 % Stop gripforce buffer after task is complete
 % .........................................................................
-% Get process ID
-if ispc
-    [~,pinfo] = system('netstat -ano | findstr :1972');
-elseif isunix
-    [~,pinfo] = system('netstat -anp | grep :1972');
-end
-pid = textscan(pinfo, '%[^\n\r]');
-pid = strsplit(pid{1}{1}, ' ');
-if isunix
-    pid = strsplit(pid, '/');
-    pid = pid{1};
-end
-pid = str2double(pid{end});
+% Only for the practice and perform stages
+if ismember(ex.stage, {'practice','perform'})
+    % Get process ID
+    if ispc
+        [~,pinfo] = system('netstat -ano | findstr :1972');
+    elseif isunix
+        [~,pinfo] = system('netstat -anp | grep :1972');
+    end
+    pid = textscan(pinfo, '%[^\n\r]');
+    pid = strsplit(pid{1}{1}, ' ');
+    if isunix
+        pid = strsplit(pid, '/');
+        pid = pid{1};
+    end
+    pid = str2double(pid{end});
 
-% Kill process
-if ispc
-    system(sprintf('taskkill /PID %d /F', pid));
-elseif isunix
-    system(sprintf('kill -9 %d', pid));
+    % Kill process
+    if ispc
+        system(sprintf('taskkill /PID %d /F', pid));
+    elseif isunix
+        system(sprintf('kill -9 %d', pid));
+    end
 end
 end
