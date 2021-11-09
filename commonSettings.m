@@ -269,6 +269,11 @@ ex.rewardDuration       = 3;   % Time from when reward appears, until screen bla
 
 % Technical setup
 % =========================================================================
+% fMRI scanner options
+% -------------------------------------------------------------------------
+ex.waitNumScans         = 5;   % number of scans to wait for before starting the actual experiment
+ex.fmriComport          = 'COM2';  % set to '' to simulate bitsi buttonbox
+
 % Response key settings
 % -------------------------------------------------------------------------
 % Keyboard
@@ -288,13 +293,18 @@ switch ex.stage
     case {'practice','perform'}
         ex.useBitsiBB = false;
     case 'choice'
-        ex.useBitsiBB = false; % For testing with keyboard, set to false
+        % For testing with keyboard, set to false
+        ex.useBitsiBB = false; 
+        
+        % Initialize bitsi buttonbox object for fmri response pads
+        if ex.useBitsiBB
+            delete(instrfindall);
+            ex.BitsiBB = Bitsi_2016(ex.fmriComport); % create a serial object
+            ex.BitsiBB.setTriggerMode();
+            ex.leftKey   = ex.leftButton;
+            ex.rightKey  = ex.rightButton;
+        end
 end
-
-% fMRI scanner options
-% -------------------------------------------------------------------------
-ex.waitNumScans         = 5;   % number of scans to wait for before starting the actual experiment
-ex.fmriComport          = 'COM2';  % set to '' to simulate bitsi buttonbox
 
 % Display options
 % -------------------------------------------------------------------------
