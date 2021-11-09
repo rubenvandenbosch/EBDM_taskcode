@@ -1,4 +1,4 @@
- function result = RunExperiment ( doTrial, ex, params, blockStart )
+function result = RunExperiment ( doTrial, ex, params, blockStart )
 % result = RunExperiment ( @doTrial, ex, params [, @blockStart] )
 % The body of the experiment.
 % Sanjay Manohar 2008
@@ -11,29 +11,29 @@
 %    position information to a date-numbered file. (if useEyelink==2 then
 %    use a dummy eyelink setup)
 %
-% 3) Combine information from 'ex' and 'params' structures. Params is 
+% 3) Combine information from 'ex' and 'params' structures. Params is
 %    either interpreted as values that override those of ex, or alternatively
 %    if params is the result from a previous experiment, then simply continue
 %    the previous experiment.
-%    If not continuing a previous experiment, create trial structure 
+%    If not continuing a previous experiment, create trial structure
 %    (type help createTrials) using parameters in ex.
-% 
-% 4) Iteratively call the given trial function: doTrial(scr, el, ex, trial) 
-%    Parameters sent: screen structure, eyelink structure, 
+%
+% 4) Iteratively call the given trial function: doTrial(scr, el, ex, trial)
+%    Parameters sent: screen structure, eyelink structure,
 %      experiment parameters structure, and trial parameters structure
 %
 % 5) Handles eyelink trial, calibration, drift correction, and abort logic.
 %
-% 6) Handles keypresses 
+% 6) Handles keypresses
 %      'R'    repeat trial now
 %      'D'    drift correct
 %      'C'    tracker setup screen
 %      'F1'   allow keyboard input to modify experiment
-%      escape exit block and exit experiment. 
+%      escape exit block and exit experiment.
 %    The key result should be passed
 %    back from doTrial in the return structure as trial.key, and trial.R
 %    should return a status (R_ERROR terminates block).
-% 
+%
 % 7) Handles errors: saves all data in 'errordump.mat', cleans screen and
 %    shuts down eyelink; also attempts to upload EDF file to current
 %    directory. Also, data is saved at every block-end, in LastExperiment.dat
@@ -43,39 +43,39 @@
 %  2) doTrial must be a function handle (passed using @) with the
 %     parameters as described in 4 above
 %
-% Input arguments:        
-%                   
-% doTrial:          user-supplied function of the form 
+% Input arguments:
+%
+% doTrial:          user-supplied function of the form
 %                   trialResult = doTrial(scr, el, ex, trial)
 %                   Called with parameters of each trial.
-% 
+%
 %
 % ex:               Experimental parameters, containing fields:
-%  blocks           = number of blocks, or alternatively an array of 
+%  blocks           = number of blocks, or alternatively an array of
 %                     integers specifying the block types for each block to
 %                     run. Default = 1
 %
-%  blockLen         = number of trials per block. 
+%  blockLen         = number of trials per block.
 %
 %  blockVariables.varName1  = [value1, value2, value3]
 %  trialVariables.varName2  = [value4, value5]
-%                     Specify trial types. 
+%                     Specify trial types.
 %                     These create variables that are shuffled across
-%                     trials and blocks. Each variable 'varName_i' will take 
-%                     one of the specified value_i from the corresponding 
-%                     array. 
+%                     trials and blocks. Each variable 'varName_i' will take
+%                     one of the specified value_i from the corresponding
+%                     array.
 %                     You can use a cell array instead.
-%                     
+%
 %  useEyelink       = whether to use eyelink
 %  useScreen        = whether to use the PsychToolbox Screen command
-%  useSqueezy       = initialise squeezy device. default initialises to 
+%  useSqueezy       = initialise squeezy device. default initialises to
 %                     500Hz, 2 channels
-% 
+%
 %  exptStart        = @function exptStart(scr, el, ex) is called at
 %                     the start of the experiment. Can be used for
 %                     one-off instructions.
 %
-%  blockStart:      = user supplied function of the form 
+%  blockStart:      = user supplied function of the form
 %                     @function blockStart (scr, el, ex, trial), where the trial
 %                     supplied is the first trial of the block. use this to
 %                     write a display needed at the start of a block.
@@ -85,26 +85,26 @@
 %
 %  rethrowErrors    = if true, then the errors will be shown as proper
 %                     errors, after the cleanup
-% 
+%
 %  practiceTrials   = number of practice trials. If this is a multiple of
 %                     the number of trial types, there will be one of each
 %                     type.
 %
-%  shuffleTrials    = true if you want the trials in a random order in each 
+%  shuffleTrials    = true if you want the trials in a random order in each
 %                     block. Otherwise they will run in the order that the
-%                     fields of 'trialVariables' were created. 
+%                     fields of 'trialVariables' were created.
 %
 %  shufflePracticeTrials = (same but for practice trials)
-% 
+%
 %  repetitionsPerBlock: You can specify this instead of blockLen. If this
 %                     is 1, then the block length will be the same as the
 %                     number of trial types.
 %
 %  MP_SAMPLE_RATE   = sample rate for the squeezy - Hz. Default 500 Hz
-%  
-%  
 %
-% params:           Either - additional experimental parameters which 
+%
+%
+% params:           Either - additional experimental parameters which
 %                   override those in 'ex', or 'result' returned from
 %                   a previous RunExperiment.
 %                   set a field 'overrideParameters' if you want to
@@ -114,8 +114,8 @@
 % blockStart:       can also be specified as a separate parameter, as an
 %                   @function.
 %
-% in doTrial, you have access to 
-% 
+% in doTrial, you have access to
+%
 %  ex.R_NEEDS_REPEATING  }
 %  ex.R_ERROR            }  = constants you can return as results in tr.R
 %  ex.R_ESCAPE           }
@@ -124,8 +124,8 @@
 % result:
 %  file             = EDF file name for eyelink data (hopefully transferred
 %                     into local working directory at end of experiment)
-%  trials(block,trial) = trial parameters structure - the specific 
-%                     parameters created by createTrials, and sent 
+%  trials(block,trial) = trial parameters structure - the specific
+%                     parameters created by createTrials, and sent
 %                     sequentially to each doTrial.
 %  params           = The experimental parameters, combined
 %  data(block,trial)= The results of each trial, as returned by doTrial.
@@ -143,7 +143,8 @@
 % Sanjay Manohar 2008
 
 
-% setup parameters
+% Setup parameters
+% =========================================================================
 global totalReward
 
 % values of responseType, supplied by doTrial.
@@ -154,41 +155,46 @@ ex.R_NEEDS_REPEATING_LATER = -95;   % error: rerun trial at end of block
 ex.R_ESCAPE       = -98;            % escape was pressed - exit immediately
 ex.R_INCOMPLETE   = -96;            % trial didn't complete as expected
 ex.R_UNSPECIFIED  = -94;            % experiment didn't provide a return value
-% Store the stack trace - so we know which .m experiment file was run 
-% to execute the experiment
-ex.experimentStack= dbstack;        
-fatal_error       = 0;              % true if the task must end suddenly
-% Store the file record for top-level function (i.e. experiment) 
-%  - includes the modification date and size! (2018) 
-ex.experimentFile = dir(which(ex.experimentStack(end).file)); 
 
+% Store the stack trace - so we know which .m experiment file was run
+% to execute the experiment
+ex.experimentStack= dbstack;
+fatal_error       = 0;              % true if the task must end suddenly
+
+% Store the file record for top-level function (i.e. experiment)
+%  - includes the modification date and size! (2018)
+ex.experimentFile = dir(which(ex.experimentStack(end).file));
+
+% If params is given, overwrite (potentially ask first) the settings in
+% struct ex with those specified in params
+% -------------------------------------------------------------------------
 last = [1 1];                       % block and trial to start at
-if exist('params','var')           % if user specified a set of experimental 
+if exist('params','var')           % if user specified a set of experimental
     p=params;                       % parameters in the input parameters,
     if isfield(p,'params'), p=p.params; end
     fnames=fieldnames(p);           % override parameters from the original (ex)
     for x = 1:length(fnames);       % with those from the input structure (p).
         if isfield(ex,fnames{x})    % Is the field already in ex?
-          if ~equals(p.(fnames{x}),ex.(fnames{x})) % if the values are unequal,
-            if(isfield(p,'overrideParameters')) % if 'overrideParameters' is set, then use that value
-                override=p.overrideParameters; 
-                if(override)        % overwrite all parameters if 'overrideParameters' is specified
-                    warning(['Using "' fnames{x} '" = "' p.(fnames{x}) '" from passed parameters.']);
-                else
-                    warning(['Using "' fnames{x} '" = "' ex.(fnames{x}) '" from experiment program.']);
+            if ~equals(p.(fnames{x}),ex.(fnames{x})) % if the values are unequal,
+                if(isfield(p,'overrideParameters')) % if 'overrideParameters' is set, then use that value
+                    override=p.overrideParameters;
+                    if(override)        % overwrite all parameters if 'overrideParameters' is specified
+                        warning(['Using "' fnames{x} '" = "' p.(fnames{x}) '" from passed parameters.']);
+                    else
+                        warning(['Using "' fnames{x} '" = "' ex.(fnames{x}) '" from experiment program.']);
+                    end
+                else                    % otherwise ask specifically for each parameter
+                    override=(input(['Override "' fnames{x} '": "' p.(fnames{x}) ...
+                        '" instead of "' ex.(fnames{x}) '" (1/0) ?'] ))
                 end
-            else                    % otherwise ask specifically for each parameter
-                override=(input(['Override "' fnames{x} '": "' p.(fnames{x}) ...
-                            '" instead of "' ex.(fnames{x}) '" (1/0) ?'] ))
             end
-          end
         end % field exists?
         ex.(fnames{x}) = p.(fnames{x});  % store field in ex
     end
-    if isfield(params,'last')   last   =params.last; end    % go straight to the last-executed trial 
-    if isfield(params,'data')   results=params.data; end    % keep results of old trials
-    if isfield(params,'trials') trials =params.trials; end  % keep old trial structure and randomisation 
-    if isfield(params,'edfFiles')                          
+    if isfield(params,'last')   last    = params.last; end    % go straight to the last-executed trial
+    if isfield(params,'data')   results = params.data; end    % keep results of old trials
+    if isfield(params,'trials') trials  = params.trials; end  % keep old trial structure and randomisation
+    if isfield(params,'edfFiles')
         result.edfFiles=params.edfFiles;  % keep a list of EDF files used in previous runs
     else
         result.edfFiles={};
@@ -199,73 +205,93 @@ if exist('params','var')           % if user specified a set of experimental
         result.startTimes={};
     end
     usingoldresults=1;
-else usingoldresults=0; end
-
-if ~isfield(ex,'useEyelink') ex.useEyelink=0; end  % default No Eyelink
-if ~isfield(ex,'useScreen')  ex.useScreen=1;  end  % default Yes Screen
-if ~isfield(ex,'useSqueezy') ex.useSqueezy=0; end  % default No Squeezy 
-if ~isfield(ex,'useGripforce') ex.useGripforce=0; end  % default No Squeezy 
-if ex.useEyelink, ex.useScreen=1;end               % can't have eyelink without screen
-if ~ex.useScreen,  scr=0;end                       % not using screen?
-if ~ex.useEyelink,  el=0;end                       % not using eyelink?
-if ~exist('result','var'), result.startTimes={};end 
-result.startTimes   = {result.startTimes{:}, datestr(now,31)}; % store time of experiment start
-if ~exist('blockStart','var') && isfield(ex,'blockStart'), blockStart= ex.blockStart; end
-if ~exist('exptStart','var') && isfield(ex,'exptStart'),   exptStart = ex.exptStart; end
-if ~isfield(ex,'blocks'), warning('Assuming 1 block only'); ex.blocks=1;end
-
-% added 2016 to cater for different random number generator in new Matlab    
-% (rand seed has been deprecated now)
-if isfield(ex,'randomSeed') && numel(ex.randomSeed)==1 && ~isnan(ex.randomSeed)
-  try   % if random seed present, set the fixed seed 
-    rng(ex.randomSeed);
-  catch mx   % older versions of matlab:
-    rand('seed',ex.randomSeed);
-  end
-else    % no seed present: randomise the generator from the clock
-  try
-    rng('shuffle');
-  catch mx  % older versions of matlab: 
-    rand('seed',sum(100*clock));
-  end
+else
+    usingoldresults=0;
 end
 
-%%%%%%%%%%% CREATE TRIALS %%%%%%%%%%%%%%%%%
-if exist('trials')~=1,  trials = createTrials(ex); end;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Set default values for unspecified parameters
+% -------------------------------------------------------------------------
+if ~isfield(ex,'useEyelink') ex.useEyelink=0; end  % default No Eyelink
+if ~isfield(ex,'useScreen')  ex.useScreen=1;  end  % default Yes Screen
+if ~isfield(ex,'useSqueezy') ex.useSqueezy=0; end  % default No Squeezy
+if ~isfield(ex,'useGripforce') ex.useGripforce=0; end  % default No Gripforce
+if ex.useEyelink, ex.useScreen=1; end               % can't have eyelink without screen
+if ~ex.useScreen,  scr=0; end                       % not using screen?
+if ~ex.useEyelink,  el=0; end                       % not using eyelink?
 
+if ~exist('blockStart','var') && isfield(ex,'blockStart'), blockStart= ex.blockStart; end
+if ~exist('exptStart','var') && isfield(ex,'exptStart'),   exptStart = ex.exptStart; end
+if ~isfield(ex,'blocks'), warning('Assuming 1 block only'); ex.blocks=1; end
+
+% store time of experiment start
+if ~exist('result','var'), result.startTimes={};end
+result.startTimes = [result.startTimes, datestr(now,31)];
+
+% Set random seed
+% -------------------------------------------------------------------------
+% added 2016 to cater for different random number generator in new Matlab
+% (rand seed has been deprecated now)
+if isfield(ex,'randomSeed') && numel(ex.randomSeed)==1 && ~isnan(ex.randomSeed)
+    try   % if random seed present, set the fixed seed
+        rng(ex.randomSeed);
+    catch mx   % older versions of matlab:
+        rand('seed',ex.randomSeed);
+    end
+else    % no seed present: randomise the generator from the clock
+    try
+        rng('shuffle');
+    catch mx  % older versions of matlab:
+        rand('seed',sum(100*clock));
+    end
+end
+
+% Create trials
+% =========================================================================
+if ~exist('trials','var')
+    trials = createTrials(ex);
+end
+
+% Run experiment
+% =========================================================================
+% Everything in try block to catch and report errors
 e=[]; % this carries any errors
-try     
+try
+    % Initialise devices
+    % ---------------------------------------------------------------------
     % Enable unified mode of KbName,
     % so KbName accepts identical key names on all operating systems:
     KbName('UnifyKeyNames');
     if ~isfield(ex,'exitkey')
-      ex.exitkey = KbName('Escape');
+        ex.exitkey = KbName('Escape');
     end
+    
+    % Initialise screen (scr struct)
     if ex.useScreen
-       if ~isfield(ex,'scr')
-          scr=prepareScreen(ex);         % initialise screen (scr struct)
-          ex.scr = scr;
-          ex.screenSize=scr.ssz;  
-       else
-          % this is already done via displayInstructions function
-          scr = ex.scr;
-       end
-    end;
-    
-    if ex.useSqueezy                   % initialise squeezy device
-      ex.mplib = 'mpdev'; mpdir='.';
-      if ~isfield(ex, 'MP_SAMPLE_RATE') ex.MP_SAMPLE_RATE=500;end
-      x=loadlibrary([mpdir '/mpdev.dll'],[mpdir '/mpdev.h']);
-      [retval, sn] = calllib(ex.mplib,'connectMPDev',101,11,'auto');
-      if ~strcmp(retval,'MPSUCCESS')
-        fprintf('for eyelink use IP 100.1.1.2; for MP150 use IP 169.254.111.111\n');
-        error('could not initialise MP150: %s', retval);
-      end
-      calllib(ex.mplib, 'setSampleRate', 1000/ex.MP_SAMPLE_RATE); % ms between samples
-      calllib(ex.mplib, 'setAcqChannels', int32([1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]));  % which of 16 channels?
+        if ~isfield(ex,'scr')
+            scr = prepareScreen(ex);
+            ex.scr = scr;
+            ex.screenSize = scr.ssz;
+        else
+            % this is already done via displayInstructions function
+            scr = ex.scr;
+        end
     end
     
+    % Initialise squeezy device
+    if ex.useSqueezy
+        ex.mplib = 'mpdev'; mpdir='.';
+        if ~isfield(ex, 'MP_SAMPLE_RATE') ex.MP_SAMPLE_RATE=500;end
+        x=loadlibrary([mpdir '/mpdev.dll'],[mpdir '/mpdev.h']);
+        [retval, sn] = calllib(ex.mplib,'connectMPDev',101,11,'auto');
+        if ~strcmp(retval,'MPSUCCESS')
+            fprintf('for eyelink use IP 100.1.1.2; for MP150 use IP 169.254.111.111\n');
+            error('could not initialise MP150: %s', retval);
+        end
+        calllib(ex.mplib, 'setSampleRate', 1000/ex.MP_SAMPLE_RATE); % ms between samples
+        calllib(ex.mplib, 'setAcqChannels', int32([1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]));  % which of 16 channels?
+    end
+    
+    % Initialise eye tracker
     datestring=datestr(now,30);
     namebase=datestring([5:8, 10:13]); % base filename = date
     if(ex.useEyelink)                  % initialise eyelink (el struct)
@@ -286,9 +312,9 @@ try
         Eyelink('command', 'screen_pixel_coords = 0,0,%d,%d', scr.ssz(1), scr.ssz(2));
         Eyelink('Command', 'pupil_size_diameter = YES');
         el=EyelinkInitDefaults(scr.w);
-        el.file=[namebase '.edf'];     
+        el.file=[namebase '.edf'];
         Eyelink('openfile', el.file ); % create the EDF file
-        result.file   = el.file;       
+        result.file   = el.file;
         el.disallowEarlySaccades=1;    % store the filename in output
         el.backgroundcolour=ex.bgColour;
         el.foregroundcolour=ex.fgColour;
@@ -296,276 +322,372 @@ try
         if(~isfield(result,'edfFiles')) result.edfFiles={};end;
         result.edfFiles={result.edfFiles{:}, result.file};
         EyelinkDoTrackerSetup(el);     % run the calibration routine
-        FlushEvents;                   
-    end;
+        FlushEvents;
+    end
+    
+    % ---------------------------------------------------------------------
+    % Start of experiment code
+    % ---------------------------------------------------------------------
+    % Init output structure
     result.trials = trials;     % save trial structure in output
     result.params = ex;         % save experimental parameters in output
-
+    
     % call experiment start code, if provided
-    if exist('exptStart')
+    if exist('exptStart','var')
         exptStart(scr,el,ex);
     end
-
-    % Practice trials
-    % if there are practice trials, and we're not continuing from before:
-    if isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1 
-        % create a new set of random trials for the practice, in the same way as
-        % would be done for the real experiment. 
-        if isfield(ex,'blockorder')
-          ex_prac = rmfield(ex,'blockorder');
-        else
-          ex_prac = ex;
-        end
-        ex_prac.blocks = 1; 
-        ex_prac.blockLen = ex.practiceTrials; 
-        if isfield(ex, 'shufflePracticeTrials')
-            ex_prac.shuffleTrials = ex.shufflePracticeTrials; 
-        end
-        % run create trials using the 'blockLen' of the practice trials. 
-        % if this is a multiple of the number of trial types, then there
-        % will be one of each trial type.
-        prac=createTrials(ex_prac); 
-        
-%         if ~ex.calibOnly
-%            msg = 'Practice trials';
-%         else
-%            msg = 'MVC calibration';
-%         end
-%         if ex.useScreen % show "Practice" screen, and wait for keypress
-%             drawTextCentred(scr, msg, ex.fgColour);
-%             Screen('Flip', scr.w);
-%         else
-%           fprintf('%s\n',msg); 
-%         end
-%         myKbWait(ex); 
-%         disp(prac)
-
-% NOTE: ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices;
-%       in the loop below, calibration, familiarize and practice trials
-%       will be handled. In the doTrial() function, it is hardcoded!!! in
-%       which of the different stages (i.e., calibration/familiarise/practice) the exeriment is running!
-        for i=1:ex.practiceTrials % for each practice trial,
-          % take practice trials sequentially from the created trials
-          %ph: fix practice trials first dimension error indexing
-          tr = prac(1+floor((i-1)/ex.blockLen),1+mod(i,ex_prac.blockLen));
-          tr.isPractice = true; % mark the trial as a practice.
-          % Now run each practice trial, setting the block index as '0'.
-          tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,i); 
-          if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
-             tr.R = 1; % do not allow repeating practice trials 
-          end
-          if isfield(result,'practiceResult') % if there are already practice results, 
-            % make sure the new practice trial structure is compatible
-            [result.practiceResult,tr]=ensureStructsAssignable(result.practiceResult,tr);            
-          end
-          if isfield(tr,'sub_stage')
-             stage = tr.sub_stage;
-          else
-             stage = ex.stage;
-          end
-          b=NaN; t=NaN; Yestrial = NaN; stake = NaN; reward = NaN; effort = NaN;
-          try reward = tr.success; catch, end
-          try effort = tr.effort;  catch, end          
-          fprintf(ex.fpSession ,'%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),         ex.subjectId,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
-          fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
-          
-          result.practiceResult(i)=tr; % store result in "practiceResult".
-          if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE % if there was an error, 
-            fatal_error=1; break;                       % exit practice trials 
-          end
-        end
-    end    
     
-   if ex.calibOnly
-        % remove non-used variables
-        result = rmfield(result,'trials');      
-   else
-       %%%%%%%%%%%%%%%%% Main blocks and trials %%%%%%%%%%%%%%%%%
-       if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1)
-          if ex.useScreen
-              Screen(scr.w, 'FillRect',ex.bgColour, scr.sszrect);
-              drawTextCentred(scr, 'De taak begint nu', ex.fgColour);
-              Screen('Flip', scr.w);
-          else
-              disp('Start of experiment - press a key');
-          end
-           myKbWait(ex);               % press a key to start the experiment
-          WaitSecs(1);
-       end
-       
-       if length(ex.blocks)==1, bnum=last(1):ex.blocks;
-       else bnum = ex.blocks(last(1):end);
-       end
-       
-       % continue from last block
-       for b=last(1):ex.blocks
-           if exist('blockStart','var')    % call the blockStart method if supplied
-               kcode = 1; while any(kcode) [z z kcode]=KbCheck; end;
-               FlushEvents '';
-               tr=trials(b,1); tr.block = b; % allow the block start code to know which block we are in
-                 blockStart(scr,el,ex,tr);
-           end
-           repeatLater = []; % trials to repeat at end of block
-           % fix too many trials for last block
-           if b==ex.choiceBlockNumber           
-              %len = min(ex.blockLen,numel(ex.last_trial));
-              len = numel(ex.last_trial);
-              % dirty trick to allow more than 25 trials for actual squeeze
-              % task
-              %trials = [trials trials];
-           else
-              len = ex.blockLen;
-           end
-           % start effort on level specified below * MVC (only used for fatiguing experiment)
-           fatEffort = ex.fatiguingExerciseSTartEffortLevel;
-           prevReward = 0; % remember previous result, init to non-used value
-           handLocation = 1; % hand target for fatiguing experiment using two gripforces
-           for t=1:len
-               if b==last(1) && t<last(2), continue; end; % skip through trials already done
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Run single trial
-               if ex.fatiguingExercise
-                  trial = trials(b,t);
-                  trial.effort = {fatEffort};
-                  if ex.twoHands
-                     handLocation = handLocation * -1; % toggle tree left (-1) or right (1)
-                     trial.location = handLocation; 
-                  else
-                     trial.location = 0; % show tree in the middle
-                  end
-                  tr=runSingleTrialAndProcess(scr,el,ex,trial,doTrial,b,t);
-                  if tr.reward, reward = 1; else reward = -1; end % convert 0/1 to -1/+1 for easy calculation
-                  fprintf('succes=%d\tprevious=%d',reward,prevReward);
-                  if reward == prevReward
-                     if reward > 0
-                        fatEffort = fatEffort + 0.1; % add 10% to required force level
-                     else
-                        fatEffort = fatEffort - 0.1; % subtract 10% from required force level
-                        if fatEffort < 0.1, fatEffort = 0.1; end
-                     end
-                     prevReward = 0; % init
-                  else
-                     prevReward = reward;
-                  end
-                  fprintf('\teffort level=%f\n',fatEffort);
-               else
-                  tr=runSingleTrialAndProcess(scr,el,ex,trials(b,t),doTrial,b,t);
-               end
+    % Practice trials
+    % ---------------------------------------------------------------------
+    % if there are practice trials, and we're not continuing from before:
+    if isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1
+        
+        % create a new set of random trials for the practice, in the same way as
+        % would be done for the real experiment.
+        if isfield(ex,'blockorder')
+            ex_prac = rmfield(ex,'blockorder');
+        else
+            ex_prac = ex;
+        end
+        ex_prac.blocks = 1;
+        ex_prac.blockLen = ex.practiceTrials;
+        if isfield(ex, 'shufflePracticeTrials')
+            ex_prac.shuffleTrials = ex.shufflePracticeTrials;
+        end
+        
+        % Create practice trials
+        %   run create trials using the 'blockLen' of the practice trials.
+        %   if this is a multiple of the number of trial types, then there
+        %   will be one of each trial type.
+        prac = createTrials(ex_prac);
+        
+        % Run practice trials
+        for i = 1:ex.practiceTrials
+            
+            % Get practice trial parameters for current trial
+            %   get from prac struct: prac(block,trial)
+            %   mark the trial as a practice.
+            tr = prac(1+floor((i-1)/ex_prac.blockLen),1+mod(i,ex_prac.blockLen));
+            tr.isPractice = true;
+            
+            % Run the practice trial
+            %   set the block index as '0'
+            tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,i);
+            
+            % do not allow repeating practice trials
+            if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
+                tr.R = 1;
+            end
+            
+            % If there are already practice results, make sure the new 
+            % practice trial structure is compatible
+            if isfield(result,'practiceResult')
+                [result.practiceResult,tr]=ensureStructsAssignable(result.practiceResult,tr);
+            end
+            
+            % Track task stage
+            if isfield(tr,'sub_stage')
+                stage = tr.sub_stage;
+            else
+                stage = ex.stage;
+            end
+            
+            % Write results to output structure and output files
+            % .............................................................
+            % Set block and trial info to NaN for the practice trials            % CHANGE?
+            b=NaN; t=NaN; Yestrial = NaN; stake = NaN; reward = NaN; effort = NaN;
+            
+            % For perform trials store the effort level and whether trial
+            % was successful
+            try reward = tr.success; catch, end
+            try effort = tr.effort;  catch, end
+            
+            % Write data to output files
+            fprintf(ex.fpSession ,'%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),ex.subjectId,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
+            fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
+            
+            % Write data to output structure
+            %   store result in "practiceResult"
+            result.practiceResult(i) = tr;
+            
+            % If there was an error, exit practice trials
+            if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE
+                fatal_error=1; break;
+            end
+        end
+    end
+    
+    % Main blocks and trials
+    % ---------------------------------------------------------------------
+    if ~ex.calibOnly
+        % Display "Start of experiment" and wait for key press to start
+        if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1)
+            if ex.useScreen
+                Screen(scr.w, 'FillRect',ex.bgColour, scr.sszrect);
+                drawTextCentred(scr, 'De taak begint nu', ex.fgColour);
+                Screen('Flip', scr.w);
+            else
+                disp('Start of experiment - press a key');
+            end
+            myKbWait(ex); % press a key to start the experiment
+            WaitSecs(1);
+        end
+        
+        % Loop over blocks
+        %   Continue from last block
+        for b=last(1):ex.blocks
+            
+            % Call the blockStart method if supplied
+            if exist('blockStart','var')
+                kcode = 1; while any(kcode); [~, ~, kcode] = KbCheck; end
+                FlushEvents ''; % Empty strings are ignored... Remove these 2 line?
                 
-               % output trial results to file               
-               if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
-               if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
-               if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
-               if isfield(tr,'sub_stage')
-                  stage = tr.sub_stage;
-               else
-                  stage = ex.stage;
-               end
-               % header: 'subject_id\tday\tMVC\tblocknr\ttrialnr\teffort_Level\treward_level\tchoice\n');
-               fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),         ex.subjectId,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
-               fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
-                              
-               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-               if exist('results','var')  % to append previous struct, ensure all the trials have the same data fields
-                   [results, tr]=ensureStructsAssignable(results,tr);
-               else results=[]; % (first trial)
-               end
-               results = [results tr];  % then append
-               if tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE
-                 fatal_error=1; break; 
-               end
-               if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
-                 repeatLater=[repeatLater, t]; 
-                 fprintf('Blk %d Trial %d will be repeated at end\n',b,t);
-               end
-               result.data   = results;      % store the results on the output
-               result.last   = [b,t];        % keep track of what the last complete trial is
-               % write the data to disc in a temporary file after every trial!
-               % this allows data to be recovered in from this file after a fatal crash
-               save 'LastExperiment' result  
-           end  %end of block
-           % repeat-later trials... keep going until they don't need repeating.
-           % add them to the end of the data, but put in the appropriate trial
-           % index for where it would have been in the sequence.
-           t=1;
-           while (~fatal_error) && (t<=length(repeatLater)) 
-               repTrial = trials(b,repeatLater(t));   
-               if isfield(repTrial,'numRepeated') && ~isnan(repTrial.numRepeated)
-                   repTrial.numRepeated = repTrial.numRepeated + 1;
-               else
-                   repTrial.numRepeated=1; % flag to signify repeated trials and how many times
-               end
-               if repTrial.numRepeated > ex.maxNumRepeatedTrials
-                   % too many retries, go on to the next trial to repeat
-                   t =t + 1;
-                   continue
-               end
-               repTrial.isRepeated = 1;
-               [trials, repTrial] = ensureStructsAssignable(trials,repTrial);
-               trials(b,repeatLater(t)) = repTrial;
+                % allow the block start code to know which block we are in
+                tr=trials(b,1); tr.block = b;
+                % Run block start method
+                blockStart(scr,el,ex,tr);
+            end
+            
+            % Initialise record of trials to repeat at end of block
+            repeatLater = [];
+            
+            % Fix too many trials for last block
+            if b == ex.choiceBlockNumber
+                len = min(ex.blockLen,numel(ex.last_trial));
+                %               len = numel(ex.last_trial);
+                % dirty trick to allow more than 25 trials for actual squeeze
+                % task
+                %trials = [trials trials];
+            else
+                len = ex.blockLen;
+            end
+            
+            % Set settings used for fatiguing experiment only
+            %   start effort on level specified below * MVC
+            fatEffort = ex.fatiguingExerciseSTartEffortLevel;
+            prevReward = 0;     % remember previous result, init to non-used value
+            handLocation = 1;   % hand target for fatiguing experiment using two gripforces
+            
+            % Run each trial in this block
+            % .............................................................
+            for t=1:len
+                % skip through trials already done
+                if b==last(1) && t<last(2)
+                    continue
+                end
+                
+                % Choice trials
+                if ~ex.fatiguingExercise
+                    % Run current trial
+                    tr = runSingleTrialAndProcess(scr,el,ex,trials(b,t),doTrial,b,t);
 
-               tr=runSingleTrialAndProcess(scr,el,ex,repTrial,doTrial,b,repeatLater(t));
-               tr.trialIndex=repeatLater(t);   % make the trial index the same as it should have been
-               [results tr]=ensureStructsAssignable(results,tr);
-               results = [results tr];
-                     
-               % output trial results to file               
-               if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
-               if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
-               if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
-               if isfield(tr,'sub_stage')
-                  stage = tr.sub_stage;
-               else
-                  stage = ex.stage;
-               end
-               % header: 'subject_id\tday\tMVC\tblocknr\ttrialnr\teffort_Level\treward_level\tchoice\n');
-               fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),         ex.subjectId,ex.session,tr.MVC,b,tr.trialIndex,tr.effort,stake,reward,totalReward,Yestrial);
-               fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,tr.trialIndex,tr.effort,stake,reward,totalReward,Yestrial);        
-               
-               if(tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE) fatal_error=1; break; end;
-               % allow the trial to repeated more than once
-               if(tr.R==ex.R_NEEDS_REPEATING_LATER) repeatLater=[repeatLater, repeatLater(t)]; end; 
-               result.data   = results;
-               save 'LastExperiment' result
-               t=t+1;
-           end
-           % at the end each block (or when quit), save all trials with the full filename
-           save([namebase '.mat'], 'result'); 
-           if ex.useScreen && ~exist('blockStart','var')
-               drawTextCentred(scr, 'End of block', ex.fgColour);
-               Screen('Flip', scr.w);
-               myKbWait(ex);                             % wait for keypress after each block
-           end
-           [z z kcode]=KbCheck;
-           if kcode(ex.exitkey) || fatal_error,  break;  end
-           
-           startTime = GetSecs();
-           if ex.fatiguingExercise && b ~= ex.blocks
-              waitDuration = 4.5 * 60; % 4,5 minutes waiting time
-              % resting phase, wait ...
-              waitTime = waitDuration - (GetSecs()-startTime);
-              while waitTime > 0
-                 waitTime = waitDuration - (GetSecs()-startTime);
-                 msg = sprintf('You have a break now. Remaining break time: %d seconds',max(0,ceil(waitTime)));
-                  drawTextCentred(scr, msg, ex.fgColour);
-                  Screen('Flip', scr.w);              
-                  java.lang.Thread.sleep(1000);
-              end
-           end
-           % output total achieved reward to file
-           if b >= ex.choiceBlockNumber % the single trials to perform at the end
-              fprintf(ex.fpPayoutSessions,'%f\t%s\t%s\t%d\t%d\n',tr.starttrial,datestr(now),ex.subjectId,ex.session,totalReward);
-           end
-           
-       end
-%       displayInstructions(ex, 10);
-      displayInstructions(ex, 15); %BL feb2021: split fmri version
-       %%%%%%%%%%%%%  end of experiment %%%%%%%%%%%%%%%%%
-   end
-catch                       % in case of an error
-    e=lasterror;            % display error message
-    fprintf('Error : %s\n',...
-        e.message);
-    for(i=1:length(e.stack))
+                else % Fatiguing experiment
+                    
+                    % Get trial info
+                    trial = trials(b,t);
+                    trial.effort = {fatEffort};
+                    
+                    if ex.twoHands
+                        handLocation = handLocation * -1; % toggle tree left (-1) or right (1)
+                        trial.location = handLocation;
+                    else
+                        trial.location = 0; % show tree in the middle
+                    end
+                    
+                    % Run current trial
+                    tr=runSingleTrialAndProcess(scr,el,ex,trial,doTrial,b,t);
+                    
+                    % Process trial data
+                    %   convert reward 0/1 to -1/+1 for easy calculation
+                    %   and report
+                    if tr.reward
+                        reward = 1;
+                    else
+                        reward = -1;
+                    end
+                    fprintf('succes=%d\tprevious=%d',reward,prevReward);
+                    
+                    % Adjust effort level to make more or less fatiguing
+                    if reward == prevReward
+                        if reward > 0
+                            fatEffort = fatEffort + 0.1; % add 10% to required force level
+                        else
+                            fatEffort = fatEffort - 0.1; % subtract 10% from required force level
+                            if fatEffort < 0.1, fatEffort = 0.1; end
+                        end
+                        prevReward = 0; % init
+                    else
+                        prevReward = reward;
+                    end
+                    % Report effort level
+                    fprintf('\teffort level=%f\n',fatEffort);
+                end
+                
+                % Write results to output structure and output files
+                % .........................................................
+                % Get output variables and set unavailable vars to NaN
+                if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
+                if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
+                if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
+                if isfield(tr,'sub_stage'), stage = tr.sub_stage; else, stage = ex.stage; end
+                
+                % Write data to output files
+                fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),ex.subjectId,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
+                fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
+                
+                % Write data to output structure
+                %   to append previous struct, ensure all the trials have 
+                %   the same data fields. Creat result struct on first
+                %   trial
+                if exist('results','var')  
+                    [results, tr]=ensureStructsAssignable(results,tr);
+                else
+                    results=[]; % (first trial)
+                end
+                results = [results tr];  % Append trial data to results struct
+                result.data   = results; % store the results on the output
+                
+                % keep track of what the last complete trial is
+                result.last   = [b,t];
+                
+                % Create recovery file
+                %   write the data to disc in a temporary file after every 
+                %   trial!
+                %   this allows data to be recovered from this file after a
+                %   fatal crash
+                save 'LastExperiment' result
+                
+                % Mark trial for repeating, if applicable
+                if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
+                    repeatLater = [repeatLater, t];
+                    fprintf('Block %d Trial %d will be repeated at end\n',b,t);
+                end
+                
+                % If there was an error, exit
+                if tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE
+                    fatal_error=1; break;
+                end
+                
+            end  %end of block
+            
+            % Repeat-later trials
+            % .............................................................
+            % keep going until they don't need repeating.
+            % add them to the end of the data, but put in the appropriate 
+            % trial index for where it would have been in the sequence.
+            t=1;
+            while (~fatal_error) && (t<=length(repeatLater))
+                repTrial = trials(b,repeatLater(t));
+                
+                % Track repeat trials and the number of repeats
+                if isfield(repTrial,'numRepeated') && ~isnan(repTrial.numRepeated)
+                    repTrial.numRepeated = repTrial.numRepeated + 1;
+                else
+                    repTrial.numRepeated = 1;
+                end
+                
+                % If the number of repeats exceeds the max, continue to
+                % next the trial to redo
+                if repTrial.numRepeated > ex.maxNumRepeatedTrials
+                    % too many retries, go on to the next trial to repeat
+                    t = t + 1;
+                    continue
+                end
+                
+                % Add repeat trial info and flags to trial struct
+                repTrial.isRepeated = 1;
+                [trials, repTrial] = ensureStructsAssignable(trials,repTrial);
+                trials(b,repeatLater(t)) = repTrial;
+                
+                % Run current repeat trial
+                tr=runSingleTrialAndProcess(scr,el,ex,repTrial,doTrial,b,repeatLater(t));
+                
+                % make the trial index the same as it should have been
+                tr.trialIndex=repeatLater(t);
+                
+                % Add trial data to results
+                [results, tr] = ensureStructsAssignable(results,tr);
+                results = [results tr];
+                
+                % Get output variables and set unavailable vars to NaN
+                if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
+                if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
+                if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
+                if isfield(tr,'sub_stage'), stage = tr.sub_stage; else, stage = ex.stage; end
+                
+                % Write data to output files
+                fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),ex.subjectId,ex.session,tr.MVC,b,tr.trialIndex,tr.effort,stake,reward,totalReward,Yestrial);
+                fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,tr.trialIndex,tr.effort,stake,reward,totalReward,Yestrial);
+                
+                % Add current results to result struct and save recovery
+                % file
+                result.data   = results;
+                save 'LastExperiment' result
+                
+                % Allow the trial to be repeated more than once
+                if tr.R==ex.R_NEEDS_REPEATING_LATER
+                    repeatLater = [repeatLater, repeatLater(t)]; 
+                end
+                
+                % If there was an error, exit
+                if tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE
+                    fatal_error=1; break;
+                end
+                
+                % Increment trial index
+                t = t + 1;
+            end
+            
+            % End of block actions
+            % .............................................................
+            % At the end each block (or when quit), save all trials with 
+            % the full filename
+            save([namebase '.mat'], 'result');
+            
+            % Display end of block
+            if ex.useScreen && ~exist('blockStart','var')
+                drawTextCentred(scr, 'End of block', ex.fgColour);
+                Screen('Flip', scr.w);
+                myKbWait(ex);  % wait for keypress after each block
+            end
+            % Exit if exit key is pressed
+            [~,~,kcode] = KbCheck;
+            if kcode(ex.exitkey) || fatal_error,  break;  end
+            
+            % Fatiguing experiment break: rest phase
+            startTime = GetSecs();
+            if ex.fatiguingExercise && b ~= ex.blocks
+                waitDuration = 4.5 * 60; % 4,5 minutes waiting time
+                % resting phase, wait ...
+                waitTime = waitDuration - (GetSecs()-startTime);
+                while waitTime > 0
+                    waitTime = waitDuration - (GetSecs()-startTime);
+                    msg = sprintf('You have a break now. Remaining break time: %d seconds',max(0,ceil(waitTime)));
+                    drawTextCentred(scr, msg, ex.fgColour);
+                    Screen('Flip', scr.w);
+                    java.lang.Thread.sleep(1000);
+                end
+            end
+            
+            % If performance phase: save the total achieved reward to file
+            if b >= ex.choiceBlockNumber
+                fprintf(ex.fpPayoutSessions,'%f\t%s\t%s\t%d\t%d\n',tr.starttrial,datestr(now),ex.subjectId,ex.session,totalReward);
+            end
+        end
+        
+        % Display end of experiment instructions
+        displayInstructions(ex, 15);
+        
+    else
+        % If only running calibration, remove non-used variables
+        result = rmfield(result,'trials');
+    end
+    
+    %%%%%%%%%%%%%  end of experiment %%%%%%%%%%%%%%%%%
+    
+catch e                                  % in case of an error
+    fprintf('Error : %s\n', e.message);  % display error message
+    for i=1:length(e.stack)
         disp(e.stack(i));
         save 'errordump';
         if exist('results','var')
@@ -574,44 +696,45 @@ catch                       % in case of an error
     end
 end
 
-if(ex.useScreen)        
-  Screen closeall;      % restore screen
-end                     
-if ex.useEyelink        % close eye data file then transfer
+% restore screen
+if(ex.useScreen)
+    Screen closeall;
+end
+% close eye data file then transfer
+if ex.useEyelink
     if(Eyelink('isConnected'))
-        Eyelink('closefile');  
+        Eyelink('closefile');
         fprintf('Downloading edf...');
         if Eyelink('receivefile',el.file,el.file) < 0
-            fprintf('Error in receiveing file!\n'); 
+            fprintf('Error in receiveing file!\n');
         end
         fprintf('Done\n');
         Eyelink('shutdown');
     end
 end
-if ex.useSqueezy        % close squeezy device
-  calllib(ex.mplib, 'disconnectMPDev');
-  unloadlibrary('mpdev');
-  fprintf('disconnecting MP150\n');
+% close squeezy device
+if ex.useSqueezy
+    calllib(ex.mplib, 'disconnectMPDev');
+    unloadlibrary('mpdev');
+    fprintf('disconnecting MP150\n');
 end
-FlushEvents '';
-ShowCursor;             % show the mouse cursor again
 
-if fatal_error && exist('tr','var') % if ending abruptly, explain why
-  if tr.R == ex.R_ESCAPE            % was escape pressed?
-    fprintf('Exiting -- Escape key pressed\n');
-    fprintf('If this was unintentional, you might be able to resume the experiment by re-running it\n');    
-    fprintf('and using the result (e.g. ans or result from LastExperiment.mat) as the input parameter.\n');    
-  end
+% Clear PTB and show the mouse cursor again
+FlushEvents '';
+ShowCursor;
+
+% If ending abruptly, explain why
+if fatal_error && exist('tr','var') 
+    if tr.R == ex.R_ESCAPE            % was escape pressed?
+        fprintf('Exiting -- Escape key pressed\n');
+        fprintf('If this was unintentional, you might be able to resume the experiment by re-running it\n');
+        fprintf('and using the result (e.g. ans or result from LastExperiment.mat) as the input parameter.\n');
+    end
 end
 
 % rethrow errors? if enabled, this will require any user code after the
 % experiment to catch the error if finalisation is required. this allows
 % debugging directly into the location of the problem.
 if isfield(ex,'rethrowErrors') && ex.rethrowErrors
-  if ~isempty(e), rethrow(e); end
+    if ~isempty(e), rethrow(e); end
 end
-
-
-%%%%%%%%% EXIT HERE %%%%%%%%%
-
-
