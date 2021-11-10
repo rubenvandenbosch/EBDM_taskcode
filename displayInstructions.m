@@ -16,7 +16,7 @@ function ex = displayInstructions(ex, instructionsDir, slides, varargin)
 % -------------------------------------------------------------------------
 
 % Process input arguments
-assert(nargin < 5, 'Too many input arguments')
+assert(nargin <= 4, 'Too many input arguments')
 if nargin == 4; stage = varargin{1}; end
 assert(isstruct(ex), 'Input ex should be type struct')
 assert(ischar(instructionsDir), 'Input instructionsDir should be type char')
