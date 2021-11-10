@@ -204,9 +204,12 @@ if exist('params','var')           % if user specified a set of experimental
     else
         result.startTimes={};
     end
-    usingoldresults=1;
+    
+    % Indicate that we're using a restored session. 
+    %   Also log here from which trial we're restarting?
+    ex.restoredSession = true;
 else
-    usingoldresults=0;
+    ex.restoredSession = false;
 end
 
 % Set default values for unspecified parameters
@@ -219,12 +222,12 @@ if ex.useEyelink, ex.useScreen=1; end               % can't have eyelink without
 if ~ex.useScreen,  scr=0; end                       % not using screen?
 if ~ex.useEyelink,  el=0; end                       % not using eyelink?
 
-if ~exist('blockStart','var') && isfield(ex,'blockStart'), blockStart= ex.blockStart; end
+if ~exist('blockStart','var') && isfield(ex,'blockStart'), blockStart = ex.blockStart; end
 if ~exist('exptStart','var') && isfield(ex,'exptStart'),   exptStart = ex.exptStart; end
-if ~isfield(ex,'blocks'), warning('Assuming 1 block only'); ex.blocks=1; end
+if ~isfield(ex,'blocks'), warning('Assuming 1 block only'); ex.blocks = 1; end
 
 % store time of experiment start
-if ~exist('result','var'), result.startTimes={};end
+if ~exist('result','var'), result.startTimes = {}; end
 result.startTimes = [result.startTimes, datestr(now,31)];
 
 % Set random seed
@@ -332,9 +335,10 @@ try
     result.trials = trials;     % save trial structure in output
     result.params = ex;         % save experimental parameters in output
     
-    % call experiment start code, if provided
+    % Call experiment start code, if provided
+    %   Currently implemented to show welcome/restore screen
     if exist('exptStart','var')
-        exptStart(scr,el,ex);
+        exptStart(ex);
     end
     
     % Practice trials
@@ -369,6 +373,20 @@ try
             %   mark the trial as a practice.
             tr = prac(1+floor((i-1)/ex_prac.blockLen),1+mod(i,ex_prac.blockLen));
             tr.isPractice = true;
+            
+            % Display instructions by calling blockstart method
+            %   using block index 0 for practice block
+            if exist('blockStart','var')
+                kcode = 1; while any(kcode); [~, ~, kcode] = KbCheck; end
+                FlushEvents ''; % Empty strings are ignored... Remove these 2 lines?
+                
+                % Run block start method
+                tr.block = 0;
+                blockStart(scr,el,ex,tr);
+                
+            elseif ~exist('blockStart','var') && ex.inMRIscanner
+                error('No blockStart function provided. This code is needed when in the MRI scanner to sync the task to the scanner')
+            end
             
             % Run the practice trial
             %   set the block index as '0'
@@ -419,7 +437,8 @@ try
     
     % Main blocks and trials
     % ---------------------------------------------------------------------
-    if ~ex.calibOnly
+    if ~ex.calibOnly   % If only MVC calibration, we skip all this
+        
         % Display "Start of experiment" and wait for key press to start
         if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1)
             if ex.useScreen
@@ -435,17 +454,39 @@ try
         
         % Loop over blocks
         %   Continue from last block
-        for b=last(1):ex.blocks
+        for b = last(1):ex.blocks
             
             % Call the blockStart method if supplied
+            %   Waiting for fMRI scanner triggers is implemented in
+            %   blockstart method. If using mri, assert we have a
+            %   blockstart method.
             if exist('blockStart','var')
                 kcode = 1; while any(kcode); [~, ~, kcode] = KbCheck; end
-                FlushEvents ''; % Empty strings are ignored... Remove these 2 line?
+                FlushEvents ''; % Empty strings are ignored... Remove these 2 lines?
                 
-                % allow the block start code to know which block we are in
-                tr=trials(b,1); tr.block = b;
+                % Get which block we are in to inform the blockStart code 
+                tr = trials(b,1); tr.block = b;
+                
+                % If this is the first block of a new fMRI run, log this in
+                % the tr struct; in the blockstart method the task will
+                % wait for the MRI triggers to come in before continuing
+                if b == last(1) && ex.inMRIscanner
+                    % Assert that this is a restored session if this is not
+                    % block 1 trial 1
+                    if ~(prod(last)==1)
+                        assert(ex.restoredSession, 'ex.restoredSession is false, but not starting with block 1 trial 1...?')
+                    end
+                    
+                    tr.firstTrialMRIrun = true;
+                else
+                    tr.firstTrialMRIrun = false;
+                end
+                
                 % Run block start method
                 blockStart(scr,el,ex,tr);
+                
+            elseif ~exist('blockStart','var') && ex.inMRIscanner
+                error('No blockStart function provided. This code is needed when in the MRI scanner to sync the task to the scanner')
             end
             
             % Initialise record of trials to repeat at end of block
