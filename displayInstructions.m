@@ -10,6 +10,7 @@ function ex = displayInstructions(ex, instructionsDir, slides, varargin)
 %                   slides from. 
 %                   Possible values: 
 %                       'practice', 'choice', 'perform', 
+%                       'welcome' (show welcome slide),
 %                       'restore' (show restored session slide)
 %                   If not specified, it is based on the value of ex.stage
 % -------------------------------------------------------------------------
@@ -21,7 +22,7 @@ assert(isstruct(ex), 'Input ex should be type struct')
 assert(ischar(instructionsDir), 'Input instructionsDir should be type char')
 assert(isnumeric(slides), 'Input slides should be a numeric')
 assert(ischar(stage), 'Input stage should be type char')
-assert(ismember(stage,{'practice', 'choice', 'perform','restore'}), 'Input stage should be one of: practice, choice, perform, restore')
+assert(ismember(stage,{'practice', 'choice', 'perform','welcome','restore'}), 'Input stage should be one of: practice, choice, perform, welcome, restore')
 
 % Prepare screen if necessary
 if ~isfield(ex, 'scr')
