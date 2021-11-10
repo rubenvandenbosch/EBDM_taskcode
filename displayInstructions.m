@@ -1,13 +1,17 @@
 function ex = displayInstructions(ex, instructionsDir, slides, varargin)
-%
+% ex = displayInstructions(ex, instructionsDir, slides, stage)
+% 
 % INPUTS
 % ex              : struct; experiment parameters
 % instructionsDir : char; directory containing image files of instruction
 %                   slides
 % slides          : num array; which slide(s) to display
 % stage           : char; which experiment stage to display experiment
-%                   slides from. If not specified, it is based on the value
-%                   of ex.stage
+%                   slides from. 
+%                   Possible values: 
+%                       'practice', 'choice', 'perform', 
+%                       'restore' (show restored session slide)
+%                   If not specified, it is based on the value of ex.stage
 % -------------------------------------------------------------------------
 
 % Process input arguments
@@ -17,6 +21,7 @@ assert(isstruct(ex), 'Input ex should be type struct')
 assert(ischar(instructionsDir), 'Input instructionsDir should be type char')
 assert(isnumeric(slides), 'Input slides should be a numeric')
 assert(ischar(stage), 'Input stage should be type char')
+assert(ismember(stage,{'practice', 'choice', 'perform','restore'}), 'Input stage should be one of: practice, choice, perform, restore')
 
 % Prepare screen if necessary
 if ~isfield(ex, 'scr')
@@ -49,5 +54,3 @@ for n = 1:numel(slides)
     myKbWait(ex);
     WaitSecs(0.5);
 end
-
-
