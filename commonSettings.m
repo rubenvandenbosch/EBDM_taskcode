@@ -30,6 +30,10 @@ ex.gripforceDir = fullfile(ex.rootDir,'gripforce');
 % last one must be fixationcross!
 ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
 
+% Directory containing image files with instructions
+% -------------------------------------------------------------------------
+ex.instructionsDir = fullfile(ex.rootDir,'instructions');
+
 % Trial structure settings
 % =========================================================================
 % Effort and reward levels specification
@@ -145,11 +149,15 @@ switch ex.stage
         % perform selected effort for reward options during the choice task
         % to number that will never be reached
         ex.choiceBlockNumber    = 99;
+        
+        % Stage performed inside MRI scanner?
+        ex.inMRIscanner = false;
     
     case 'choice'
         % Choice stage:
         %   - decision trials about expending effort for reward, performed
         %     in the MRI scanner.
+        ex.inMRIscanner = true;
         
         % Number of blocks and trials per block
         %   NB: with a 4x4 design, a block length of 16 or 32 allows for 
@@ -159,6 +167,9 @@ switch ex.stage
 
         % Include this number of practice choice trials at the beginning?
         ex.numPracticeChoices   = 0;
+        
+        % How many retries are allowed (>=0 or Inf for endless retries)
+        ex.maxNumRepeatedTrials = Inf;
         
         % Set the block number on which people are asked to actually 
         % perform selected effort for reward options during the choice task
@@ -194,7 +205,10 @@ switch ex.stage
         % Block number from which people are to actually perform gripforce 
         % effort. Set to 1, as that's all we do at this stage
         ex.choiceBlockNumber    = 1;
-                
+        
+        % How many retries are allowed (>=0 or Inf for endless retries)
+        ex.maxNumRepeatedTrials = Inf;
+        
         % Load subject's results from output file to load their decisisions
         % in the choice stage
         % .................................................................
@@ -227,14 +241,16 @@ switch ex.stage
         % Set total number of practice trials based on the above
         ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices; 
         assert(ex.practiceTrials <= ex.blockLen,'Set parameter "blockLen >= "practiceTrials"');
+        
+        % Stage performed inside MRI scanner?
+        ex.inMRIscanner = false;
 end
 
-% Other trial/block settings?
-% Not sure yet what these do or whether we can just leave this out
-% =========================================================================
-ex.maxNumRepeatedTrials = Inf; % How many retries are allowed (>=0 or Inf for endless retries)
-
-% Fatiguing added exercise
+% Other block settings
+% No sure whether we can leave this out, just set to false for now
+% -------------------------------------------------------------------------
+% Do fatiguing experiment? Seems to be like perform trials, but effort 
+%   level is dynamically adjusted based on success rate
 ex.fatiguingExercise    = false;
 ex.fatiguingExerciseSTartEffortLevel = 0.3;
 
@@ -269,11 +285,6 @@ ex.rewardDuration       = 3;   % Time from when reward appears, until screen bla
 
 % Technical setup
 % =========================================================================
-% fMRI scanner options
-% -------------------------------------------------------------------------
-ex.waitNumScans         = 5;   % number of scans to wait for before starting the actual experiment
-ex.fmriComport          = 'COM2';  % set to '' to simulate bitsi buttonbox
-
 % Response key settings
 % -------------------------------------------------------------------------
 % Keyboard
@@ -282,13 +293,14 @@ ex.leftKey     = KbName('LeftArrow');
 ex.rightKey    = KbName('RightArrow');
 
 % Bitsi buttonbox
+ex.COMportBitsiBB = 'COM2';  % set to '' to simulate bitsi buttonbox
 ex.leftButton  = 'a';
 ex.rightButton = 'b';
 
-% Use buttonbox or keyboard?
-% Current experimental setup: choice stage is in the scanner using the 
-% bitsi buttonbox, the calibration/practice stage and performance stage
-% outside the scanner using a keyboard.
+% Response keys: use buttonbox or keyboard?
+%   Current experimental setup: choice stage is in the scanner using the 
+%   bitsi buttonbox, the calibration/practice stage and performance stage
+%   outside the scanner using a keyboard.
 switch ex.stage
     case {'practice','perform'}
         ex.useBitsiBB = false;
@@ -296,14 +308,35 @@ switch ex.stage
         % For testing with keyboard, set to false
         ex.useBitsiBB = false; 
         
-        % Initialize bitsi buttonbox object for fmri response pads
+        % Initialize bitsi buttonbox object for response pads used in MRI
+        %   Do it here to catch errors early
         if ex.useBitsiBB
             delete(instrfindall);
-            ex.BitsiBB = Bitsi_2016(ex.fmriComport); % create a serial object
+            ex.BitsiBB = Bitsi_2016(ex.COMportBitsiBB); % create a serial object
             ex.BitsiBB.setTriggerMode();
             ex.leftKey   = ex.leftButton;
             ex.rightKey  = ex.rightButton;
         end
+end
+
+% MRI scanner options
+% -------------------------------------------------------------------------
+% Number of scans triggers to wait for at the start of an fMRI run
+ex.waitNumScans = 5;
+
+% Trigger info
+%   COMport receiving scanner triggers, and
+%   character code sent by scanner as trigger
+ex.COMportMRI     = 'COM3';   % set to '' to simulate bitsi
+ex.triggerKeyCode = 97;       % 97 = key 'a' (set to 4 if simulated bitsi)
+
+% Initialize bitsi serial object for incoming MRI triggers
+%  Only if inMRIscanner = true
+%  Do it here to catch errors early
+if ex.inMRIscanner
+    delete(instrfindall);
+    ex.BitsiMRI = Bitsi_2016(ex.COMportMRI); % create a serial object
+    ex.BitsiMRI.setTriggerMode();
 end
 
 % Display options
