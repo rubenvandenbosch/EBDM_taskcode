@@ -71,8 +71,8 @@ end
 % Constrain visit number? e.g. comment if not. We have max 2 visits
 assert(ex.visit == 1 || ex.visit == 2, 'Visit number can only be 1 or 2.')
 
-% Constrain possible strings for experiment stage (to prevent irregularities in
-% output file names)
+% Constrain possible strings for experiment stage (to prevent 
+% irregularities in output file names)
 stages = {'practice', 'choice', 'perform'};
 try
     assert(ismember(lower(ex.stage),stages), '\nUnknown experiment stage. Check spelling?\n Possible stages: practice, choice, perform.\n', false)
@@ -147,10 +147,18 @@ ex = commonSettings(ex);
 params = []; % Empty now. Possible to implement such that it can be used to restore options from earlier sessions
 result = AGT_CoreProtocol_RU_BSI(params,ex);
 
+% Cleanup
+% -------------------------------------------------------------------------
+% Close bitsi objects for button box and MRI triggers
+if ex.useBitsiBB
+    ex.BitsiBB.close;
+end
+if ex.inMRIscanner
+    ex.BitsiMRI.close;
+end
+
 % Stop gripforce buffer after task is complete
-% .........................................................................
-% Only for the practice and perform stages
-if ismember(ex.stage, {'practice','perform'})
+if ex.useGripforce
     % Get process ID
     if ispc
         [~,pinfo] = system('netstat -ano | findstr :1972');
