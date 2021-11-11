@@ -65,10 +65,15 @@ if init
             % Open
             ex.fids.(fields{ifile}) = fopen(ex.files.(fields{ifile}), 'a');
         else
-            % Open, write header
+            % Open
             ex.fids.(fields{ifile}) = fopen(ex.files.(fields{ifile}), 'a');
+            
+            % Write header
+            %   Required columns in BIDS specification for events files: 
+            %       onset, duration
+            %   subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation   
             fprintf(ex.fids.(fields{ifile}), ...
-                'starttime\ttime\tstage\tsubject_id\tsession\tMVC\tblocknr\ttrialnr\teffort\tstake\treward\ttotalReward\tchoice\n');
+                'subject\tsession\tstage\tMVC\tblock\ttrialNr\ttrialNr_block\tonset\tduration\treward\teffortIx\teffortLvl\taccept\tdidAccept\tsuccess\ttotalReward\tyesLocation\n');
         end
     end
     
@@ -103,14 +108,21 @@ save(ex.files.recovery,'result');
 if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
 if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
 if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
+if isfield(tr,'effort'), effort = tr.reward; else, effort = NaN; end
 if isfield(tr,'sub_stage'), stage = tr.sub_stage; else, stage = ex.stage; end
 
 % Write data
 for ifile = 1:numel(fields)
-    fprintf(ex.fids.(fields{ifile}),'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n', ...
-        tr.starttrial,datestr(now),stage,ex.subject,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
+    % subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
+    fprintf(ex.fids.(fields{ifile}), '%d\t%d\t%s\t%d\t%d\t%d\t%d\t%f\t%f\t%d\t%d\t%f\t%s\t%d\t%d\t%d\t%s', ...
+        ex.subject, ex.session, ex.stage, tr.MVC, tr.block, tr.trialIndex, tr.allTrialIndex, ...
+        tr.onset, tr.duration, tr.reward, tr.effortIx, tr.effortLvl, tr.accept, tr.didAccept, tr.success, tr.totalReward, tr.yesLocation);
 end
 end
 
+% old:
+% 'starttime\ttime\tstage\tsubject_id\tsession\tMVC\tblocknr\ttrialnr\teffort\tstake\treward\ttotalReward\tchoice\n'
 
+%     fprintf(ex.fids.(fields{ifile}),'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n', ...
+%         tr.starttrial,datestr(now),stage,ex.subject,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
 % fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),ex.subject,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
