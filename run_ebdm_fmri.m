@@ -98,7 +98,7 @@ ex.files.output_all = fullfile(ex.dirs.output,sprintf('subject-%.3d_task-EBDM.ts
 if exist(ex.files.output_session_stage,'file') == 2
     warning('An output file for this participant and experiment stage already exists! Check whether yout session info input is correct.\n  %s',  ...
         ex.files.output_session_stage)
-    cont = input('Continue anyway?  (yes/no)\n  The results of this run will be appended to existing output files.', 's');
+    cont = input('Continue anyway?\n    The results of this run will be appended to existing output files.\n(yes/no) ', 's');
     cont = strtrim(cont);
     if ~ismember(lower(cont),{'y', 'yes', 'ja', 'j'})
         error('\nExperiment settings not accepted. Run %s again to specify different settings.', mfilename);
