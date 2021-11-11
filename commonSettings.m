@@ -18,21 +18,25 @@ ex.DEBUG = false;
 % Directories and files
 % =========================================================================
 % Required directories for recording gripforce input
-% -------------------------------------------------------------------------
-% Full path to conda environment to activate
-ex.condaEnv = 'C:\Users\rubvdbos\AppData\Local\Continuum\anaconda3\envs\flair';
-
-% Full path to directory with gripforce recording code
-ex.gripforceDir = fullfile(ex.rootDir,'gripforce');
-
-% Stimulus image files
-% -------------------------------------------------------------------------
-% last one must be fixationcross!
-ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
+%   - Full path to conda environment to activate
+%   - Full path to directory with gripforce recording code
+ex.dirs.condaEnv  = 'C:\Users\rubvdbos\AppData\Local\Continuum\anaconda3\envs\flair';
+ex.dirs.gripforce = fullfile(ex.dirs.rootDir,'gripforce');
 
 % Directory containing image files with instructions
-% -------------------------------------------------------------------------
-ex.instructionsDir = fullfile(ex.rootDir,'instructions');
+ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
+
+% Stimulus image files
+%   last one must be fixationcross!
+%   Not placed in .files field because it's referenced like this in the
+%   original code (in prepareScreen)
+ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
+
+% Recovery file
+%   Full path to the experiment recovery file that is saved after every
+%   trial and can be used to restore a session, e.g. after a crash.
+%   This file is overwritten on each new experiment session.
+ex.files.recovery = fullfile(ex.dirs.rootDir,'LastExperiment_recovery.mat');
 
 % Trial structure settings
 % =========================================================================
@@ -213,7 +217,7 @@ switch ex.stage
         % in the choice stage
         % .................................................................
         % Get choices output mat file and assert it exists
-        choices_file = fullfile(ex.outputFolder, sprintf('subject-%.3d_visit-%d_stage-choice_ses-%d.mat', ex.subjectId,ex.visit,ex.session));
+        choices_file = fullfile(ex.dirs.output, sprintf('subject-%.3d_visit-%d_stage-choice_ses-%d.mat', ex.subject,ex.visit,ex.session));
         assert(exist(choices_file,'file') == 2, 'The choices output file does not exist: %s',choices_file);
         
         % Load choices data
@@ -381,9 +385,9 @@ switch ex.stage
         % within matlab
         if isempty(pinfo)
             if ispc
-                system([fullfile('gripforce','start_gripforce.bat') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+                system([fullfile('gripforce','start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
             elseif isunix
-                system([fullfile('gripforce','start_gripforce.sh') ' ' ex.condaEnv ' ' ex.gripforceDir ' &']);
+                system([fullfile('gripforce','start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
             end
         else
             disp('Gripforce fieldtrip buffer is running. Not starting anew')
