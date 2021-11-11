@@ -366,18 +366,28 @@ try
         prac = createTrials(ex_prac);
         
         % Run practice trials
-        practiceResult = [];
+        practiceResult = struct();
         for ix = 1:ex.practiceTrials
             
             % Get practice trial parameters for current trial
             %   get from prac struct: prac(block,trial)
-            %   mark the trial as a practice.
+            %   mark the trial as a practice
+            %   log practice trial number
+            %   set first trial of MRI run to false
             tr = prac(1+floor((ix-1)/ex_prac.blockLen),1+mod(ix,ex_prac.blockLen));
             tr.isPractice = true;
+            tr.practiceTrialIx = ix;
+            tr.firstTrialMRIrun = false;
             
             % Display instructions by calling blockstart method
             %   using block index 0 for practice block
-            if exist('blockStart','var')
+            %   call blockstart method to display instructions on the first
+            %   practice trial and the first of each new part
+            %   following trials
+            blockstart_trials = unique([1, ...
+                                        1 + ex.practiceTrials - ex.numFamiliarise - ex.numPracticeChoices, ...
+                                        1 + ex.practiceTrials - ex.numFamiliarise]);
+            if exist('blockStart','var') && ismember(ix,blockstart_trials)
                 kcode = 1; while any(kcode); [~, ~, kcode] = KbCheck; end
                 FlushEvents ''; % Empty strings are ignored... Remove these 2 lines?
                 
@@ -390,7 +400,7 @@ try
             end
             
             % Run the practice trial
-            %   set the block index as '0'
+            %   set the block index to 0
             tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,ix);
             
             % do not allow repeating practice trials
@@ -398,22 +408,9 @@ try
                 tr.R = 1;
             end
             
-            % If there are already practice results, make sure the new 
-            % practice trial structure is compatible
-            if isfield(result,'practiceResult')
-                [result.practiceResult,tr] = ensureStructsAssignable(result.practiceResult,tr);
-            end
-            
-            % Track task stage
-            if isfield(tr,'sub_stage')
-                stage = tr.sub_stage;
-            else
-                stage = ex.stage;
-            end
-            
             % Write results to output structure and output files
             % .............................................................
-            practiceResult = writeResults(ex, practiceResult, tr);
+            [practiceResult, ex] = writeResults(ex, practiceResult, tr);
             
             % Write practice data to main result output structure
             %   store in "practiceResult"
@@ -561,7 +558,7 @@ try
                 % Write results to result struct, output txt files, and
                 % save a recovery file after each trial
                 % .........................................................
-                result = writeResults(ex, result, tr);
+                [result, ex] = writeResults(ex, result, tr);
                 
                 % Mark trial for repeating, if applicable
                 if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
@@ -613,7 +610,7 @@ try
                 % Write results to result struct, output txt files, and
                 % save a recovery file after each trial
                 % .........................................................
-                result = writeResults(ex, result, tr);
+                [result, ex] = writeResults(ex, result, tr);
                 
                 % Allow the trial to be repeated more than once
                 if tr.R==ex.R_NEEDS_REPEATING_LATER

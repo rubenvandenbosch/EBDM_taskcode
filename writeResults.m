@@ -1,4 +1,4 @@
-function result = writeResults(ex, result, tr, varargin)
+function [result, ex] = writeResults(ex, result, tr, varargin)
 % result = writeResults(ex, result, tr, init)
 % 
 % Function to save the results of the current trial.
@@ -88,7 +88,7 @@ assert(~init, 'Trying to write results when initialize only option is set to tru
 % Write to result struct
 % -------------------------------------------------------------------------
 % Initialise data field in result struct if necessary (first trial)
-if ~isfield(result.data,'data')
+if ~isfield(result,'data')
     result.data = []; 
 else
     assert(isstruct(result.data), 'result.data should be class struct');
@@ -105,18 +105,21 @@ save(ex.files.recovery,'result');
 % Write data to output files
 % -------------------------------------------------------------------------
 % Get output variables and set unavailable vars to NaN
-if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
-if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
-if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
-if isfield(tr,'effort'), effort = tr.reward; else, effort = NaN; end
-if isfield(tr,'sub_stage'), stage = tr.sub_stage; else, stage = ex.stage; end
+vars = {'onset', 'duration', 'reward', 'effortIx', 'effortLvl', 'accept', 'didAccept', 'success', 'totalReward', 'yesLocation'};
+for ivar = 1:numel(vars)
+    if isfield(tr,vars{ivar}) % Retrieve var from tr struct
+        output.(vars{ivar}) = tr.(vars{ivar});
+    else    % if unavailable, set to NaN
+        output.(vars{ivar}) = NaN;
+    end
+end
 
 % Write data
 for ifile = 1:numel(fields)
     % subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
     fprintf(ex.fids.(fields{ifile}), '%d\t%d\t%s\t%d\t%d\t%d\t%d\t%f\t%f\t%d\t%d\t%f\t%s\t%d\t%d\t%d\t%s', ...
         ex.subject, ex.session, ex.stage, tr.MVC, tr.block, tr.trialIndex, tr.allTrialIndex, ...
-        tr.onset, tr.duration, tr.reward, tr.effortIx, tr.effortLvl, tr.accept, tr.didAccept, tr.success, tr.totalReward, tr.yesLocation);
+        output.onset, output.duration, output.reward, output.effortIx, output.effortLvl, output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
 end
 end
 
