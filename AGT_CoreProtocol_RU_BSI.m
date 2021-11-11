@@ -67,11 +67,11 @@ ex.exptStart = @exptStart;
 % Open output files for writing
 % -------------------------------------------------------------------------
 % .mat output file name to save result struct of current session and stage
-[p, f, ~] = fileparts(ex.ex.files.output_session_stage);
+[p, f, ~] = fileparts(ex.files.output_session_stage);
 outfile_mat = fullfile(p,[f '.mat']);
 
 % Open output files and write header lines
-writeResults(ex, [], [], true);
+[~, ex] = writeResults(ex, [], [], true);
 
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
@@ -79,7 +79,7 @@ if ~exist('params','var') || isempty(params)
     params=struct();
 else % restore globals from previous experiment?
     if isfield(params, 'MVC'), MVC = params.MVC; end
-    if isfield(params, 'data')
+    if isfield(params, 'data') && isfield(params.data(end),'totalReward')
         totalReward = params.data(end).totalReward;
     end
 end
@@ -228,8 +228,26 @@ totalReward = 0; % start each block with zero total reward
 %   Kept displayInstructions method of calling img files, at least for now
 % -------------------------------------------------------------------------
 if tr.block == 0  % Practice block
-    slideNrs = 1;
-    displayInstructions(ex, ex.dirs.instructions, slideNrs)
+    
+    % Display general practice instructions on first trial
+    if tr.practiceTrialIx == 1
+        slideNrs = 1; %:5;
+        displayInstructions(ex, ex.dirs.instructions, slideNrs)
+    end
+
+    % Determine which part of practice stage we're in 
+    CALIBRATING   = ex.numCalibration > 0 && tr.practiceTrialIx <= ex.numCalibration;
+    FAMILIARISE   = ~CALIBRATING && tr.practiceTrialIx <= ex.numFamiliarise + ex.numCalibration;
+    PRACTICE      = ~CALIBRATING && ~FAMILIARISE;
+    
+    % Display instructions according to which part
+    if CALIBRATING
+        displayInstructions(ex, ex.dirs.instructions, 6)
+    elseif FAMILIARISE
+        displayInstructions(ex, ex.dirs.instructions, 5)
+    elseif PRACTICE
+        displayInstructions(ex, ex.dirs.instructions, 7)
+    end
     
 elseif tr.block == 1 % start of experiment
     slideNrs = 1:5;
@@ -363,10 +381,11 @@ if CALIBRATING % on the first trial of the practice, display the calibration.
         end
         Screen('Flip', scr.w);
         EXIT = EXIT || waitForKeypress(ex);
-        tr.MVC = MVC; %
+        tr.MVC = MVC; % Save MVC to trial only on last calibration
     else
-        % not yet calibrated well
-        %       tr.MVC = NaN;       %% RB: Why do multiple calibrations if you reset it to NaN after each one???
+        % If not last calibration, the MVC is not yet calibrated well, so
+        % do not save a value to the trial data
+        tr.MVC = NaN;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%
