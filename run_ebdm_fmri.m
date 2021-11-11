@@ -92,9 +92,6 @@ ex.files.output_session = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_t
 % Output file with all sessions (visits) and experiment stages concatenated
 ex.files.output_all = fullfile(ex.dirs.output,sprintf('subject-%.3d_task-EBDM.tsv', ex.subject));
 
-% Output file of reward payout (per session)
-ex.files.output_payout = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_task-EBDM_desc-payout.tsv', ex.subject,ex.session));
-
 % Check for existing output files
 % .........................................................................
 % Ask whether to abort in case of existing output file

@@ -656,11 +656,6 @@ try
                     java.lang.Thread.sleep(1000);
                 end
             end
-%             
-%             % If performance phase: save the total achieved reward to file
-%             if b >= ex.choiceBlockNumber
-%                 fprintf(ex.fpPayoutSessions,'%f\t%s\t%s\t%d\t%d\n',tr.starttrial,datestr(now),ex.subject,ex.session,totalReward);
-%             end
         end
         
         % Display end of experiment instructions
