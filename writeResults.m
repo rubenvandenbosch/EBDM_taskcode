@@ -19,10 +19,16 @@ function result = writeResults(ex, result, tr, varargin)
 % Use empty [] for result and tr inputs if initializing.
 % 
 % INPUTS
-% ex
-% result
-% tr
-% init
+% ex      : struct; main experiment info struct. Should contain at least
+%           the fields: dirs, files. A field with file IDs (fids) is
+%           added when initializing.
+% result  : struct with all results of current experiment run. Not used
+%           (supply []) when init=true.
+% tr      : struct with results for the current trial. Not used (supply [])
+%           when init=true.
+% init    : true/false; defaults to false. Toggle initialize only mode. If
+%           set to true, the relevant text output files are opened and, if
+%           necessary, the header line is written. 
 % 
 % OUTPUT
 % result  : struct with all results of the currently running experiment.
@@ -30,7 +36,7 @@ function result = writeResults(ex, result, tr, varargin)
 % Output files:
 % - Recovery .mat file (ex.recoveryFile) of current session to which the
 %   updated result struct is saved.
-% - tab-delimited txt files for specified in ex struct
+% - tab-delimited txt files specified in ex struct
 % 
 % -------------------------------------------------------------------------
 % 
