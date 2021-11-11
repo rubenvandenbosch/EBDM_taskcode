@@ -1,3 +1,5 @@
 *.jpg
+*.mat
+*.asv
 /gripforce/fieldtrip
 /matlib
