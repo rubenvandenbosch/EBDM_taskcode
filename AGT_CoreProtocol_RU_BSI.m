@@ -44,26 +44,20 @@ function result = AGT_CoreProtocol_RU_BSI(params,ex)
 % these Need to be global.
 global MVC totalReward
 
-% Load up subject results file to get MVC from previous calibration:
+% Get subject's MVC from previous calibration, or set to arbitrary number
+% before calibration
 if ~ex.calibNeeded
-    %filename = uigetfile('Apples_*.mat','Select the results file that has calbration (MVC) in it');
-    %filename = sprintf('%s_1_MVC.mat',ex.subjectId);
+    % Get MVC from output mat file of the practice stage
+    filename = strrep(ex.files.output_session_stage,sprintf('stage-%s',ex.stage),'stage-practice');
+    assert(exist(filename,'file')==2, 'Practice stage file that includes MVC is missing');
     
-    % Get output mat file of the practice stage of ses-1
-    %       (remove session number later)
-    filename = regexprep(ex.outputFilenameSession,sprintf('stage-%s_ses-\\d\\.tsv',ex.stage),'stage-practice_ses-1.mat');
-    if ~exist(filename,'file')
-        try sca(); catch; end
-        error('First (day) calibration file is missing.');
-    end
-    load(filename,'result');  % load the 'result' variable from the file.
+    % load the 'result' variable from the file.
+    load(filename,'result');  
     % an error will occur here if the selected file isn't a valid result file.
     MVC = result.MVC;         % grab MVC
     clear result % Clear result file to make way for new one.
 else
-    % MVC is calculated in the first trial. So these values are used for trial 1
-    % So this is the arbitrary force scaling for the first trial.
-    % Was previously 4
+    % Arbitrary MVC value that is overwritten after first calibration
     MVC = 3;
 end
 
@@ -72,43 +66,33 @@ ex.exptStart = @exptStart;
 
 % Open output files for writing
 % -------------------------------------------------------------------------
-% .mat output file name to save result struct
-[p f e] = fileparts(ex.outputFilenameSession);
-savename = fullfile(p,[f '.mat']);
+% .mat output file name to save result struct of current session and stage
+[p, f, ~] = fileparts(ex.ex.files.output_session_stage);
+outfile_mat = fullfile(p,[f '.mat']);
 
 % Open output files and write header lines
-ex.fpSession = fopen(ex.outputFilenameSession,'w');
-fprintf(ex.fpSession,'starttime\ttime\tstage\tsubject_id\tsession\tMVC\tblocknr\ttrialnr\teffort\tstake\treward\ttotalReward\tchoice\n');
-if ~exist(ex.outputFilenameSessions,'file')
-    ex.fpSessions = fopen(ex.outputFilenameSessions,'a');
-    fprintf(ex.fpSessions,'starttime\ttime\tstage\tsubject_id\tsession\tMVC\tblocknr\ttrialnr\teffort\tstake\treward\ttotalReward\tchoice\n');
-else
-    ex.fpSessions = fopen(ex.outputFilenameSessions,'a');
-end
-if ~exist(ex.payoutFilenameSessions,'file')
-    ex.fpPayoutSessions = fopen(ex.payoutFilenameSessions,'a');
-    fprintf(ex.fpPayoutSessions,'starttime\ttime\tsubjext_id\tsession\ttotalReward\n');
-else
-    ex.fpPayoutSessions = fopen(ex.payoutFilenameSessions,'a');
-end
+writeResults(ex, [], [], true);
 
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
-if ~exist('params','var') || isempty(params), params=struct();
+if ~exist('params','var') || isempty(params)
+    params=struct();
 else % restore globals from previous experiment?
     if isfield(params, 'MVC'), MVC = params.MVC; end
     if isfield(params, 'data')
         totalReward = params.data(end).totalReward;
     end
 end
-result = RunExperiment( @doTrial, ex, params, @blockfn);
-result.MVC = MVC; % record this global value in results
 
-% Save result struct in mat file, and close output files
-save(savename, 'result');
-fclose(ex.fpSession);
-fclose(ex.fpSessions);
-fclose(ex.fpPayoutSessions);
+% start experiment
+result = RunExperiment( @doTrial, ex, params, @blockfn);
+
+% Save the final result struct in mat file
+save(outfile_mat, 'result');
+
+% Close all open (output) files
+fclose('all');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -229,9 +213,9 @@ function exptStart(ex)
 %   either a welcome screen OR a session restore info screen
 slideNrs = 1;
 if ex.restoredSession
-    displayInstructions(ex, ex.instructionsDir, slideNrs, 'restore')
+    displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
 else
-    displayInstructions(ex, ex.instructionsDir, slideNrs, 'welcome')
+    displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
 end
 
 %% Start of block:
@@ -245,16 +229,16 @@ totalReward = 0; % start each block with zero total reward
 % -------------------------------------------------------------------------
 if tr.block == 0  % Practice block
     slideNrs = 1;
-    displayInstructions(ex, ex.instructionsDir, slideNrs)
+    displayInstructions(ex, ex.dirs.instructions, slideNrs)
     
 elseif tr.block == 1 % start of experiment
     slideNrs = 1:5;
-    displayInstructions(ex, ex.instructionsDir, slideNrs)
+    displayInstructions(ex, ex.dirs.instructions, slideNrs)
     
 elseif tr.block >= ex.choiceBlockNumber % the single trials to perform at the end
     if ~ex.fatiguingExercise
         slideNrs = 1;
-        displayInstructions(ex, ex.instructionsDir, slideNrs)
+        displayInstructions(ex, ex.dirs.instructions, slideNrs)
     else
         warning('No instructions implemented for fatiguingExercise experiment')
     end
@@ -278,7 +262,7 @@ else  % starting a new block of the main experiment
     end
 end
 
-% Wait for MRI scanner triggers and set T0 of this MRI run
+% Wait for MRI scanner triggers and set T0 of this MRI run, if applicable
 if tr.firstTrialMRIrun
     [ex, tr] = WaitForScanner(ex, tr);
 end
