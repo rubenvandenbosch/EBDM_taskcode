@@ -380,15 +380,29 @@ switch ex.stage
         elseif isunix
             [~,pinfo] = system('netstat -anp | grep :1972');
         end
+        % Figure out whether a new process for the gripforce should be
+        % started
+        if ~isempty(pinfo)
+            pinfo = textscan(strtrim(pinfo),'%[^\n\r]');
+            pinfo = pinfo{1};
+            if size(pinfo,1) > 1 
+                newP = false;
+            elseif pinfo(end) == '0'
+                newP = true;
+            end
+        else
+            newP = true;
+        end
         % If not running yet, call system command to start gripforce with 
         % '&' to start a separate process instead of running the command 
         % within matlab
-        if isempty(pinfo)
+        if newP
             if ispc
                 system([fullfile('gripforce','start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
             elseif isunix
                 system([fullfile('gripforce','start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
             end
+            WaitSecs(6); % Give process enough time to start
         else
             disp('Gripforce fieldtrip buffer is running. Not starting anew')
         end

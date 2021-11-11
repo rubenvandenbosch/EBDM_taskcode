@@ -57,11 +57,11 @@ elseif nargin == 2
     ex.stage     = lower(input('Experiment stage: ','s'));
 elseif nargin == 1
     ex.subject   = varargin{1};
-    ex.session   = input('Visit number: ');
+    ex.session   = input('Session number: ');
     ex.stage     = lower(input('Experiment stage: ','s'));
 else
     ex.subject   = input('Subject number: ');
-    ex.session   = input('Visit number: ');
+    ex.session   = input('Session number: ');
     ex.stage     = lower(input('Experiment stage: ','s'));
 end
 
@@ -107,7 +107,7 @@ end
 
 % Display session information and ask for confirmation
 % -------------------------------------------------------------------------
-fprintf('\nSubject: %.3d \nVisit: %d \nExperiment stage: %s\nSession: %d\n',ex.subject,ex.visit,ex.stage,ex.session);
+fprintf('\nSubject: %.3d \nSession: %d \nExperiment stage: %s\n',ex.subject,ex.session,ex.stage);
 accept = input('Is this correct (yes/no)? ', 's');
 accept = strtrim(accept);
 if ~ismember(lower(accept),{'y', 'yes', 'ja', 'j'})
@@ -142,19 +142,24 @@ if ex.useGripforce
     elseif isunix
         [~,pinfo] = system('netstat -anp | grep :1972');
     end
-    pid = textscan(pinfo, '%[^\n\r]');
-    pid = strsplit(pid{1}{1}, ' ');
-    if isunix
-        pid = strsplit(pid, '/');
-        pid = pid{1};
-    end
-    pid = str2double(pid{end});
+    if ~isempty(pinfo)
+        pinfo = textscan(strtrim(pinfo), '%[^\n\r]');
+        pinfo = pinfo{1}{1};
+        if size(pinfo,1) > 1
+            pid = strsplit(pinfo{1}, ' ');
+            if isunix
+                pid = strsplit(pid, '/');
+                pid = pid{1};
+            end
+            pid = str2double(pid{end});
 
-    % Kill process
-    if ispc
-        system(sprintf('taskkill /PID %d /F', pid));
-    elseif isunix
-        system(sprintf('kill -9 %d', pid));
+            % Kill process
+            if ispc && ~pid==0
+                system(sprintf('taskkill /PID %d /F', pid));
+            elseif isunix && ~pid==0
+                system(sprintf('kill -9 %d', pid));
+            end
+        end
     end
 end
 end
