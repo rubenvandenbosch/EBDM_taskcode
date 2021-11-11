@@ -17,21 +17,17 @@ function ex = displayInstructions(ex, instructionsDir, slides, varargin)
 
 % Process input arguments
 assert(nargin <= 4, 'Too many input arguments')
-if nargin == 4; stage = varargin{1}; end
-assert(isstruct(ex), 'Input ex should be type struct')
-assert(ischar(instructionsDir), 'Input instructionsDir should be type char')
-assert(isnumeric(slides), 'Input slides should be a numeric')
-assert(ischar(stage), 'Input stage should be type char')
+if nargin == 4; stage = varargin{1}; assert(ischar(stage), 'Input stage should be class char'); end
+assert(isstruct(ex), 'Input ex should be class struct')
+assert(ischar(instructionsDir), 'Input instructionsDir should be class char')
+assert(isnumeric(slides), 'Input slides should be numeric')
+
+if ~exist('stage','var'), stage = ex.stage; end
 assert(ismember(stage,{'practice', 'choice', 'perform','welcome','restore'}), 'Input stage should be one of: practice, choice, perform, welcome, restore')
 
 % Prepare screen if necessary
 if ~isfield(ex, 'scr')
     ex.scr=prepareScreen(ex);
-end
-
-% Get experiment stage
-if ~exist(stage,'var')
-    stage = ex.stage;
 end
 
 % Display selected instruction slides
