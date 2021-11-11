@@ -366,12 +366,13 @@ try
         prac = createTrials(ex_prac);
         
         % Run practice trials
-        for i = 1:ex.practiceTrials
+        practiceResult = [];
+        for ix = 1:ex.practiceTrials
             
             % Get practice trial parameters for current trial
             %   get from prac struct: prac(block,trial)
             %   mark the trial as a practice.
-            tr = prac(1+floor((i-1)/ex_prac.blockLen),1+mod(i,ex_prac.blockLen));
+            tr = prac(1+floor((ix-1)/ex_prac.blockLen),1+mod(ix,ex_prac.blockLen));
             tr.isPractice = true;
             
             % Display instructions by calling blockstart method
@@ -390,7 +391,7 @@ try
             
             % Run the practice trial
             %   set the block index as '0'
-            tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,i);
+            tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,ix);
             
             % do not allow repeating practice trials
             if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
@@ -400,7 +401,7 @@ try
             % If there are already practice results, make sure the new 
             % practice trial structure is compatible
             if isfield(result,'practiceResult')
-                [result.practiceResult,tr]=ensureStructsAssignable(result.practiceResult,tr);
+                [result.practiceResult,tr] = ensureStructsAssignable(result.practiceResult,tr);
             end
             
             % Track task stage
@@ -412,21 +413,11 @@ try
             
             % Write results to output structure and output files
             % .............................................................
-            % Set block and trial info to NaN for the practice trials            % CHANGE?
-            b=NaN; t=NaN; Yestrial = NaN; stake = NaN; reward = NaN; effort = NaN;
+            practiceResult = writeResults(ex, practiceResult, tr);
             
-            % For perform trials store the effort level and whether trial
-            % was successful
-            try reward = tr.success; catch, end
-            try effort = tr.effort;  catch, end
-            
-            % Write data to output files
-            fprintf(ex.fpSession ,'%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),ex.subjectId,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
-            fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
-            
-            % Write data to output structure
-            %   store result in "practiceResult"
-            result.practiceResult(i) = tr;
+            % Write practice data to main result output structure
+            %   store in "practiceResult"
+            result.practiceResult(ix) = practiceResult.data;
             
             % If there was an error, exit practice trials
             if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE
@@ -564,39 +555,13 @@ try
                     fprintf('\teffort level=%f\n',fatEffort);
                 end
                 
-                % Write results to output structure and output files
-                % .........................................................
-                % Get output variables and set unavailable vars to NaN
-                if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
-                if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
-                if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
-                if isfield(tr,'sub_stage'), stage = tr.sub_stage; else, stage = ex.stage; end
-                
-                % Write data to output files
-                fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),ex.subjectId,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
-                fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
-                
-                % Write data to output structure
-                %   to append previous struct, ensure all the trials have 
-                %   the same data fields. Creat result struct on first
-                %   trial
-                if exist('results','var')  
-                    [results, tr]=ensureStructsAssignable(results,tr);
-                else
-                    results=[]; % (first trial)
-                end
-                results = [results tr];  % Append trial data to results struct
-                result.data   = results; % store the results on the output
-                
                 % keep track of what the last complete trial is
                 result.last   = [b,t];
                 
-                % Create recovery file
-                %   write the data to disc in a temporary file after every 
-                %   trial!
-                %   this allows data to be recovered from this file after a
-                %   fatal crash
-                save 'LastExperiment' result
+                % Write results to result struct, output txt files, and
+                % save a recovery file after each trial
+                % .........................................................
+                result = writeResults(ex, result, tr);
                 
                 % Mark trial for repeating, if applicable
                 if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
@@ -608,7 +573,6 @@ try
                 if tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE
                     fatal_error=1; break;
                 end
-                
             end  %end of block
             
             % Repeat-later trials
@@ -644,26 +608,12 @@ try
                 tr=runSingleTrialAndProcess(scr,el,ex,repTrial,doTrial,b,repeatLater(t));
                 
                 % make the trial index the same as it should have been
-                tr.trialIndex=repeatLater(t);
+                tr.trialIndex = repeatLater(t);
                 
-                % Add trial data to results
-                [results, tr] = ensureStructsAssignable(results,tr);
-                results = [results tr];
-                
-                % Get output variables and set unavailable vars to NaN
-                if isfield(tr,'Yestrial'), Yestrial = tr.Yestrial; else, Yestrial = NaN; end
-                if isfield(tr,'stake'), stake = tr.stake; else, stake = NaN; end
-                if isfield(tr,'reward'), reward = tr.reward; else, reward = NaN; end
-                if isfield(tr,'sub_stage'), stage = tr.sub_stage; else, stage = ex.stage; end
-                
-                % Write data to output files
-                fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',    tr.starttrial,datestr(now),ex.subjectId,ex.session,tr.MVC,b,tr.trialIndex,tr.effort,stake,reward,totalReward,Yestrial);
-                fprintf(ex.fpSessions,'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),stage,ex.subjectId,ex.session,tr.MVC,b,tr.trialIndex,tr.effort,stake,reward,totalReward,Yestrial);
-                
-                % Add current results to result struct and save recovery
-                % file
-                result.data   = results;
-                save 'LastExperiment' result
+                % Write results to result struct, output txt files, and
+                % save a recovery file after each trial
+                % .........................................................
+                result = writeResults(ex, result, tr);
                 
                 % Allow the trial to be repeated more than once
                 if tr.R==ex.R_NEEDS_REPEATING_LATER
@@ -681,17 +631,14 @@ try
             
             % End of block actions
             % .............................................................
-            % At the end each block (or when quit), save all trials with 
-            % the full filename
-            save([namebase '.mat'], 'result');
-            
             % Display end of block
             if ex.useScreen && ~exist('blockStart','var')
                 drawTextCentred(scr, 'End of block', ex.fgColour);
                 Screen('Flip', scr.w);
                 myKbWait(ex);  % wait for keypress after each block
             end
-            % Exit if exit key is pressed
+            
+            % Exit experiment if exit key is pressed
             [~,~,kcode] = KbCheck;
             if kcode(ex.exitkey) || fatal_error,  break;  end
             
@@ -709,11 +656,11 @@ try
                     java.lang.Thread.sleep(1000);
                 end
             end
-            
-            % If performance phase: save the total achieved reward to file
-            if b >= ex.choiceBlockNumber
-                fprintf(ex.fpPayoutSessions,'%f\t%s\t%s\t%d\t%d\n',tr.starttrial,datestr(now),ex.subjectId,ex.session,totalReward);
-            end
+%             
+%             % If performance phase: save the total achieved reward to file
+%             if b >= ex.choiceBlockNumber
+%                 fprintf(ex.fpPayoutSessions,'%f\t%s\t%s\t%d\t%d\n',tr.starttrial,datestr(now),ex.subject,ex.session,totalReward);
+%             end
         end
         
         % Display end of experiment instructions
@@ -724,12 +671,12 @@ try
         result = rmfield(result,'trials');
     end
     
-    %%%%%%%%%%%%%  end of experiment %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%  end of experiment %%%%%%%%%%%%%%%%%
     
 catch e                                  % in case of an error
     fprintf('Error : %s\n', e.message);  % display error message
-    for i=1:length(e.stack)
-        disp(e.stack(i));
+    for ix=1:length(e.stack)
+        disp(e.stack(ix));
         save 'errordump';
         if exist('results','var')
             result.data=results; % and still give back the data so far
@@ -737,6 +684,8 @@ catch e                                  % in case of an error
     end
 end
 
+% Cleanup
+% -------------------------------------------------------------------------
 % restore screen
 if(ex.useScreen)
     Screen closeall;
