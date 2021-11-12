@@ -387,8 +387,10 @@ switch ex.stage
             pinfo = pinfo{1};
             if size(pinfo,1) > 1 
                 newP = false;
-            elseif pinfo(end) == '0'
-                newP = true;
+            else
+                pid = strsplit(pinfo{1}, ' ');
+                if isunix, pid = strsplit(pid, '/'); pid = pid{1}; end
+                if pid(end) == '0', newP = true; else, newP = false; end
             end
         else
             newP = true;
