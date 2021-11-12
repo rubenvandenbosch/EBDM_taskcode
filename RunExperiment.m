@@ -366,7 +366,6 @@ try
         prac = createTrials(ex_prac);
         
         % Run practice trials
-        practiceResult = struct();
         for ix = 1:ex.practiceTrials
             
             % Get practice trial parameters for current trial
@@ -408,13 +407,10 @@ try
                 tr.R = 1;
             end
             
-            % Write results to output structure and output files
-            % .............................................................
-            [practiceResult, ex] = writeResults(ex, practiceResult, tr);
-            
-            % Write practice data to main result output structure
-            %   store in "practiceResult"
-            result.practiceResult(ix) = practiceResult.data;
+            % Write practice data to results output structure and the txt 
+            % output files
+            assert(isfield(tr,'isPractice') && tr.isPractice, 'Make sure to mark the trial as practice for correct assignment in the result struct')
+            [result, ex] = writeResults(ex, result, tr);
             
             % If there was an error, exit practice trials
             if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE
@@ -557,7 +553,6 @@ try
                 
                 % Write results to result struct, output txt files, and
                 % save a recovery file after each trial
-                % .........................................................
                 [result, ex] = writeResults(ex, result, tr);
                 
                 % Mark trial for repeating, if applicable
