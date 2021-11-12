@@ -213,9 +213,9 @@ function exptStart(ex)
 %   either a welcome screen OR a session restore info screen
 slideNrs = 1;
 if ex.restoredSession
-    displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
+%     displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
 else
-    displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
+%     displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
 end
 
 %% Start of block:
@@ -231,8 +231,8 @@ if tr.block == 0  % Practice block
     
     % Display general practice instructions on first trial
     if tr.practiceTrialIx == 1
-        slideNrs = 1; %:5;
-        displayInstructions(ex, ex.dirs.instructions, slideNrs)
+        slideNrs = 1:5;
+%         displayInstructions(ex, ex.dirs.instructions, slideNrs)
     end
 
     % Determine which part of practice stage we're in 
@@ -318,26 +318,25 @@ EXIT = false; % this gets set to true if escape is pressed.
 
 % init to global MVC
 tr.MVC = MVC;
-if CALIBRATING % on the first trial of the practice, display the calibration.
+if CALIBRATING 
     % The experiment starts with CALIBRATION if calibNeeded.
     % if no calibration needed, just exit the trial.
     if ~ex.calibNeeded; tr.R=1; return; end
     
-    %    if pa.trialIndex == 1     % Calib instructions (just on first trial):
-    %       drawTextCentred(scr, 'Get ready to squeeze as hard as you can!', ex.fgColour, scr.centre +[0, -100])
-    %       Screen('Flip',scr.w);
-    %       EXIT = EXIT || waitForKeypress(ex);
-    %    end
+    % Log practice substage
+    if strcmp(ex.stage,'practice'), tr.sub_stage = 'calibration'; end
     
     % trial 1: draw red bar - height = voltage divided by 3, no target line
     % trial 2: target line at 1.1  * MVC from first trial
     % trial 3: target line at 1.05 * MVC
     % the number is the proportion of MVC to use as the top of the bar.
+    
+    % Prepare final instruction and target force setting
     if strcmp(ex.language,'NL')
         calibrationInstructions = {
             'Knijp zo hard mogelijk!'  , 1.0,[0 0 0]
-            'Probeer boven the gele lijn te komen!'    , 1.1,[255 255 0]
-            'Probeer boven the gele lijn te komen!'    , 1.05,[255 255 0]
+            'Probeer boven de gele lijn te komen!'    , 1.1,[255 255 0]
+            'Probeer boven de gele lijn te komen!'    , 1.05,[255 255 0]
             };
     else
         calibrationInstructions = {
@@ -346,30 +345,39 @@ if CALIBRATING % on the first trial of the practice, display the calibration.
             'Get above the yellow line!'    , 1.05,[255 255 0]
             };
     end
-    i  = pa.trialIndex;
+    % Use the trial index to select one of the above three
+    % instructions+settings. If trial index > 3, keep using the third
+    % option, i.e. every time use 1.05 * MVC as the target line
+    if pa.trialIndex <= 3, ix = pa.trialIndex; else, ix = 3; end
     
-    drawTextCentred(scr, calibrationInstructions{i,1} , ex.fgColour);
+    % Display instruction
+    drawTextCentred(scr, calibrationInstructions{ix,1} , ex.fgColour);
     Screen('Flip',scr.w);
     WaitSecs(1);
-    tr = LogEvent(ex,el,tr,'startresponse');
-    % parameters:(scr, ex, colour, colourlevel, height, effortLevel)
-    fbfunc = @(f) drawCalibAndFlip(scr, ex, ex.fgColour, calibrationInstructions{i,3}, f(pa.channel)/MVC, calibrationInstructions{i,2} );
-    % read data from force transducer:
-    % parameters: ( timeOfLastAcquisition, maxTimeToWait, stopRecordingThreshold, ISI, feedbackFunction )
-    [data]  = waitForForceData(ex,tr.startSqueezyAcquisition, ex.calibrationDuration, inf, 6, fbfunc);
-    tr.maximumForce = max(data(:,pa.channel));
     
+    % Prepare gripforce feedback function
+    %   parameters:(scr, ex, colour, colourlevel, height, effortLevel)
+    fbfunc = @(f) drawCalibAndFlip(scr, ex, ex.fgColour, calibrationInstructions{ix,3}, f(pa.channel)/MVC, calibrationInstructions{ix,2} );
+    
+    % read data from force transducer:
+    %   parameters: ( timeOfLastAcquisition, maxTimeToWait, stopRecordingThreshold, ISI, feedbackFunction )
+    tr = LogEvent(ex,el,tr,'startresponse');
+    [data] = waitForForceData(ex,tr.startSqueezyAcquisition, ex.calibrationDuration, inf, 6, fbfunc);
+    tr.maximumForce = max(data(:,pa.channel));
     tr=LogEvent(ex,el,tr,'endresponse');
+    
+    % Process during blank screen
     Screen('Flip', scr.w);
     WaitSecs(0.5);           % Blank screen for 0.5 seconds
     tr.data1 = data(:,1);    % store all force data for channel 1
     tr.R=1;                  % report success
     
     % which is larger, the current trial's force, or the current MVC?
-    % update the MVC on calibration trials.
+    %   update the MVC on calibration trials.
     MVC = max(tr.maximumForce, MVC);
     
-    if pa.trialIndex == ex.numCalibration    % End of last calibration trial. Used to be hardcoded to 3
+    % Display 'end of calibration' instruction
+    if pa.trialIndex == ex.numCalibration
         if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
         drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -200]);
         if ~ex.calibOnly
@@ -387,52 +395,62 @@ if CALIBRATING % on the first trial of the practice, display the calibration.
         % do not save a value to the trial data
         tr.MVC = NaN;
     end
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
 elseif FAMILIARISE
-    if strcmp(ex.stage,'ChoiceTask')
-        tr.sub_stage = 'Familiarization';
-    end
-    practice = tr.trialIndex - ex.numCalibration -1; % 0 to 9 ( ignore first # which are calibration )
+    % Log practice substage
+    if strcmp(ex.stage,'practice'), tr.sub_stage = 'familiarization'; end
     
-    if pa.practiceAscending  % (Old version - 1,1,2,2,3,3, etc.
-        % first 2 trials should have force level 1, then next 2 should have
-        % force level 2 etc.
-        tr.effortIx = 2 + floor(practice/2); % so this will be [1 1 2 2 etc]
+    % Get trial number of familiarization stage
+    if ex.calibNeeded
+        famTrIndex = tr.trialIndex - ex.numCalibration;
     else
-        % this version gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
-        tr.effortIx = 1 + mod(practice,5);
+        famTrIndex = tr.trialIndex;
+    end
+    
+    % Get effort level
+    if pa.practiceAscending 
+        % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
+        numTrLvl = floor(ex.numFamiliarise/numel(ex.effortIndex));  % number of trials per level
+        tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
+    else
+        % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
+        tr.effortIx = 1 + mod(famTrIndex,numel(ex.effortIndex));
     end
     tr.effort   = ex.effortLevel( tr.effortIx );
     
-    if practice == 0     % First practice trial: Practise force levels instructions:
-        %drawTextCentred(scr, 'Practice each force level twice.', ex.fgColour, scr.centre +[0, -150])
-        if strcmp(ex.language,'NL'), txt='Knijp boven de lijn totdat de balk geel wordt, houd dit 2 seconden vol!'; else, txt='Squeeze above the line until the bar turns yellow. Hold for 2 seconds'; end
+    % On first practice trial, display instructions
+    if famTrIndex == 0     
+        if strcmp(ex.language,'NL')
+            txt='Knijp boven de lijn totdat de balk geel wordt, houd dit 2 seconden vol!'; 
+        else
+            txt='Squeeze above the line until the bar turns yellow. Hold for 2 seconds';
+        end
         drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, -100])
         Screen('Flip',scr.w);
         EXIT = EXIT || waitForKeypress(ex); % wait for a key to be pressed before starting
         WaitSecs(1);
     end
     
-    tr = LogEvent(ex,el,tr,'startresponse');
-    % wait for squeeze
-    % draw tree with no apples, but the correct effort rung,
-    % with "RESPOND NOW". Location 0 means centre of screen.
-    fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, 'Knijp nu!', true );
+    % Function to draw tree without apples and the correct effort rung,
+    %   with "RESPOND NOW". Location 0 means centre of screen.
+    if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
+    fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
     
+    % Get squeeze response data
+    tr = LogEvent(ex,el,tr,'startresponse');
     [data,z,TLA]  = waitForForceData(ex,tr.startSqueezyAcquisition, ex.responseDuration, inf, ...
         (pa.responseDuration+pa.rewardDuration) , fbfunc);
+    tr = LogEvent(ex,el,tr,'endresponse');
+    activeHandData  = data(:,pa.channel);                       % units are samples
+    tr.maximumForce = max(activeHandData);                      % Find maximum force
+    tr.maximumTime  = find(activeHandData==tr.maximumForce,1);  % find all samples with max force
+    tr.data         = data(:,pa.channel);                       % store all force data
     
-    activeHandData  = data(:,pa.channel);
-    tr.maximumForce = max(activeHandData);
-    tr.maximumTime  = find(activeHandData==tr.maximumForce,1); % units are samples
-    tr.data         = data(:,pa.channel);  % store all force data
-    % Need to stay above for 2s
+    % Was the squeeze equal or greater than required for long enough?
     squeezeTime     = sum(activeHandData >= tr.effort*MVC);
     tr.success      = squeezeTime >= pa.minimumAcceptableSqueezeTime;
     
+    % Give participant feedback on performance
     if tr.success
         if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
         drawTextCentred(scr, txt, [0 255 0]);
@@ -448,20 +466,16 @@ elseif FAMILIARISE
     
     % CHECK KEYPRESSES
     [~,~,keyCode] = KbCheck;                    % check for real key
-    if keyCode(pa.exitkey), EXIT=true; end         % check for ESCAPE
+    if keyCode(pa.exitkey), EXIT=true; end      % check for ESCAPE
     
-    Screen('Flip',scr.w);    % blank screen
-    tr=LogEvent(ex,el,tr,'endresponse');
-    tr=waitOrBreak(pa,tr,ex.delayAfterResponse);
-    
-    %%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%
+    % Wait with blank screen during time delay after response
+    Screen('Flip',scr.w);
+    tr = waitOrBreak(pa,tr,ex.delayAfterResponse);
     
 elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
-    %disp('practice trials:');
-    %%%%%%%%%%%%%%%%%%%%%%%%%
-    % PRACTICE TRIALS AND MAIN EXPERIMENT TRIALS (DECISION PHASE)
-    % this occurs when we're in the actual choice practice, or in  block 1/2/3/4/5.
+    
+    % Choice trials (practice and main experiment)
+    % ---------------------------------------------------------------------
     
     % change instructions according to randomisation
     if ex.yesIsLeft==true
@@ -476,42 +490,17 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
         NoText  = txt;
     end
     
-    %%%%% CHANGE THIS TO THE TRIAL INDEX (minus something?) FOR WHEN THE
-    %%%%% FIRST PRACTICE TRIAL OCCURS?
-    firstPractice = pa.numCalibration + pa.numFamiliarise + 1 - pa.blockLen;
-    if ~isfield(pa,'numRepeated') || (isfield(pa,'numRepeated') && pa.numRepeated<=0)
-        if pa.allTrialIndex == firstPractice % for the first practice trial only:
-            %        displayInstructions(ex, 7);
-            displayInstructions(ex, 6); %%BL feb2021: split fmri version
-            % IMPORTANT: comment-out the line above for the script on MRI PC, otherwise you get dia6 for the MRI practice too
-            % which isnt what you want (different instructions,button vs space etc)
-            %         drawTextCentred(scr, 'Practice Phase:', ex.fgColour, scr.centre +[0, -300])
-            %         drawTextCentred(scr, 'Are the apples "worth it" for the level of force?', ex.fgColour, scr.centre +[0, -200])
-            %         drawTextCentred(scr, YesText, ex.fgColour, scr.centre +[0, -100])
-            %         drawTextCentred(scr, NoText, ex.fgColour, scr.centre +[0, -50])
-            %         drawTextCentred(scr, 'Now get ready to make 5 practice decisions', ex.fgColour, scr.centre +[0, 50])%-0
-            %         drawTextCentred(scr, 'Press the spacebar to begin', ex.fgColour, scr.centre +[0, 150])%50
-            %         Screen('Flip',scr.w);
-            %        EXIT = EXIT || waitForKeypress(ex);
+    % If practice trials
+    if tr.block==0
+        % Get practice trial number
+        if ex.calibNeeded
+            pracTrIndex = tr.trialIndex - ex.numFamiliarise - ex.numCalibration;
+        else
+            pracTrIndex = tr.trialIndex - ex.numFamiliarise;
         end
-        if pa.allTrialIndex == 1 % for the first trial of the main experiment:
-            %         displayInstructions(ex, 8);
-            displayInstructions(ex, 14); %BL feb2021: split fmri version
-            %         drawTextCentred(scr, 'Actual Decision Phase', ex.fgColour, scr.centre +[0, -100])
-            %         %drawTextCentred(scr, 'Are the apples "worth it" for the level of force?', ex.fgColour, scr.centre +[0, -200])
-            %         %drawTextCentred(scr, YesText, ex.fgColour, scr.centre +[0, -100])
-            %         %drawTextCentred(scr, NoText, ex.fgColour, scr.centre +[0, -50])
-            %         %drawTextCentred(scr, 'Now get ready to make some decisions', ex.fgColour, scr.centre +[0, 50])%-0
-            %         drawTextCentred(scr, 'Press the spacebar to begin', ex.fgColour, scr.centre +[0, -50])%50
-            %         Screen('Flip',scr.w);
-            %        EXIT = EXIT || waitForKeypress(ex);
-        end
-    end
-    if tr.block==0 % practice trials:
-        % which trial 1 to 5 are we on, of the practice trials?
-        practiceIndex = pa.allTrialIndex + pa.blockLen - pa.numCalibration - pa.numFamiliarise;
-        % decide which of the main trials to show, for the 5 practice trials.
-        trialNumber = pa.practiceTrialIndex( practiceIndex  );
+        
+%         % decide which of the main trials to show, for the 5 practice trials.
+%         trialNumber = pa.practiceTrialIndex( pracTrIndex  );
     else % 'real' trials
         trialNumber = pa.allTrialIndex; % which of the list of trials to show
     end
@@ -519,15 +508,15 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     % draw fixation cross
     Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
     Screen('Flip', ex.scr.w);
-    WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));
+    WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));    %RB: Currently random, change to e.g. poisson??
     
-    % get the effort/stake combination from the predetermined list
-    %    RB: THIS IS WHERE TRIAL ORDER FRON createTrials IS IGNORED, AND INSTEAD PRESPECIFIED ORDER IS USED
-    tr.effortIx = ex.order_effort( trialNumber );
-    tr.effort   = ex.effortLevel( tr.effortIx );  % proportion of MVC to display
-    tr.stakeIx  = ex.order_reward( trialNumber ); % n is stake index (1-5)
-    tr.stake    = ex.applesInStake( tr.stakeIx ); % look up stake value (in apples), based on stake 'level' (1-5)
-    
+%     % get the effort/stake combination from the predetermined list
+%     %    RB: THIS IS WHERE TRIAL ORDER FRON createTrials IS IGNORED, AND INSTEAD PRESPECIFIED ORDER IS USED
+%     tr.effortIx = ex.order_effort( trialNumber );
+%     tr.effort   = ex.effortLevel( tr.effortIx );  % proportion of MVC to display
+%     tr.stakeIx  = ex.order_reward( trialNumber ); % n is stake index (1-5)
+%     tr.stake    = ex.applesInStake( tr.stakeIx ); % look up stake value (in apples), based on stake 'level' (1-5)
+%     
     % draw tree with effort and stake in centre of screen, for choice.
     drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], true);
     
