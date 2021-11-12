@@ -1,5 +1,5 @@
-function ex = displayInstructions(ex, instructionsDir, slides, varargin)
-% ex = displayInstructions(ex, instructionsDir, slides, stage)
+function displayInstructions(ex, instructionsDir, slides, varargin)
+% displayInstructions(ex, instructionsDir, slides, stage)
 % 
 % INPUTS
 % ex              : struct; experiment parameters
