@@ -46,7 +46,10 @@ function [result, ex] = writeResults(ex, result, tr, varargin)
 assert(nargin <= 4, 'Too many input arguments')
 if nargin == 4, init = varargin{1}; else, init = false; end
 if ~init
-    assert(isstruct(result), 'Input result should be class struct');
+    if ~isempty(result)
+        assert(isstruct(result), 'Input result should be class struct');
+    else, assert(isnumeric(result), 'If using an empty input for result, use an empty vector []')
+    end
     assert(isstruct(tr), 'Input tr should be class struct');
 end
 
@@ -87,16 +90,33 @@ assert(~init, 'Trying to write results when initialize only option is set to tru
 
 % Write to result struct
 % -------------------------------------------------------------------------
-% Initialise data field in result struct if necessary (first trial)
-if ~isfield(result,'data')
-    result.data = []; 
-else
-    assert(isstruct(result.data), 'result.data should be class struct');
+% Write practice results to result.practiceResult
+if isfield(tr,'isPractice') && tr.isPractice
+    
+    % Initialise field in result struct if necessary (first trial)
+    if ~isfield(result,'practiceResult')
+        result.practiceResult = []; 
+    else
+        assert(isstruct(result.practiceResult), 'result.practiceResult should be class struct');
+        [result.practiceResult, tr] = ensureStructsAssignable(result.practiceResult,tr);
+    end
+    
+    % Append trial data to result.data struct
+    result.practiceResult = [result.practiceResult tr];
+    
+else % Write other trial results to result.data
+    
+    % Initialise data field in result struct if necessary (first trial)
+    if ~isfield(result,'data')
+        result.data = []; 
+    else
+        assert(isstruct(result.data), 'result.data should be class struct');
+        [result.data, tr] = ensureStructsAssignable(result.data,tr);
+    end
+    
+    % Append trial data to result.data struct
+    result.data = [result.data tr];
 end
-
-% Append trial data to result.data struct
-[result.data, tr] = ensureStructsAssignable(result.data,tr);
-result.data = [result.data tr];
 
 % Save experiment recovery file
 % -------------------------------------------------------------------------
@@ -117,7 +137,7 @@ end
 % Write data
 for ifile = 1:numel(fields)
     % subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
-    fprintf(ex.fids.(fields{ifile}), '%d\t%d\t%s\t%d\t%d\t%d\t%d\t%f\t%f\t%d\t%d\t%f\t%s\t%d\t%d\t%d\t%s', ...
+    fprintf(ex.fids.(fields{ifile}), '%d\t%d\t%s\t%d\t%d\t%d\t%d\t%f\t%f\t%d\t%d\t%f\t%s\t%d\t%d\t%d\t%s\n', ...
         ex.subject, ex.session, ex.stage, tr.MVC, tr.block, tr.trialIndex, tr.allTrialIndex, ...
         output.onset, output.duration, output.reward, output.effortIx, output.effortLvl, output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
 end
