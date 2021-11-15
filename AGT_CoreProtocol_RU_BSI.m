@@ -131,51 +131,58 @@ if ex.fatiguingExercise
 else
     height = max(0,min(1.5,height));
 end
-Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]); % trunk brown
+
+% Draw trunk brown
+Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]); 
 
 if ~ex.fatiguingExercise
-    Screen('DrawTexture', scr.w, scr.imageTexture(stake+1),[],...
-        [ (x0-3*W) (y0+BP(2)-ex.effortLevel(5)*S-5*W) (x0+3*W) (y0+BP(2)-ex.effortLevel(5)*S) ]);
+    Screen('DrawTexture', scr.w, scr.imageTexture(stake+1),[], ...
+        [ (x0-3*W) (y0 + BP(2) - ex.effortLevel(end)*S - numel(ex.effortLevel)*W) (x0 + 3*W) (y0 + BP(2) - ex.effortLevel(end)*S) ]);
 end
 
-if stake>0 % draw apples according to stake level
-    apples = ex.applesInStake( stake );
+% Draw apples according to stake level
+if stake > 0
+    apples = ex.rewardLevel(stake);
     if doAppleText   % text for how many apples
         formatstring = 'Appels: %d ';
-        drawTextCentred( scr, sprintf(formatstring ,apples), ex.fgColour, scr.centre + [0 300]);
+        drawTextCentred(scr, sprintf(formatstring ,apples), ex.fgColour, scr.centre + [0 300]);
     end
 end
 
+% Draw rungs of ladder at each effortLevel
 if ~ex.fatiguingExercise
-    for i=1:length(ex.effortLevel) % draw 5 rungs of ladder at each effortLevel
-        Screen('Drawlines',scr.w,[ -W/2  W/2 ; BP(2)-ex.effortLevel(i)*S BP(2)-ex.effortLevel(i)*S ], 5, ex.silver, [x0 y0], 0);
-    end
-end
-% Display the effort level as on-screen text.
-% (note previous versions only displayed effort visually as a forcebar)
-if force>0
-    if doAppleText   % text for how many apples
-        formatstring = 'Inspanningsniveau: %d ';
-        drawTextCentred( scr, sprintf(formatstring,floor(effort))...
-            , ex.fgColour, scr.centre + [0 350]);
+    for ix = 1:length(ex.effortLevel) % width of lines is 5 (i.e. this is not a hardcoded level of something)
+        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*S BP(2)-ex.effortLevel(ix)*S ], 5, ex.silver, [x0 y0], 0);
     end
 end
 
+% Display the effort level as on-screen text.
+%   (note previous versions only displayed effort visually as a forcebar)
+if force > 0
+    if doAppleText   % text for how many apples
+        if strcmpi(ex.language,'NL'), formatstring = 'Inspanningsniveau: %d '; 
+        else, formatstring = 'Effort level: %d '; end
+        drawTextCentred(scr, sprintf(formatstring,floor(effort)), ex.fgColour, scr.centre + [0 350]);
+    end
+end
+
+% Show current trial's force level as a wider rung at the relevant height
 if ex.fatiguingExercise
     % NB: Fixed force level set to 0.7 (always plot the target yellow bar at this location)
     % draw wider line for fixed force=0.7 level
-    Screen(  'Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], 7, ex.yellow, [x0 y0], 0);
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], 7, ex.yellow, [x0 y0], 0);
 else
     % draw wider line for current force level
-    Screen(  'Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-force*S BP(2)-force*S ], 7, ex.yellow, [x0 y0], 0);
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-force*S BP(2)-force*S ], 7, ex.yellow, [x0 y0], 0);
 end
 
-% now draw the momentary force height
-if height<force
+% Draw the momentary force height
+if height < force
     clr = ex.forceColour;
-elseif height>=force
+elseif height >= force
     clr = ex.yellow;
 end
+
 if ex.fatiguingExercise
     % adapt plot height level to match 0.7 for actually requested force during fatiguing experiment
     height = height * (0.7/force);
@@ -192,7 +199,6 @@ if doFlip
 end
 
 
-
 function drawCalibAndFlip(scr, ex, colour, colourlevel, height, effortLevel)
 height = max(0,min(1.5,height));
 x0     = scr.centre(1);
@@ -200,9 +206,7 @@ y0     = scr.centre(2);
 FC     = ex.forceColour;
 % These are the coordinates for the target line:
 % Y = 150 - effortLevel*S for AGT, where S is 200
-Screen('Drawlines',scr.w,[ -25-50/8 +25+50/8 ;
-    150-effortLevel*200 150-effortLevel*200
-    ], 7, colourlevel, [x0 y0], 0);
+Screen('Drawlines',scr.w,[ -25-50/8 +25+50/8 ; 150-effortLevel*200 150-effortLevel*200 ], 7, colourlevel, [x0 y0], 0);
 % These are the coordinates for the Bar Outline
 Screen('FrameRect', scr.w, colour, [x0-25 y0-150 x0+25 y0+150], 4);
 % These are the coordinates for the Force Feedback Bar; Original height*S
