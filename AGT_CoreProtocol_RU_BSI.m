@@ -44,26 +44,6 @@ function result = AGT_CoreProtocol_RU_BSI(params,ex)
 % these Need to be global.
 global MVC totalReward
 
-% Get subject's MVC from previous calibration, or set to arbitrary number
-% before calibration
-if ~ex.calibNeeded
-    % Get MVC from output mat file of the practice stage
-    filename = strrep(ex.files.output_session_stage,sprintf('stage-%s',ex.stage),'stage-practice');
-    assert(exist(filename,'file')==2, 'Practice stage file that includes MVC is missing');
-    
-    % load the 'result' variable from the file.
-    load(filename,'result');  
-    % an error will occur here if the selected file isn't a valid result file.
-    MVC = result.MVC;         % grab MVC
-    clear result % Clear result file to make way for new one.
-else
-    % Arbitrary MVC value that is overwritten after first calibration
-    MVC = 3;
-end
-
-% Add function handle for start experiment function to ex struct
-ex.exptStart = @exptStart;
-
 % Open output files for writing
 % -------------------------------------------------------------------------
 % .mat output file name to save result struct of current session and stage
@@ -73,11 +53,33 @@ outfile_mat = fullfile(p,[f '.mat']);
 % Open output files and write header lines
 [~, ex] = writeResults(ex, [], [], true);
 
+% Get subject's MVC from previous calibration, or set to arbitrary number
+% before calibration
+% -------------------------------------------------------------------------
+if ~ex.calibNeeded
+    % Get MVC from output mat file of the practice stage
+    filename = strrep(outfile_mat,sprintf('stage-%s',ex.stage),'stage-practice');
+    assert(exist(filename,'file')==2, 'Practice stage file that includes MVC is missing');
+    
+    % load the 'result' variable from the file.
+    load(filename,'result');
+    % an error will occur here if the selected file isn't a valid result file.
+    MVC = result.MVC;         % grab MVC
+    clear result % Clear result file to make way for new one.
+else
+    % Arbitrary MVC value that is overwritten after first calibration
+    MVC = 3;
+end
+
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
+% Add function handle for start experiment function to ex struct
+ex.exptStart = @exptStart;
+
+% restore globals from previous experiment?
 if ~exist('params','var') || isempty(params)
     params=struct();
-else % restore globals from previous experiment?
+else
     if isfield(params, 'MVC'), MVC = params.MVC; end
     if isfield(params, 'data') && isfield(params.data(end),'totalReward')
         totalReward = params.data(end).totalReward;
@@ -108,6 +110,7 @@ function drawTree( scr, ex, location, stake,effort, height, doAppleText, otherTe
 % if doAppleText, then write the stake & effort below the centre of screen
 % if not, then write the string in otherText below the centre if screen.
 % if doFlip, then the screen is flipped at the end of the function.
+
 BP = ex.forceBarPos;        % bar position
 x0 = scr.centre(1);
 y0 = scr.centre(2);         % where to place the tree?
@@ -476,20 +479,41 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     
     % Choice trials (practice and main experiment)
     % ---------------------------------------------------------------------
+    % Randomly assign left/right key to yes/no option
+    tr.yesIsLeft = rand > 0.5;
     
-    % change instructions according to randomisation
-    if ex.yesIsLeft==true
-        if strcmp(ex.language,'NL'), txt='Druk de linker pijl toets/knop voor JA'; else, txt='Press the left arrow key for YES'; end
-        YesText = txt;
-        if strcmp(ex.language,'NL'), txt='Druk de rechter pijl toets/knop voor NEE'; else, txt='Press the right arrow key for NO'; end
-        NoText  = txt;
+    % Work out which keys are 'yes' and 'no', and set location on screen to
+    % present yes/no text
+    if tr.yesIsLeft
+        tr.yeslocation  = -300;
+        tr.yesKey       = pa.leftKey;
+        tr.noKey        = pa.rightKey;
     else
-        if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop voor Ja of NEE'; else, txt='Use the left and right arrow keys to choose YES or NO'; end
-        YesText = txt;
-        if strcmp(ex.language,'NL'), txt='afhankelijk van de getoonde zijde'; else, txt='depending on the side they are presented'; end
-        NoText  = txt;
+        tr.yeslocation  = 300;
+        tr.yesKey       = pa.rightKey;
+        tr.noKey        = pa.leftKey;
+    end
+    if strcmp(ex.language,'NL')
+        yestxt='Ja';
+        notxt='Nee';
+    else
+        yestxt='Yes';
+        notxt='No';
     end
     
+%     % Change instructions according to randomisation
+%     if tr.yesIsLeft
+%         if strcmp(ex.language,'NL'), txt='Druk de linker pijl toets/knop voor JA'; else, txt='Press the left arrow key for YES'; end
+%         YesText = txt;
+%         if strcmp(ex.language,'NL'), txt='Druk de rechter pijl toets/knop voor NEE'; else, txt='Press the right arrow key for NO'; end
+%         NoText  = txt;
+%     else
+%         if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop voor Ja of NEE'; else, txt='Use the left and right arrow keys to choose YES or NO'; end
+%         YesText = txt;
+%         if strcmp(ex.language,'NL'), txt='afhankelijk van de getoonde zijde'; else, txt='depending on the side they are presented'; end
+%         NoText  = txt;
+%     end
+%     
     % If practice trials
     if tr.block==0
         % Get practice trial number
@@ -511,21 +535,27 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));    %RB: Currently random, change to e.g. poisson??
     
 %     % get the effort/stake combination from the predetermined list
-%     %    RB: THIS IS WHERE TRIAL ORDER FRON createTrials IS IGNORED, AND INSTEAD PRESPECIFIED ORDER IS USED
+%     %    RB: THIS IS WHERE TRIAL ORDER FROM createTrials IS IGNORED, AND INSTEAD PRESPECIFIED ORDER IS USED
 %     tr.effortIx = ex.order_effort( trialNumber );
 %     tr.effort   = ex.effortLevel( tr.effortIx );  % proportion of MVC to display
 %     tr.stakeIx  = ex.order_reward( trialNumber ); % n is stake index (1-5)
 %     tr.stake    = ex.applesInStake( tr.stakeIx ); % look up stake value (in apples), based on stake 'level' (1-5)
 %     
-    % draw tree with effort and stake in centre of screen, for choice.
-    drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], true);
+
+
+    % Log this trial's reward and effort levels based on the index
+    tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
+    tr.effortLevel = ex.effortLevel(tr.effortIx);
+
+    % Present tree with effort and stake in centre of screen, for choice
+    drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
+    tr = LogEvent(ex,el,tr,'startStim');
     
     % Wait before presenting yes/no response options
-    tr = LogEvent(ex,el,tr,'startStim');
     Tdelay = pa.timeBeforeChoice;
     if ischar(pa.timeBeforeChoice)
         if strcmpi(pa.timeBeforeChoice,'RandPoisson')
-            % get Poisson distributed random number
+            % Get Poisson distributed random number
             lambda=10;
             Tdelay = 2+poissrnd(lambda)/(lambda+1);
         elseif strcmpi(pa.timeBeforeChoice,'RandNormal')
@@ -536,31 +566,11 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     end
     WaitSecs(Tdelay);
     
-    % Draw again with 'yes/no', but do not yet flip
+    % Draw tree and add 'yes/no' response options, then flip to present
     drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], false);
-    
-    % Work out which keys are 'yes' and 'no', and set location on screen to
-    % present yes/no text
-    if pa.yesIsLeft
-        tr.yeslocation = -300;
-        tr.yesKey      = pa.leftKey;
-        tr.noKey       = pa.rightKey;
-    else
-        tr.yeslocation = - tr.yeslocation;
-        tr.yesKey = pa.rightKey;
-        tr.noKey  = pa.leftKey;
-    end
-    if strcmp(ex.language,'NL')
-        yestxt='Ja';
-        notxt='Nee';
-    else
-        yestxt='Yes';
-        notxt='No';
-    end
-    
-    % Add yes/no options to drawn tree and present (i.e. flip)
-    drawTextCentred(scr, yestxt, ex.fgColour, scr.centre +[ tr.yeslocation 200]);
+    drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation 200]);
     drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
+    
     Screen('Flip',scr.w);
     tr = LogEvent(ex,el,tr,'startChoice');
     
@@ -569,9 +579,10 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     % To change it, alter ex.maxTimeToWait at the start of the script.
     deadline = GetSecs + ex.maxTimeToWait;
     
-    % Wait for a valid response or until deadline.
+    % Wait for a valid response or until deadline
+    % ---------------------------------------------------------------------
     if ex.useBitsiBB,  ex.BitsiBB.clearResponses(); end % empty input buffer
-    while GetSecs<deadline
+    while GetSecs < deadline
         if ex.useBitsiBB
             tr.key = [];
             while 1
@@ -590,17 +601,16 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
                 end
             end
         else
-            while ~KbCheck && GetSecs<deadline, WaitSecs(0.1); end
-            [z,z,keyCode] = KbCheck;   % get key code
+            while ~KbCheck && GetSecs < deadline, WaitSecs(0.1); end
+            [~,~,keyCode] = KbCheck;   % get key code
             tr.key = find(keyCode,1);
         end
         if isempty(tr.key), continue, end
         
-        %      if tr.key==tr.yesKey || tr.key==tr.noKey || tr.key==ex.exitkey %%BLjuli2021: aangepast voor twee buttonboxen
-        if any(tr.yesKey==tr.key) || any(tr.noKey==tr.key) || tr.key==ex.exitkey   %%BLjuli2021: aangepast voor twee buttonboxen
-            
-            break % out of while 1 loop
-        else % draw feedback
+        % If a response key was pressed, break out of the while loop
+        if any(tr.yesKey==tr.key) || any(tr.noKey==tr.key) || tr.key==ex.exitkey
+            break
+        else % Draw feedback about which button to use
             drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], false);
             if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
             drawTextCentred(scr, txt, ex.forceColour, scr.centre + [0, -300])
@@ -611,34 +621,38 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
         tr.key = [];
     end
     
+    % Process response
+    % ---------------------------------------------------------------------
     doTree       = true;
-    if isempty(tr.key)  % no key pressed in allotted time?
+    
+    % No key pressed in allotted time?
+    if isempty(tr.key)
         tr.Yestrial  = NaN;        % Too slow.
         if strcmp(ex.language,'NL'), message='Reageer sneller alstublieft'; else, message='Please respond faster'; end
         msgloc       = scr.centre + [0, -300];
         msgcolour    = ex.forceColour;
-        if tr.block~=0 % not a practice trials, repeat it
+        
+        % If this was not a practice trial, mark it to repeat at the end of
+        % this block
+        if tr.block~=0
             tr.R=ex.R_NEEDS_REPEATING_LATER;
         end
-    else
-        switch tr.key     % a key was pressed in time:
-            %        case tr.yesKey  %%BLjuli2021: aangepast voor twee buttonboxen
-            %          case tr.yesKey(1), tr.yesKey(2)  %%BLjuli2021: aangepast voor twee buttonboxen
-            case num2cell(tr.yesKey)    %%RBoct2021: fix error resulting from the above split in two change
-                tr.Yestrial  = 1;  % responded "yes"
+        
+    else % Process response
+        switch tr.key
+            case num2cell(tr.yesKey)    % responded "yes"
+                tr.Yestrial  = 1;
                 message      = yestxt;
                 msgloc       = scr.centre + [tr.yeslocation, 200];
-                msgcolour    = ex.fgColour3;%mv changed from ex.fgColour2;
-                %         case tr.noKey  %%BLjuli2021: aangepast voor twee buttonboxen
-                %          case tr.noKey(1), tr.noKey(2)   %%BLjuli2021: aangepast voor twee buttonboxen
-            case num2cell(tr.noKey)    %%RBoct2021: fix error resulting from the above split in two change
-                tr.Yestrial  = 0;  % responded "no"
+                msgcolour    = ex.fgColour3;
+            case num2cell(tr.noKey)     % responded "no"
+                tr.Yestrial  = 0;
                 message      = notxt;
                 msgloc       = scr.centre + [-tr.yeslocation, 200];
-                msgcolour    = ex.fgColour3;%mv changed from ex.fgColour;
-            case ex.exitkey
+                msgcolour    = ex.fgColour3;
+            case ex.exitkey             % EXIT key was pressed
                 tr.Yestrial  = NaN;
-                EXIT         = true; % exit the script
+                EXIT         = true;
                 message      = 'User exit via Esc key';
                 doTree       = false;
                 msgloc       = scr.centre + [0, -300];
@@ -649,13 +663,13 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
                 message      = txt;
                 msgloc       = scr.centre + [0, -300];
                 msgcolour    = ex.forceColour;
-                if tr.block~=0 % not a practice trials, repeat it
+                if tr.block~=0 % If not a practice trial, repeat it
                     tr.R=ex.R_NEEDS_REPEATING_LATER;
                 end
         end
     end
     
-    % draw feedback
+    % Draw feedback
     drawTextCentred(scr, message, msgcolour, msgloc)
     if doTree
         drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], true);
@@ -672,8 +686,8 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     if ~PRACTICE
         YesResp( tr.allTrialIndex ) = tr.Yestrial;
     end
-    %%%%%%%%%%%%% end of trial
-    %%%%%%%%%%%%%%%%
+    
+    %%%%%%%%%%%%% end of trial %%%%%%%%%%%%%%%%
     
 elseif PERFORM_TRIAL
     if strcmp(ex.stage,'ChoiceTask')
