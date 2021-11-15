@@ -73,8 +73,8 @@ end
 
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
-% Add function handle for start experiment function to ex struct
-ex.exptStart = @exptStart;
+% Add function handle for experiment start/end function to ex struct
+ex.exptStartEnd = @exptStartEnd;
 
 % restore globals from previous experiment?
 if ~exist('params','var') || isempty(params)
@@ -215,14 +215,27 @@ Screen('Flip',scr.w);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Start of experiment
-function exptStart(ex)
-% Display start of experiment instruction slide:
-%   either a welcome screen OR a session restore info screen
-slideNrs = 1;
-if ex.restoredSession
-%     displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
-else
-%     displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
+function exptStartEnd(ex, timepoint)
+% Display start/end of experiment instruction slides
+% INPUTS
+% ex        : struct with experiment parameters
+% timepoint : char; 'start' OR 'end'
+% 
+assert(isstruct(ex), 'Input ex should be of class struct')
+assert(ischar(timepoint), 'Input timepoint should be a character string')
+
+switch lower(timepoint)
+    case 'start'
+        % Either a welcome screen OR a session restore info screen
+        slideNrs = 1;
+        if ex.restoredSession
+%             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
+        else
+%             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
+        end
+    case 'end'
+        slideNrs = 1;
+%         displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end')
 end
 
 %% Start of block:
@@ -571,7 +584,7 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     WaitSecs(Tdelay);
     
     % Draw tree and add 'yes/no' response options, then flip to present
-    drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], false);
+    drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
     drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation 200]);
     drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
     
@@ -615,7 +628,7 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
         if any(tr.yesKey==tr.key) || any(tr.noKey==tr.key) || tr.key==ex.exitkey
             break
         else % Draw feedback about which button to use
-            drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], false);
+            drawTree(scr,ex,0,tr.rewardIx , tr.effortIx, 0, true, [], false);
             if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
             drawTextCentred(scr, txt, ex.forceColour, scr.centre + [0, -300])
             drawTextCentred(scr, yestxt, ex.fgColour, scr.centre +[ tr.yeslocation 200]);
@@ -627,7 +640,7 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     
     % Process response
     % ---------------------------------------------------------------------
-    doTree       = true;
+    doTree = true;
     
     % No key pressed in allotted time?
     if isempty(tr.key)
@@ -676,7 +689,7 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     % Draw feedback
     drawTextCentred(scr, message, msgcolour, msgloc)
     if doTree
-        drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, true, [], true);
+        drawTree(scr,ex,0, tr.rewardIx, tr.effortIx, 0, true, [], true);
     end
     tr = LogEvent(ex,el,tr,'endChoice');
     

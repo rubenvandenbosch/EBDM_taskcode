@@ -71,8 +71,8 @@ function result = RunExperiment ( doTrial, ex, params, blockStart )
 %  useSqueezy       = initialise squeezy device. default initialises to
 %                     500Hz, 2 channels
 %
-%  exptStart        = @function exptStart(scr, el, ex) is called at
-%                     the start of the experiment. Can be used for
+%  exptStartEnd     = @function exptStartEnd(ex, timepoint) is called at
+%                     the start/end of the experiment. Can be used for
 %                     one-off instructions.
 %
 %  blockStart:      = user supplied function of the form
@@ -223,7 +223,7 @@ if ~ex.useScreen,  scr=0; end                       % not using screen?
 if ~ex.useEyelink,  el=0; end                       % not using eyelink?
 
 if ~exist('blockStart','var') && isfield(ex,'blockStart'), blockStart = ex.blockStart; end
-if ~exist('exptStart','var') && isfield(ex,'exptStart'),   exptStart = ex.exptStart; end
+if ~exist('exptStartEnd','var') && isfield(ex,'exptStartEnd'), exptStartEnd = ex.exptStartEnd; end
 if ~isfield(ex,'blocks'), warning('Assuming 1 block only'); ex.blocks = 1; end
 
 % store time of experiment start
@@ -275,7 +275,6 @@ try
             ex.scr = scr;
             ex.screenSize = scr.ssz;
         else
-            % this is already done via displayInstructions function
             scr = ex.scr;
         end
     end
@@ -337,8 +336,8 @@ try
     
     % Call experiment start code, if provided
     %   Currently implemented to show welcome/restore screen
-    if exist('exptStart','var')
-        exptStart(ex);
+    if exist('exptStartEnd','var')
+        exptStartEnd(ex,'start');
     end
     
     % Practice trials
@@ -650,15 +649,15 @@ try
             end
         end
         
-        % Display end of experiment instructions
-        displayInstructions(ex, 15);
-        
+        % END OF EXPERIMENT
+        %   Call experiment end function, if provided
+        if exist('exptStartEnd','var')
+            exptStartEnd(ex,'end');
+        end
     else
         % If only running calibration, remove non-used variables
         result = rmfield(result,'trials');
     end
-    
-%%%%%%%%%%%%%  end of experiment %%%%%%%%%%%%%%%%%
     
 catch e                                  % in case of an error
     fprintf('Error : %s\n', e.message);  % display error message
