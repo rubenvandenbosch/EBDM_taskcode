@@ -255,10 +255,14 @@ if tr.block == 0  % Practice block
 %         displayInstructions(ex, ex.dirs.instructions, slideNrs)
     end
 
-    % Determine which part of practice stage we're in 
-    CALIBRATING   = ex.numCalibration > 0 && tr.practiceTrialIx <= ex.numCalibration;
-    FAMILIARISE   = ~CALIBRATING && tr.practiceTrialIx <= ex.numFamiliarise + ex.numCalibration;
-    PRACTICE      = ~CALIBRATING && ~FAMILIARISE;
+    % Determine which part of practice stage we're in
+    CALIBRATING   = strcmp(tr.sub_stage,'calibration');
+    FAMILIARISE   = strcmp(tr.sub_stage,'familiarize');
+    PRACTICE      = strcmp(tr.sub_stage,'practice');
+    
+%     CALIBRATING   = ex.numCalibration > 0 && tr.practiceTrialIx <= ex.numCalibration;
+%     FAMILIARISE   = ~CALIBRATING && tr.practiceTrialIx <= ex.numFamiliarise + ex.numCalibration;
+%     PRACTICE      = ~CALIBRATING && ~FAMILIARISE;
     
     % Display instructions according to which part
     if CALIBRATING
@@ -313,17 +317,21 @@ function tr = doTrial(scr, el, ex, tr)
 % tr  = trial-specific parameters
 global  MVC totalReward YesResp
 
-tr.sub_stage = ex.stage; % init
 pa = combineStruct(ex, tr);   % get parameters for this trial
 
 % Work out what kind of trial this is:
 % calibration is done as the first 3 trial of the practice.
 % the calibration and practice trials themselves are run with block==0
 % for the final block, execution trials are picked from previous choices at random
-CALIBRATING   = pa.block == 0 && ex.numCalibration>0 && pa.trialIndex < (ex.numCalibration+1) ;
-FAMILIARISE   = pa.block == 0 && ~CALIBRATING && pa.trialIndex < pa.numFamiliarise +ex.numCalibration+1;
-PRACTICE      = pa.block == 0 && ~CALIBRATING && ~FAMILIARISE;
-PERFORM_TRIAL = tr.block >= ex.choiceBlockNumber || ex.fatiguingExercise;
+% CALIBRATING   = pa.block == 0 && ex.numCalibration>0 && pa.trialIndex < (ex.numCalibration+1) ;
+% FAMILIARISE   = pa.block == 0 && ~CALIBRATING && pa.trialIndex < pa.numFamiliarise +ex.numCalibration+1;
+% PRACTICE      = pa.block == 0 && ~CALIBRATING && ~FAMILIARISE;
+% PERFORM_TRIAL = tr.block >= ex.choiceBlockNumber || ex.fatiguingExercise;
+
+CALIBRATING   = strcmp(tr.sub_stage,'calibration');
+FAMILIARISE   = strcmp(tr.sub_stage,'familiarize');
+PRACTICE      = strcmp(tr.sub_stage,'practice');
+PERFORM_TRIAL = strcmp(tr.sub_stage,'perform');
 
 tr=LogEvent(ex,el,tr,'starttrial');  % Log events
 
@@ -337,9 +345,6 @@ if CALIBRATING
     % The experiment starts with CALIBRATION if calibNeeded.
     % if no calibration needed, just exit the trial.
     if ~ex.calibNeeded; tr.R=1; return; end
-    
-    % Log practice substage
-    if strcmp(ex.stage,'practice'), tr.sub_stage = 'calibration'; end
     
     % trial 1: draw red bar - height = voltage divided by 3, no target line
     % trial 2: target line at 1.1  * MVC from first trial
@@ -412,9 +417,7 @@ if CALIBRATING
     end
 
 elseif FAMILIARISE
-    % Log practice substage
-    if strcmp(ex.stage,'practice'), tr.sub_stage = 'familiarization'; end
-    
+
     % Get trial number of familiarization stage
     if ex.calibNeeded
         famTrIndex = tr.trialIndex - ex.numCalibration;
@@ -665,9 +668,6 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     %%%%%%%%%%%%% end of trial %%%%%%%%%%%%%%%%
     
 elseif PERFORM_TRIAL
-    if strcmp(ex.stage,'ChoiceTask')
-        tr.sub_stage = 'Perform';
-    end
     
     %%%%%%%%%%%%%%%%%
     % there are 10 performance trials, at the end of the experiment. They

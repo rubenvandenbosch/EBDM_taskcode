@@ -101,15 +101,14 @@ switch ex.stage
         ex.numFamiliarise       = 0; %5; %12;
         
         % Number of practice decisions about X effort for X reward
-        ex.numPracticeChoices   = 5;
+        ex.practiceTrials   = 5;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
         
         % Set total number of trials based on the above
-        ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices;
-        ex.blockLen             = ex.practiceTrials;
-        ex.last_trial           = [];
+        ex.blockLen = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials;
+        ex.last_trial       = [];
         
         % Set the block number on which people are asked to actually 
         % perform selected effort for reward options during the choice task
@@ -132,7 +131,7 @@ switch ex.stage
         ex.blockLen = 16;  % number of  trials within each block
 
         % Include this number of practice choice trials at the beginning?
-        ex.numPracticeChoices   = 0;
+        ex.practiceTrials = 0;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -146,12 +145,8 @@ switch ex.stage
         ex.choiceBlockNumber    = 99;
         
         % Turn off the calibration and effort familiarization
-        ex.numCalibration       = 0;   
-        ex.numFamiliarise       = 0;   
-        
-        % Set total number of practice trials based on the above
-        ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices; 
-        assert(~(ex.practiceTrials > ex.blockLen),'Set parameter "blockLen >= "practiceTrials"');
+        ex.numCalibration       = 0;
+        ex.numFamiliarise       = 0;
         
     case 'perform'
         % Perform stage:
@@ -167,10 +162,7 @@ switch ex.stage
         
         % Practice a number of trials with different effort levels without
         % reward?
-        ex.numPracticeChoices   = 0;
-        
-        % Random order of practice trials?
-        ex.shufflePracticeTrials = true;
+        ex.practiceTrials = 0;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -210,7 +202,7 @@ switch ex.stage
         ex.numFamiliarise       = 0;
         
         % Set total number of practice trials based on the above
-        ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices; 
+        ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials; 
         assert(ex.practiceTrials <= ex.blockLen,'Set parameter "blockLen >= "practiceTrials"');
         
         % Stage performed inside MRI scanner?

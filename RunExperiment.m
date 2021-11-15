@@ -364,17 +364,39 @@ try
         %   will be one of each trial type.
         prac = createTrials(ex_prac);
         
-        % Run practice trials
-        for ix = 1:ex.practiceTrials
+        % Run practice trials, preceded by calibration and familiarization
+        % if applicable
+        prePracticeTrials = ex.numCalibration + ex.numFamiliarise;
+        for ix = 1:prePracticeTrials + ex.practiceTrials
             
-            % Get practice trial parameters for current trial
-            %   get from prac struct: prac(block,trial)
-            %   mark the trial as a practice
-            %   log practice trial number
-            %   set first trial of MRI run to false
-            tr = prac(1+floor((ix-1)/ex_prac.blockLen),1+mod(ix,ex_prac.blockLen));
-            tr.isPractice = true;
-            tr.practiceTrialIx = ix;
+            % Get practice trial number (negative for prePracticeTrials)
+            if ix <= prePracticeTrials
+                practiceTrialIx = -prePracticeTrials + ix;
+            else
+                practiceTrialIx = ix - prePracticeTrials;
+            end
+            
+            % Work out what kind of trial this is
+            %   Start with calibration, then familiarize, then practice
+            %   For calibration and familiarize, load trial info of first
+            %   practice trial (not used)
+            if ix <= ex.numCalibration
+                tr = prac(1,1);
+                tr.sub_stage = 'calibration';
+            elseif ix <= prePracticeTrials
+                tr = prac(1,1);
+                tr.sub_stage = 'familiarize';
+            else
+                % Get practice trial parameters for current trial
+                tr = prac(1+floor((practiceTrialIx-1)/ex_prac.blockLen),1+mod(practiceTrialIx,ex_prac.blockLen));
+                tr.sub_stage = 'practice';
+            end
+            
+            % Log practice trial number (negative for prePracticeTrials)
+            % mark the trial as a practice
+            % set first trial of MRI run to false
+            tr.practiceTrialIx  = practiceTrialIx;
+            tr.isPractice       = true;
             tr.firstTrialMRIrun = false;
             
             % Display instructions by calling blockstart method
@@ -383,8 +405,8 @@ try
             %   practice trial and the first of each new part
             %   following trials
             blockstart_trials = unique([1, ...
-                                        1 + ex.practiceTrials - ex.numFamiliarise - ex.numPracticeChoices, ...
-                                        1 + ex.practiceTrials - ex.numFamiliarise]);
+                                        1 + ex.numCalibration, ...
+                                        1 + ex.numCalibration + ex.numFamiliarise]);
             if exist('blockStart','var') && ismember(ix,blockstart_trials)
                 kcode = 1; while any(kcode); [~, ~, kcode] = KbCheck; end
                 FlushEvents ''; % Empty strings are ignored... Remove these 2 lines?
@@ -420,7 +442,8 @@ try
     
     % Main blocks and trials
     % ---------------------------------------------------------------------
-    if ~ex.calibOnly   % If only MVC calibration, we skip all this
+    % If only MVC calibration or stage=='practice', we skip all this
+    if ~ex.calibOnly && ~strcmp(ex.stage,'practice')
         
         % Display "Start of experiment" and wait for key press to start
         if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1)
@@ -499,6 +522,9 @@ try
                 if b==last(1) && t<last(2)
                     continue
                 end
+                
+                % Set current trials sub_stage to the overall ex.stage
+                tr.sub_stage = ex.stage;
                 
                 % Choice trials
                 if ~ex.fatiguingExercise
