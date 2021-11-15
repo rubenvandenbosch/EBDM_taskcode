@@ -305,13 +305,8 @@ if tr.firstTrialMRIrun
     [ex, tr] = WaitForScanner(ex, tr);
 end
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %% For each trial:
-
-function tr=doTrial(scr, el, ex, tr)
+function tr = doTrial(scr, el, ex, tr)
 % scr = screen information
 % el  = eyelink information
 % ex  = general experiment parameters
@@ -517,49 +512,12 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
         yestxt='Yes';
         notxt='No';
     end
-    
-%     % Change instructions according to randomisation
-%     if tr.yesIsLeft
-%         if strcmp(ex.language,'NL'), txt='Druk de linker pijl toets/knop voor JA'; else, txt='Press the left arrow key for YES'; end
-%         YesText = txt;
-%         if strcmp(ex.language,'NL'), txt='Druk de rechter pijl toets/knop voor NEE'; else, txt='Press the right arrow key for NO'; end
-%         NoText  = txt;
-%     else
-%         if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop voor Ja of NEE'; else, txt='Use the left and right arrow keys to choose YES or NO'; end
-%         YesText = txt;
-%         if strcmp(ex.language,'NL'), txt='afhankelijk van de getoonde zijde'; else, txt='depending on the side they are presented'; end
-%         NoText  = txt;
-%     end
-%     
-    % If practice trials
-    if tr.block==0
-        % Get practice trial number
-        if ex.calibNeeded
-            pracTrIndex = tr.trialIndex - ex.numFamiliarise - ex.numCalibration;
-        else
-            pracTrIndex = tr.trialIndex - ex.numFamiliarise;
-        end
         
-%         % decide which of the main trials to show, for the 5 practice trials.
-%         trialNumber = pa.practiceTrialIndex( pracTrIndex  );
-    else % 'real' trials
-        trialNumber = pa.allTrialIndex; % which of the list of trials to show
-    end
-    
     % draw fixation cross
     Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
     Screen('Flip', ex.scr.w);
     WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));    %RB: Currently random, change to e.g. poisson??
     
-%     % get the effort/stake combination from the predetermined list
-%     %    RB: THIS IS WHERE TRIAL ORDER FROM createTrials IS IGNORED, AND INSTEAD PRESPECIFIED ORDER IS USED
-%     tr.effortIx = ex.order_effort( trialNumber );
-%     tr.effort   = ex.effortLevel( tr.effortIx );  % proportion of MVC to display
-%     tr.stakeIx  = ex.order_reward( trialNumber ); % n is stake index (1-5)
-%     tr.stake    = ex.applesInStake( tr.stakeIx ); % look up stake value (in apples), based on stake 'level' (1-5)
-%     
-
-
     % Log this trial's reward and effort levels based on the index
     tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
     tr.effortLevel = ex.effortLevel(tr.effortIx);
