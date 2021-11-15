@@ -56,7 +56,7 @@ end
 % Field names in ex.files (and ex.fids) that contain the file names (file 
 % ids)to use for this session
 fields = {'output_session_stage','output_session','output_all'};
-if strcmp(ex.stage,'perform'), fields = [fields 'output_payout']; end
+if strcmp(ex.stage,'perform'), fields = [fields, 'output_payout']; end
 
 % Initialize output files
 % =========================================================================
@@ -101,8 +101,11 @@ if isfield(tr,'isPractice') && tr.isPractice
         [result.practiceResult, tr] = ensureStructsAssignable(result.practiceResult,tr);
     end
     
-    % Append trial data to result.data struct
+    % Append practice trial data to result.practiceResult struct
     result.practiceResult = [result.practiceResult tr];
+    
+    % Store MVC value in main result struct
+    result.MVC = tr.MVC;
     
 else % Write other trial results to result.data
     
