@@ -11,7 +11,8 @@ function displayInstructions(ex, instructionsDir, slides, varargin)
 %                   Possible values: 
 %                       'practice', 'choice', 'perform', 
 %                       'welcome' (show welcome slide),
-%                       'restore' (show restored session slide)
+%                       'restore' (show restored session slide),
+%                       'end' (show end of experiment slide)
 %                   If not specified, it is based on the value of ex.stage
 % -------------------------------------------------------------------------
 
@@ -27,7 +28,7 @@ assert(ismember(stage,{'practice', 'choice', 'perform','welcome','restore'}), 'I
 
 % Prepare screen if necessary
 if ~isfield(ex, 'scr')
-    ex.scr=prepareScreen(ex);
+    ex.scr = prepareScreen(ex);
 end
 
 % Display selected instruction slides
