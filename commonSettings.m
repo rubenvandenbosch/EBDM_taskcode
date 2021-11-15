@@ -44,15 +44,13 @@ ex.files.recovery = fullfile(ex.dirs.rootDir,'LastExperiment_recovery.mat');
 % -------------------------------------------------------------------------
 % 4 x 4 effort x reward
 
-% What are the different levels of rewards that will be used. Make sure jpgs of apple tree match this.
-% Change to something that makes sense for our stimuli
-ex.applesInStake = [1 3 6 9];  % [1 3 6 9 12]; 
+% What are the different levels of rewards that will be used. 
+%   Make sure jpgs of apple tree match this.
+%   Change to something that makes sense for our stimuli
+ex.rewardLevel = [1 3 6 9 12];  % [1 3 6 9]; 
 
-% Effort levels corresponding to the variable 'force' in 'drawTree'.
-ex.effortIndex   = 1:4; % [1 2 3 4 5];
-
-% Define effort level as proportion of MVC
-ex.effortLevel   = [0.2 0.4 0.6 0.8]; % [0.16 0.32 0.48 0.64 0.80];
+% Effort levels: proportions of MVC
+ex.effortLevel = [0.16 0.32 0.48 0.64 0.80]; % [0.2 0.4 0.6 0.8];
 
 % Order of familiarizing with force levels.
 % true = use force levels 1 1 2 2 3 3 etc, false = 1...6,1...6
@@ -63,8 +61,9 @@ ex.practiceAscending    = false;
 %   ex.blockVariables.<var> = <list or vector with possible values>
 %   ex.trialVariables.<var> = <list or vector with possible values>
 
-% Vary block types?
-ex.blockVariables.blocktype = 1;   % Force all blocks same = 1
+% Variables to vary over blocks
+%   Set one variable of length 1 to force all blocks same
+ex.blockVariables.blocktype = 1;
 
 % Allow unequal number of trials per trial type within one block
 ex.allowUnequalTrials  = true;
@@ -78,47 +77,8 @@ ex.allowUnequalTrials  = true;
 % Having two varying reward variables might make things complicated.
 % Instead use a 4-level reward coding? 
 %   1=lowCal_lowMag, 2=lowCal_highMag, 3=highCal_lowMag, 4=highCal_highMag
-ex.trialVariables.reward = 1:numel(ex.effortIndex);
-ex.trialVariables.effort = 1:numel(ex.applesInStake);
-
-% Vary whether Yes/No response option is on the left
-% ex.trialVariables.yesIsLeft = [true false];
-
-% Force Yes response option on the left. Not sure if this works without
-% fixed trial orders; to be tested I suppose
-% ex.yesIsLeft = false;
-
-% There are HARDCODED 5x5 effort x reward levels later on!!
-% -------------------------------------------------------------------------
-% Use 5x5 for now to test, then change hardcoded elements to implement 4x4
-% or other designs
-        ex.yesIsLeft            = false;
-        ex.applesInStake        = [1 3 6 9 12];% What are the different levels of rewards that will be used. Make sure jpgs of apple tree match this.
-        ex.effortIndex          = [1 2 3 4 5];  % Effort levels corresponding to the variable 'force' in 'drawTree'.
-        %16/7/18     ...
-        ex.effortLevel          = [0.16 0.32 0.48 0.64 0.80]; % Effort - Proportion of MVC
-        %effort required on each trial (column vector of 100 trials)
-        ex.order_effort= [
-            4 5 5 5 3 3 2 4 1 3 4 4 5 3 5 1 2 2 4 1 1 2 3 1 2 ... % each row is one block
-            4 5 3 2 1 5 5 5 2 3 2 2 5 1 4 4 3 4 1 3 4 3 1 2 1 ...
-            2 3 3 5 4 4 5 1 2 4 2 3 5 5 4 2 1 1 1 5 3 4 2 1 3 ...
-            5 3 4 5 1 1 2 1 4 2 5 5 4 3 4 4 3 1 5 2 1 3 3 2 2 
-            ]';
-        %    3 2 4 4 1 2 5 5 3 4 2 2 3 4 5 4 5 1 1 1 3 1 5 3 2
-        % Offered reward on each trial
-        % one fifth of each of the levels 1 to 5
-        % 25 x 4 trials
-        ex.order_reward =[
-            4 2 1 5 4 2 2 5 5 3 1 3 4 5 3 2 5 1 2 3 1 3 1 4 4 ...
-            4 2 3 2 1 5 1 3 1 2 5 3 4 3 5 1 4 3 2 5 2 1 4 4 5 ...
-            5 3 5 2 2 4 1 4 3 3 1 2 3 4 5 2 5 3 1 5 1 1 4 2 4 ...
-            3 1 4 4 5 1 3 3 2 4 1 2 1 4 3 5 5 2 5 2 4 2 3 5 1 
-            ]';
-        %    2 4 1 2 4 3 2 3 1 5 5 1 4 3 4 4 1 2 5 3 5 1 5 3 2
-        % trial set to use for practice (i.e. drawn form the above list)
-        ex.practiceTrialIndex   = [ 1;2;3;4;5 ]; 
-        ex.last_trial           = [];
-% -------------------------------------------------------------------------
+ex.trialVariables.rewardIx = 1:numel(ex.rewardLevel);
+ex.trialVariables.effortIx = 1:numel(ex.effortLevel);
 
 % Block settings depending on experiment stage
 % =========================================================================
@@ -130,19 +90,21 @@ switch ex.stage
         %   - familiarization with the different effort levels (based on
         %     MVC)
         %   - Practice choice task
-        ex.calibNeeded          = true;
-        ex.calibOnly            = false;  % If true, only MVC calibration is run
         
         % Number of MVC calibration trials
-        ex.numCalibration       = 3;
+        ex.numCalibration       = 0; %3;
+        ex.calibOnly            = false;  % If true, only MVC calibration is run
         
         % Number of trials to familiarize with effort levels. Ideally an
         % multiple of the number of effort levels (e.g. 3x4=12 to practice
         % each of 4 effort levels 3 times).
-        ex.numFamiliarise       = 5; %12;
+        ex.numFamiliarise       = 0; %5; %12;
         
         % Number of practice decisions about X effort for X reward
         ex.numPracticeChoices   = 5;
+        
+        % Random order of practice trials?
+        ex.shufflePracticeTrials = true;
         
         % Set total number of trials based on the above
         ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.numPracticeChoices;
@@ -172,6 +134,9 @@ switch ex.stage
         % Include this number of practice choice trials at the beginning?
         ex.numPracticeChoices   = 0;
         
+        % Random order of practice trials?
+        ex.shufflePracticeTrials = true;
+        
         % How many retries are allowed (>=0 or Inf for endless retries)
         ex.maxNumRepeatedTrials = Inf;
         
@@ -181,8 +146,6 @@ switch ex.stage
         ex.choiceBlockNumber    = 99;
         
         % Turn off the calibration and effort familiarization
-        ex.calibNeeded          = false;
-        ex.calibOnly            = false;
         ex.numCalibration       = 0;   
         ex.numFamiliarise       = 0;   
         
@@ -205,6 +168,12 @@ switch ex.stage
         % Practice a number of trials with different effort levels without
         % reward?
         ex.numPracticeChoices   = 0;
+        
+        % Random order of practice trials?
+        ex.shufflePracticeTrials = true;
+        
+        % Random order of practice trials?
+        ex.shufflePracticeTrials = true;
         
         % Block number from which people are to actually perform gripforce 
         % effort. Set to 1, as that's all we do at this stage
@@ -237,8 +206,6 @@ switch ex.stage
         ex.last_trial = allCombinationsOnce;
                 
         % Turn off the calibration and effort familiarization
-        ex.calibNeeded          = false;
-        ex.calibOnly            = false;
         ex.numCalibration       = 0;
         ex.numFamiliarise       = 0;
         
@@ -249,6 +216,11 @@ switch ex.stage
         % Stage performed inside MRI scanner?
         ex.inMRIscanner = false;
 end
+
+% Set calibration needed flag depending on whether any calibration trials
+% are requested
+if ex.numCalibration > 0, ex.calibNeeded = true;
+else, ex.calibNeeded = false; end
 
 % Other block settings
 % No sure whether we can leave this out, just set to false for now
@@ -289,6 +261,9 @@ ex.rewardDuration       = 3;   % Time from when reward appears, until screen bla
 
 % Technical setup
 % =========================================================================
+% Set random number generator seed based on subject number
+ex.randomSeed = ex.subject;
+
 % Response key settings
 % -------------------------------------------------------------------------
 % Keyboard
