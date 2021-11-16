@@ -442,7 +442,7 @@ try
     
     % Main blocks and trials
     % ---------------------------------------------------------------------
-    % If only MVC calibration or stage=='practice', we skip all this
+    % If only MVC calibration or stage is 'practice', we skip all this
     if ~ex.calibOnly && ~strcmp(ex.stage,'practice')
         
         % Display "Start of experiment" and wait for key press to start
@@ -523,29 +523,31 @@ try
                     continue
                 end
                 
-                % Set current trials sub_stage to the overall ex.stage
+                % Get trial parameters
+                tr = trials(b,t);
+                
+                % Set current trial's sub_stage to the overall ex.stage
                 tr.sub_stage = ex.stage;
                 
                 % Choice trials
                 if ~ex.fatiguingExercise
                     % Run current trial
-                    tr = runSingleTrialAndProcess(scr,el,ex,trials(b,t),doTrial,b,t);
+                    tr = runSingleTrialAndProcess(scr,el,ex,tr,doTrial,b,t);
 
                 else % Fatiguing experiment
                     
-                    % Get trial info
-                    trial = trials(b,t);
-                    trial.effort = {fatEffort};
+                    % Set trial effort level
+                    tr.effort = {fatEffort};
                     
                     if ex.twoHands
                         handLocation = handLocation * -1; % toggle tree left (-1) or right (1)
-                        trial.location = handLocation;
+                        tr.location = handLocation;
                     else
-                        trial.location = 0; % show tree in the middle
+                        tr.location = 0; % show tree in the middle
                     end
                     
                     % Run current trial
-                    tr=runSingleTrialAndProcess(scr,el,ex,trial,doTrial,b,t);
+                    tr=runSingleTrialAndProcess(scr,el,ex,tr,doTrial,b,t);
                     
                     % Process trial data
                     %   convert reward 0/1 to -1/+1 for easy calculation

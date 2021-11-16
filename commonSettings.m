@@ -210,9 +210,9 @@ switch ex.stage
 end
 
 % Set calibration needed flag depending on whether any calibration trials
-% are requested
+% are requested. If no calibration needed, automatically unset calibOnly.
 if ex.numCalibration > 0, ex.calibNeeded = true;
-else, ex.calibNeeded = false; end
+else, ex.calibNeeded = false; ex.calibOnly = false; end
 
 % Other block settings
 % No sure whether we can leave this out, just set to false for now
@@ -298,8 +298,8 @@ ex.waitNumScans = 5;
 % Trigger info
 %   COMport receiving scanner triggers, and
 %   character code sent by scanner as trigger
-ex.COMportMRI     = 'COM3';   % set to '' to simulate bitsi
-ex.triggerKeyCode = 97;       % 97 = key 'a' (set to 4 if simulated bitsi)
+ex.COMportMRI     = ''; %'COM3';   % set to '' to simulate bitsi
+ex.triggerKeyCode = 65; %97;       % 97 = key 'a' (set to 65 if simulated bitsi)
 
 % Initialize bitsi serial object for incoming MRI triggers
 %  Only if inMRIscanner = true

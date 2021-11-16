@@ -39,15 +39,15 @@ if nargin > 2
         end
     end
 end
-if ~exist(nTriggers,'var'); nTriggers = ex.waitNumScans; end
-if ~exist(bitsi,'var'); bitsi = ex.BitsiMRI; end
+if ~exist('nTriggers','var'); nTriggers = ex.waitNumScans; end
+if ~exist('bitsi','var'); bitsi = ex.BitsiMRI; end
 assert(isnumeric(nTriggers), 'Input nTriggers should be of type struct')
 assert(isa(bitsi, 'Bitsi_2016'), 'Input bitsi should be of type Bitsi_2016')
 
 % Countdown nTriggers
 % -------------------------------------------------------------------------
 % Preallocate variables
-triggers = NaN(nTriggers,3);
+triggers = nan(nTriggers,3);
 
 count = 0;
 bitsi.clearResponses(); % Clear response buffer
@@ -60,10 +60,10 @@ while count < nTriggers
         case 'NL'
             basetxt = 'Wachten op scanner...';
     end
-    txt = sprintf('%s %d', basetxt,num2str(nTriggers-count));
+    txt = sprintf('%s %d', basetxt, nTriggers-count);
     
     % Display on screen
-    drawTextCentred(scr, txt, ex.fgColour);
+    drawTextCentred(ex.scr, txt, ex.fgColour);
     Screen('Flip', ex.scr.w);
     
     % Log trigger number, trigger code, and trigger time
@@ -80,7 +80,7 @@ while count < nTriggers
 end
 
 % Display count zero
-drawTextCentred(scr, sprintf('%s %d', basetxt,num2str(nTriggers-count)), ex.fgColour);
+drawTextCentred(ex.scr, sprintf('%s %d', basetxt,nTriggers-count), ex.fgColour);
 Screen('Flip', ex.scr.w);
 
 % Save trigger time info
