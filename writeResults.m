@@ -71,12 +71,15 @@ if init
             % Open
             ex.fids.(fields{ifile}) = fopen(ex.files.(fields{ifile}), 'a');
             
-            % Write header
+            % Create header
             %   Required columns in BIDS specification for events files: 
             %       onset, duration
-            %   subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation   
-            fprintf(ex.fids.(fields{ifile}), ...
-                'subject\tsession\tstage\tMVC\tblock\ttrialNr\ttrialNr_block\tonset\tduration\treward\teffortIx\teffortLvl\taccept\tdidAccept\tsuccess\ttotalReward\tyesLocation\n');
+            header = 'subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation';
+            
+            % Write header
+            %   Replace white space with delimiter, and add newline char
+            header = [strrep(header,' ','\t') '\n'];
+            fprintf(ex.fids.(fields{ifile}), header);
         end
     end
     
@@ -139,16 +142,17 @@ end
 
 % Write data
 for ifile = 1:numel(fields)
-    % subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
-    fprintf(ex.fids.(fields{ifile}), '%d\t%d\t%s\t%d\t%d\t%d\t%d\t%f\t%f\t%d\t%d\t%f\t%s\t%d\t%d\t%d\t%s\n', ...
-        ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.trialIndex, tr.allTrialIndex, ...
-        output.onset, output.duration, output.reward, output.effortIx, output.effortLvl, output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
+    % Create pattern for variables to write
+    %   Header:
+    %   subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
+    pattern = '%d %d %s %f %d %d %d %f %f %d %d %f %s %d %d %d %s\n';
+    
+    % Write data line
+    %   Replace whitespace in pattern with delimiter
+    pattern = strrep(pattern,' ','\t');
+    fprintf(ex.fids.(fields{ifile}), pattern, ...
+        ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
+        output.onset, output.duration, output.reward, output.effortIx, output.effortLvl, ...
+        output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
 end
 end
-
-% old:
-% 'starttime\ttime\tstage\tsubject_id\tsession\tMVC\tblocknr\ttrialnr\teffort\tstake\treward\ttotalReward\tchoice\n'
-
-%     fprintf(ex.fids.(fields{ifile}),'%f\t%s\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n', ...
-%         tr.starttrial,datestr(now),stage,ex.subject,ex.session,tr.MVC,b,t,effort,stake,reward,totalReward,Yestrial);
-% fprintf(ex.fpSession, '%f\t%s\t%s\t%d\t%.2f\t%d\t%d\t%f\t%d\t%d\t%d\t%d\n',tr.starttrial,datestr(now),ex.subject,ex.session,tr.MVC,b,t,tr.effort,stake,reward,totalReward,Yestrial);
