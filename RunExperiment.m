@@ -413,7 +413,7 @@ try
                 
                 % Run block start method
                 tr.block = 0;
-                blockStart(scr,el,ex,tr);
+                [ex, tr] = blockStart(scr,el,ex,tr);
                 
             elseif ~exist('blockStart','var') && ex.inMRIscanner
                 error('No blockStart function provided. This code is needed when in the MRI scanner to sync the task to the scanner')
@@ -471,7 +471,7 @@ try
                 FlushEvents ''; % Empty strings are ignored... Remove these 2 lines?
                 
                 % Get which block we are in to inform the blockStart code 
-                tr = trials(b,1); tr.block = b;
+                trial1.block = b;
                 
                 % If this is the first block of a new fMRI run, log this in
                 % the tr struct; in the blockstart method the task will
@@ -483,13 +483,13 @@ try
                         assert(ex.restoredSession, 'ex.restoredSession is false, but not starting with block 1 trial 1...?')
                     end
                     
-                    tr.firstTrialMRIrun = true;
+                    trial1.firstTrialMRIrun = true;
                 else
-                    tr.firstTrialMRIrun = false;
+                    trial1.firstTrialMRIrun = false;
                 end
                 
                 % Run block start method
-                blockStart(scr,el,ex,tr);
+                [ex, trial1] = blockStart(scr,el,ex,trial1);
                 
             elseif ~exist('blockStart','var') && ex.inMRIscanner
                 error('No blockStart function provided. This code is needed when in the MRI scanner to sync the task to the scanner')
@@ -517,17 +517,26 @@ try
             
             % Run each trial in this block
             % .............................................................
-            for t=1:len
+            firstMIRtrial = 1;
+            for t = 1:len
                 % skip through trials already done
                 if b==last(1) && t<last(2)
+                    firstMIRtrial = t+1;
                     continue
                 end
                 
                 % Get trial parameters
+                %   Set current trial's sub_stage to the overall ex.stage
                 tr = trials(b,t);
-                
-                % Set current trial's sub_stage to the overall ex.stage
                 tr.sub_stage = ex.stage;
+                
+                % Add MRI info to trial struct
+                if b==last(1) && t == firstMIRtrial
+                    tr.firstTrialMRIrun = true;
+                    tr.firstTrialMRIrun_triggerTime = trial1.firstTrialMRIrun_triggerTime;
+                else
+                    tr.firstTrialMRIrun = false;
+                end
                 
                 % Choice trials
                 if ~ex.fatiguingExercise
@@ -592,7 +601,7 @@ try
                 if tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE
                     fatal_error=1; break;
                 end
-            end  %end of block
+            end  % end of regular trials in block
             
             % Repeat-later trials
             % .............................................................

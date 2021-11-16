@@ -240,7 +240,7 @@ end
 
 %% Start of block:
 % this also controls calibration and practice at the start of the experiment
-function blockfn(scr, el, ex, tr)
+function [ex, tr] = blockfn(scr, el, ex, tr)
 global  totalReward
 totalReward = 0; % start each block with zero total reward
 
