@@ -36,7 +36,9 @@ function [result, ex] = writeResults(ex, result, tr, varargin)
 % Output files:
 % - Recovery .mat file (ex.recoveryFile) of current session to which the
 %   updated result struct is saved.
-% - tab-delimited txt files specified in ex struct
+% - Output text files specified in ex struct. 
+%   By default the output files are tab-delimited, except when the file 
+%   extension is .csv, then they are comma-delimited.
 % 
 % -------------------------------------------------------------------------
 % 
@@ -53,10 +55,10 @@ if ~init
     assert(isstruct(tr), 'Input tr should be class struct');
 end
 
-% Field names in ex.files (and ex.fids) that contain the file names (file 
-% ids)to use for this session
-fields = {'output_session_stage','output_session','output_all'};
-if strcmp(ex.stage,'perform'), fields = [fields, 'output_payout']; end
+% Get field names of text output files in ex.files
+%   Exclude recovery mat file
+fields = fieldnames(ex.files);
+fields(strcmp(fields,'recovery')) = [];
 
 % Initialize output files
 % =========================================================================
@@ -71,6 +73,14 @@ if init
             % Open
             ex.fids.(fields{ifile}) = fopen(ex.files.(fields{ifile}), 'a');
             
+            % Determine delimiter
+            [~,~,extension] = fileparts(ex.files.(fields{ifile}));
+            if strcmp(extension,'.csv')
+                delimiter = ',';
+            else
+                delimiter = '\t';
+            end
+            
             % Create header
             %   Required columns in BIDS specification for events files: 
             %       onset, duration
@@ -78,7 +88,7 @@ if init
             
             % Write header
             %   Replace white space with delimiter, and add newline char
-            header = [strrep(header,' ','\t') '\n'];
+            header = [strrep(header,' ',delimiter) '\n'];
             fprintf(ex.fids.(fields{ifile}), header);
         end
     end
@@ -142,6 +152,14 @@ end
 
 % Write data
 for ifile = 1:numel(fields)
+    % Determine delimiter
+    [~,~,extension] = fileparts(ex.files.(fields{ifile}));
+    if strcmp(extension,'.csv')
+        delimiter = ',';
+    else
+        delimiter = '\t';
+    end
+    
     % Create pattern for variables to write
     %   Header:
     %   subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
@@ -149,7 +167,7 @@ for ifile = 1:numel(fields)
     
     % Write data line
     %   Replace whitespace in pattern with delimiter
-    pattern = strrep(pattern,' ','\t');
+    pattern = strrep(pattern,' ',delimiter);
     fprintf(ex.fids.(fields{ifile}), pattern, ...
         ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
         output.onset, output.duration, output.reward, output.effortIx, output.effortLvl, ...

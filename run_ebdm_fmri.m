@@ -82,6 +82,8 @@ end
 
 % Output files
 %   BIDS-like naming scheme
+%   By default the files are tab-delimited for all file extensions, except
+%   for the .csv file extension, which results in comma-delimited.
 % -------------------------------------------------------------------------
 % Output file of the current session (visit) and experiment stage
 ex.files.output_session_stage = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_task-EBDM_stage-%s.tsv', ex.subject,ex.session,ex.stage));
