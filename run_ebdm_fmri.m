@@ -22,14 +22,9 @@ function result = run_ebdm_fmri(varargin)
 % -------------------------------------------------------------------------
 %
 
-assert(nargin < 4, 'Too many input arguments');
+assert(nargin <= 3, 'Too many input arguments');
 
-% Script to add all required folders to Matlab path and make sure that 
-% Psychtoolbox is added to path (start_apple_task.m must be in the root 
-% directory of task code, same as run_ebdm_fmri.m)
-start_apple_task();
-
-% Main directories
+% Directories
 % -------------------------------------------------------------------------
 % Root directory of task code
 ex.dirs.rootDir = fileparts(mfilename('fullpath'));
@@ -43,6 +38,14 @@ ex.dirs.output = fullfile(ex.dirs.rootDir,'..','output');
 if ~exist(ex.dirs.output,'dir')
     mkdir(ex.dirs.output); 
 end
+
+% Add required task directories to Matlab path
+% .........................................................................
+addpath(genpath(fullfile(ex.dirs.rootDir,'functions')));
+addpath(genpath(fullfile(ex.dirs.rootDir,'instructions')));
+addpath(genpath(fullfile(ex.dirs.rootDir,'stimuli')));
+try ex.PsychtoolboxVersion = PsychtoolboxVersion;
+catch, error('Psychtoolbox is not added to the Matlab path.'); end
 
 % Get subject, visit, and experiment stage info
 % -------------------------------------------------------------------------
