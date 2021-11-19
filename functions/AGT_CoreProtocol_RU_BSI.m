@@ -87,7 +87,7 @@ else
 end
 
 % start experiment
-result = RunExperiment( @doTrial, ex, params, @blockfn);
+result = RunExperiment(@doTrial, ex, params, @blockfn);
 
 % Save the final result struct in mat file
 save(outfile_mat, 'result');

@@ -1,5 +1,9 @@
 *.jpg
+*.png
 *.mat
 *.asv
-/gripforce/fieldtrip
-/matlib
+*.pyc
+/functions/gripforce/fieldtrip
+/diverse_code_downloaded
+/stimuli
+/old_stuff
