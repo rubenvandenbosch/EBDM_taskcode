@@ -91,5 +91,5 @@ if ~isfield(ex,'MRIrunsT0'), ex.MRIrunsT0 = {}; end
 ex.MRIrunsT0 = [ex.MRIrunsT0, triggers(end,3)];
 
 % Also add this time to the current trial info struct
-tr.firstTrialMRIrun_triggerTime = triggers(end,3);
+tr.timings.firstMRItriggerT0 = triggers(end,3);
 end
