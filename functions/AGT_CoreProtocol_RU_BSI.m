@@ -582,7 +582,7 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
             end
         else
             while ~KbCheck && GetSecs < deadline, WaitSecs(0.1); end
-            [~,~,keyCode] = KbCheck;   % get key code
+            [~,respTime,keyCode] = KbCheck;   % get key code
             tr.key = find(keyCode,1);
         end
         if isempty(tr.key), continue, end

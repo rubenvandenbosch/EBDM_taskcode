@@ -337,7 +337,7 @@ try
     % Call experiment start code
     %   Logs experiment start system time
     %   Shows welcome/restore screen
-    assert(exist('exptStartEnd','var'), 'No experiment start function provided. Required for setting start time reference point, and showing instructions.')
+    assert(exist('exptStartEnd','var')==1, 'No experiment start function provided. Required for setting start time reference point, and showing instructions.')
     exptStartEnd(ex,'start');
     
     % Practice trials
@@ -527,13 +527,15 @@ try
                 
                 % Get trial parameters
                 %   Set current trial's sub_stage to the overall ex.stage
+                %   Set tr.isPractice to false
                 tr = trials(b,t);
-                tr.sub_stage = ex.stage;
+                tr.sub_stage  = ex.stage;
+                tr.isPractice = false;
                 
                 % Add MRI info to trial struct
                 if b==last(1) && t == firstMRItrial
                     tr.firstTrialMRIrun = true;
-                    tr.firstTrialMRIrun_triggerTime = trial1.firstTrialMRIrun_triggerTime;
+                    tr.timings.firstMRItriggerT0 = trial1.timings.firstMRItriggerT0;
                 else
                     tr.firstTrialMRIrun = false;
                 end
