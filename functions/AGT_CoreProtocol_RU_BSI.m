@@ -226,7 +226,11 @@ assert(ischar(timepoint), 'Input timepoint should be a character string')
 
 switch lower(timepoint)
     case 'start'
-        % Either a welcome screen OR a session restore info screen
+        % Log the system time at the start of the experiment
+        if ~isfield(ex,'exptStartT0'), ex.exptStartT0 = {GetSecs()};
+        else, ex.exptStartT0 = [ex.exptStartT0 {GetSecs()}]; end
+        
+        % Show either a welcome screen OR a session restore info screen
         slideNrs = 1;
         if ex.restoredSession
 %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
