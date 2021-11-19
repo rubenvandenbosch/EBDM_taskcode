@@ -82,9 +82,9 @@ if init
             end
             
             % Create header
-            %   Required columns in BIDS specification for events files: 
-            %       onset, duration
-            header = 'subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation';
+            header = ['subject session stage MVC block trialNr trialNr_block ' ...
+                      'trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ' ...
+                      'rewardIx rewardLvl effortIx effortLvl accept didAccept success totalReward yesLocation'];
             
             % Write header
             %   Replace white space with delimiter, and add newline char
@@ -144,7 +144,8 @@ save(ex.files.recovery,'result');
 % Write data to output files
 % -------------------------------------------------------------------------
 % Get output variables and set unavailable vars to NaN
-vars = {'onset', 'duration', 'reward', 'effortIx', 'effortLvl', 'accept', 'didAccept', 'success', 'totalReward', 'yesLocation'};
+vars = {'trialOnset','stimOnset','choiceOnset','responseOnset','responseTime','feedbackOnset','trialEnd', ...
+        'rewardIx','rewardLvl','effortIx','effortLvl','accept','didAccept','success','totalReward','yesLocation'};
 for ivar = 1:numel(vars)
     if isfield(tr,vars{ivar}) % Retrieve var from tr struct
         output.(vars{ivar}) = tr.(vars{ivar});
@@ -152,6 +153,7 @@ for ivar = 1:numel(vars)
         output.(vars{ivar}) = NaN;
     end
 end
+output.trialDuration = output.trialEnd - output.trialOnset;
 
 % Write data
 for ifile = 1:numel(fields)
@@ -165,15 +167,17 @@ for ifile = 1:numel(fields)
     
     % Create pattern for variables to write
     %   Header:
-    %   subject session stage MVC block trialNr trialNr_block onset duration reward effortIx effortLvl accept didAccept success totalReward yesLocation
-    pattern = '%d %d %s %f %d %d %d %f %f %d %d %f %s %d %d %d %s\n';
+    %   subject session stage MVC block trialNr trialNr_block ...
+    %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
+    %   rewardIx rewardLvl effortIx effortLvl accept didAccept success totalReward yesLocation
+    pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %d %d %d %f %s %d %d %d %s\n';
     
     % Write data line
     %   Replace whitespace in pattern with delimiter
     pattern = strrep(pattern,' ',delimiter);
     fprintf(ex.fids.(fields{ifile}), pattern, ...
         ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
-        output.onset, output.duration, output.reward, output.effortIx, output.effortLvl, ...
-        output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
+        output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
+        output.rewardIx, output.rewardLvl, output.effortIx, output.effortLvl, output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
 end
 end

@@ -362,12 +362,10 @@ if CALIBRATING
     % option, i.e. every time use 1.05 * MVC as the target line
     if pa.trialIndex <= 3, ix = pa.trialIndex; else, ix = 3; end
     
-    % Log trial onset time
-    tr = LogEvent(ex,el,tr,'trialOnset');
-    
     % Display instruction
     drawTextCentred(scr, calibrationInstructions{ix,1} , ex.fgColour);
     Screen('Flip',scr.w);
+    tr = LogEvent(ex,el,tr,'trialOnset');
     WaitSecs(1);
     
     % Prepare gripforce feedback function
@@ -410,6 +408,7 @@ if CALIBRATING
         % do not save a value to the trial data
         tr.MVC = NaN;
     end
+    tr = LogEvent(ex,el,tr,'trialEnd');
 
 elseif FAMILIARISE
 
@@ -479,7 +478,9 @@ elseif FAMILIARISE
         drawTextCentred(scr, txt, [255 0 0]);
     end
     Screen('Flip',scr.w);
+    tr = LogEvent(ex,el,tr,'feedbackOnset');
     tr = waitOrBreak(pa,tr,2);                  % wait 2 seconds
+    tr = LogEvent(ex,el,tr,'trialEnd');
     
     % CHECK KEYPRESSES
     [~,~,keyCode] = KbCheck;                    % check for real key
@@ -663,10 +664,10 @@ elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
     end
     tr = LogEvent(ex,el,tr,'feedbackOnset');
     
-%     % Wait until the total trial length is up, so all trials are the same length (ex.maxTimeToWait)
-%     WaitSecs(0.5);      %% RB: Always wait .5?? Should be while GetSecs() < deadline ?
-%     Screen('Flip', scr.w);
-%     tr=LogEvent(ex,el,tr,'trialEnd');
+    % Wait until the total trial length is up, so all trials are the same length (ex.maxTimeToWait)
+    WaitSecs(0.5);      %% RB: Always wait .5?? Should be while GetSecs() < deadline if the goal is indeed to get equal trial durations?
+    Screen('Flip', scr.w);
+    tr = LogEvent(ex,el,tr,'trialEnd');
     
     % Store whether the offer was accepted on each trial, for the purposes
     % of the final perfomance block.
@@ -780,6 +781,8 @@ elseif PERFORM_TRIAL
 %         WaitSecs(pa.delayAfterResponse);
         WaitSecs(pa.rewardDuration);
     end
+    % Log end of trial
+    tr = LogEvent(ex,el,tr,'trialEnd');
     
     % Store total reward in tr struct
     tr.totalReward = totalReward;
