@@ -103,6 +103,9 @@ assert(~init, 'Trying to write results when initialize only option is set to tru
 
 % Write to result struct
 % -------------------------------------------------------------------------
+% Write potentially updated experiment parameters
+result.params = ex;
+
 % Write practice results to result.practiceResult
 if isfield(tr,'isPractice') && tr.isPractice
     
