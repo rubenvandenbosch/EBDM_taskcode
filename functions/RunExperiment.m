@@ -251,7 +251,11 @@ end
 % Create trials
 % =========================================================================
 if ~exist('trials','var')
-    trials = createTrials(ex);
+    if ~strcmp(ex.stage,'perform')  % Create trials on choice and practice stages
+        trials = createTrials(ex);
+    else                            % Select trials from previous choices for the perform stage
+        trials = getPerformTrials(ex);
+    end
 end
 
 % Run experiment
@@ -449,7 +453,8 @@ try
         if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1)
             if ex.useScreen
                 Screen(scr.w, 'FillRect',ex.bgColour, scr.sszrect);
-                drawTextCentred(scr, 'De taak begint nu', ex.fgColour);
+                if strcmp(ex.language,'NL'), txt='De taak begint nu'; else, txt='The task starts now'; end
+                drawTextCentred(scr, txt, ex.fgColour);
                 Screen('Flip', scr.w);
             else
                 disp('Start of experiment - press a key');
@@ -511,8 +516,8 @@ try
             
             % Set settings used for fatiguing experiment only
             %   start effort on level specified below * MVC
-            fatEffort = ex.fatiguingExerciseSTartEffortLevel;
-            prevReward = 0;     % remember previous result, init to non-used value
+            fatEffort    = ex.fatiguingExerciseSTartEffortLevel;
+            prevReward   = 0;   % remember previous result, init to non-used value
             handLocation = 1;   % hand target for fatiguing experiment using two gripforces
             
             % Run each trial in this block
@@ -540,12 +545,16 @@ try
                     tr.firstTrialMRIrun = false;
                 end
                 
-                % Choice trials
-                if ~ex.fatiguingExercise
+                % Run trial
+                if strcmp(ex.stage,'choice') % Choice trials
                     % Run current trial
                     tr = runSingleTrialAndProcess(scr,el,ex,tr,doTrial,b,t);
 
-                else % Fatiguing experiment
+                elseif ~ex.fatiguingExercise % Regular perform stage trials
+                    % Run current trial
+                    tr = runSingleTrialAndProcess(scr,el,ex,tr,doTrial,b,t);
+                
+                else                         % Fatiguing experiment
                     
                     % Set trial effort level
                     tr.effort = {fatEffort};
@@ -558,7 +567,7 @@ try
                     end
                     
                     % Run current trial
-                    tr=runSingleTrialAndProcess(scr,el,ex,tr,doTrial,b,t);
+                    tr = runSingleTrialAndProcess(scr,el,ex,tr,doTrial,b,t);
                     
                     % Process trial data
                     %   convert reward 0/1 to -1/+1 for easy calculation

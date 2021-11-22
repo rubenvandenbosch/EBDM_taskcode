@@ -693,18 +693,18 @@ switch stage
         
     case 'perform'
         
-        %%%%%%%%%%%%%%%%%
-        % there are 10 performance trials, at the end of the experiment. They
-        % constitute the final block.  (Block 6 in this case).
-        % They are drawn with predetermined indices from the choices.
-        % select the corresponding choice trial
+%         %%%%%%%%%%%%%%%%%
+%         % there are 10 performance trials, at the end of the experiment. They
+%         % constitute the final block.  (Block 6 in this case).
+%         % They are drawn with predetermined indices from the choices.
+%         % select the corresponding choice trial
         if ~ex.fatiguingExercise
             location = 0; % tree in the middle
-            performTrial = ex.last_trial(tr.trialIndex);
-            tr.effortIx = ex.order_effort( performTrial );
-            tr.effort  = ex.effortLevel( tr.effortIx );
-            tr.stakeIx = ex.order_reward(  performTrial ); % n is stake index (1-5)
-            tr.stake   = ex.applesInStake(tr.stakeIx); % look up stake value (in apples), based on stake 'level' (1-5)
+%             performTrial = ex.last_trial(tr.trialIndex);
+%             tr.effortIx = ex.order_effort( performTrial );
+%             tr.effort  = ex.effortLevel( tr.effortIx );
+%             tr.stakeIx = ex.order_reward(  performTrial ); % n is stake index (1-5)
+%             tr.stake   = ex.applesInStake(tr.stakeIx); % look up stake value (in apples), based on stake 'level' (1-5)
         else
             location = tr.location; % tree middle (0) or left(-1)/right(1) for two hands case
             if location > 0, pa.channel = 2; else pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
@@ -715,25 +715,24 @@ switch stage
             tr.stake = 1;
         end
         
-        % Draw tree with effort and stake in centre of screen, indicating
-        % previous choice.
-        drawTree(scr,ex, location, tr.stakeIx ,tr.effortIx, 0, false, [], true);
+        % Draw tree with reward/effort indication of previous choice.
+        drawTree(scr,ex, location, tr.rewardIx ,tr.effortIx, 0, false, [], true);
         tr = LogEvent(ex,el,tr,'stimOnset');
         WaitSecs(0.5);
         
-        % Find out if trial 18 was a Yes response
+        % Find out if trial was a Yes response
         if ~ex.fatiguingExercise
             Yestrial = YesResp(performTrial);
         else
             Yestrial = 1;
         end
         
-        if Yestrial == 1   % Accepted Performance trials (MV)
+        if Yestrial == 1   % Accepted Performance trials
             
             % Function to draw tree without apples and the correct effort 
             % rung, with "RESPOND NOW" text
             if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
-            fbfunc = @(f) drawTree(scr,ex,location ,tr.stakeIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
+            fbfunc = @(f) drawTree(scr,ex,location ,tr.rewardIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
             
             % Get squeeze response data
             tr = LogEvent(ex,el,tr,'squeezeStart');
@@ -757,18 +756,18 @@ switch stage
             %   Trial successful if force stayed above effort level for
             %   pa.minimumAcceptableSqueezeTime
             %   Add winnings to total apples in basket
-            tr.timeAboveTarget = sum(tr.data >= tr.effort*MVC );
+            tr.timeAboveTarget = sum(tr.data >= tr.effortLevel*MVC );
             if tr.timeAboveTarget >= pa.minimumAcceptableSqueezeTime
-                tr.reward = tr.stake;   % success!
+                tr.success = true;   % success!
             else
-                tr.reward = 0;          % failure!
+                tr.success = false;  % failure!
             end
-            totalReward = totalReward + tr.reward;
+            totalReward = totalReward + tr.success * tr.rewardLevel;
             
             % Display reward feedback
             if ~ex.fatiguingExercise
                 if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
-                drawTextCentred(scr, sprintf('%s: %d', txt,tr.reward), pa.fgColour, scr.centre + [0,-100])
+                drawTextCentred(scr, sprintf('%s: %d', txt,tr.rewardLevel), pa.fgColour, scr.centre + [0,-100])
                 Screen('Flip',scr.w);
                 
                 % Log reward feedback onset time and wait reward duration
@@ -782,12 +781,12 @@ switch stage
         else    % Declined performance trials
             
             % No reward on this trial
-            tr.reward = NaN;
+            tr.success = NaN;
             
-            % Display offer declined text
+            % Display "offer declined" text
             if strcmp(ex.language,'NL'), txt='Aanbod afgewezen'; else, txt='Offer declined'; end
             drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
-            drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, false, [], true);
+            drawTree(scr,ex,0,tr.rewardIx , tr.effortIx, 0, false, [], true);
             
             % Log decline feedback onset time
             tr = LogEvent(ex,el,tr,'feedbackOnset');
@@ -804,12 +803,12 @@ switch stage
         tr.totalReward = totalReward;
         
         % Present total reward feedback after the last perform trial
-        if pa.trialIndex >= length(ex.last_trial) && ~ex.fatiguingExercise
-            if strcmp(ex.language,'NL'), txt='Einde van de taak, dank voor uw deelname!'; else, txt='End of Task. Thank you for taking part!'; end
+        if pa.trialIndex >= ex.blocks*ex.blockLen && ~ex.fatiguingExercise
+            if strcmp(ex.language,'NL'), txt='Einde van dit taakgedeelte'; else, txt='End of this task stage'; end
             drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
-            if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total Apples gathered'; end
+            if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
             drawTextCentred( scr, sprintf( '%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100] )
-            if strcmp(ex.language,'NL'), txt='Druk een toets/knop om door te gaan'; else, txt='Press space bar to continue'; end
+            if strcmp(ex.language,'NL'), txt='Druk op een knop om door te gaan'; else, txt='Press a button to continue'; end
             drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0,-200] )
             Screen('Flip', scr.w);
             tr = LogEvent(ex,el,tr,'totalRewardOnset');  % Log onset of total reward feedback
@@ -868,7 +867,3 @@ if escapepressed, EXIT = true; return; else, EXIT=false; end
 
 while KbCheck, WaitSecs(0.1); end  % (and wait for key release)
 return
-
-%if exist(subjname)
-%error('Subject name already in use,please rename current or saved file')
-%end
