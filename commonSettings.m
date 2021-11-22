@@ -173,30 +173,6 @@ switch ex.stage
         
         % How many retries are allowed (>=0 or Inf for endless retries)
         ex.maxNumRepeatedTrials = Inf;
-        
-        % Load subject's results from output file to load their decisisions
-        % in the choice stage
-        % .................................................................
-        % Get choices output mat file and assert it exists
-        choices_file = strrep(ex.files.output_session_stage,'stage-perform','stage-choice');
-        choices_file = strrep(choices_file,'.tsv','.mat');
-        assert(exist(choices_file,'file') == 2, 'The choices output file does not exist: %s',choices_file);
-        
-        % Load choices data
-        ex.resultsChoiceTask = load(choices_file);
-        YesResp = [ex.resultsChoiceTask.result.data.Yestrial];
-
-        % Assert that the number of perform trials is not greater than the
-        % number of decisions made in the choice stage
-        assert(ex.resultsChoiceTask.result.params.blockLen * ex.resultsChoiceTask.result.params.blocks >= ex.blockLen || ex.DEBUG, ...
-            'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ...
-            ex.blocks * ex.blockLen, ex.resultsChoiceTask.result.params.blockLen * ex.resultsChoiceTask.result.params.blocks);
-        
-        % Pseudorandomly select trials where force to be performed after 
-        % all choices
-        %       This function uses HARDCODED 5x5 effort x reward levels!! CHANGE!
-        allCombinationsOnce = combinationsEffortReward(ex.order_effort,ex.order_reward,1);
-        ex.last_trial = allCombinationsOnce;
                 
         % Turn off the calibration and effort familiarization
         ex.numCalibration       = 0;
