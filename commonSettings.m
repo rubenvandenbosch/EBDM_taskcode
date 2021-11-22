@@ -178,7 +178,8 @@ switch ex.stage
         % in the choice stage
         % .................................................................
         % Get choices output mat file and assert it exists
-        choices_file = fullfile(ex.dirs.output, sprintf('subject-%.3d_visit-%d_stage-choice_ses-%d.mat', ex.subject,ex.visit,ex.session));
+        choices_file = strrep(ex.files.output_session_stage,'stage-perform','stage-choice');
+        choices_file = strrep(choices_file,'.tsv','.mat');
         assert(exist(choices_file,'file') == 2, 'The choices output file does not exist: %s',choices_file);
         
         % Load choices data
@@ -253,8 +254,8 @@ ex.rewardDuration       = 3;   % Time from when reward appears, until screen bla
 
 % Technical setup
 % =========================================================================
-% Set random number generator seed based on subject number
-ex.randomSeed = ex.subject;
+% Set random number generator seed based on subject and session number
+ex.randomSeed = str2double(sprintf('%d%d', ex.subject,ex.session));
 
 % Response key settings
 % -------------------------------------------------------------------------
