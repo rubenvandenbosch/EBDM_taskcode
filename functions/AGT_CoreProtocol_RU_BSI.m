@@ -71,6 +71,22 @@ else
     MVC = 3;
 end
 
+% For the perform stage, load subject's choices from the choice stage
+% -------------------------------------------------------------------------
+if strcmp(ex.stage,'perform')
+    % Get choices output mat file and assert it exists
+    ex.choices_file = strrep(outfile_mat,'stage-perform','stage-choice');
+    assert(exist(ex.choices_file,'file') == 2, 'The choices output file does not exist: %s',ex.choices_file);
+    
+    % Assert that the number of perform trials is not greater than the
+    % number of decisions made in the choice stage
+    choices  = load(ex.choices_file,'result');
+    nChoices = numel(choices.result.data);
+    assert(ex.blocks * ex.blockLen <= nChoices || ex.DEBUG, ...
+        'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, nChoices);
+    clear choices;  % Clear previous results from memory hear
+end
+
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
 % Add function handle for experiment start/end function to ex struct
@@ -133,7 +149,7 @@ else
 end
 
 % Draw trunk brown
-Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]); 
+Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]);
 
 if ~ex.fatiguingExercise
     Screen('DrawTexture', scr.w, scr.imageTexture(stake+1),[], ...
@@ -160,7 +176,7 @@ end
 %   (note previous versions only displayed effort visually as a forcebar)
 if force > 0
     if doAppleText   % text for how many apples
-        if strcmpi(ex.language,'NL'), formatstring = 'Inspanningsniveau: %d '; 
+        if strcmpi(ex.language,'NL'), formatstring = 'Inspanningsniveau: %d ';
         else, formatstring = 'Effort level: %d '; end
         drawTextCentred(scr, sprintf(formatstring,floor(effort)), ex.fgColour, scr.centre + [0 350]);
     end
@@ -220,7 +236,7 @@ function exptStartEnd(ex, timepoint)
 % INPUTS
 % ex        : struct with experiment parameters
 % timepoint : char; 'start' OR 'end'
-% 
+%
 assert(isstruct(ex), 'Input ex should be of class struct')
 assert(ischar(timepoint), 'Input timepoint should be a character string')
 
@@ -233,13 +249,13 @@ switch lower(timepoint)
         % Show either a welcome screen OR a session restore info screen
         slideNrs = 1;
         if ex.restoredSession
-%             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
+            %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
         else
-%             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
+            %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
         end
     case 'end'
         slideNrs = 1;
-%         displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end')
+        %         displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end')
 end
 
 %% Start of block:
@@ -256,21 +272,17 @@ if tr.block == 0  % Practice block
     % Display general practice instructions on first trial
     if tr.practiceTrialIx == 1
         slideNrs = 1:5;
-%         displayInstructions(ex, ex.dirs.instructions, slideNrs)
+        %         displayInstructions(ex, ex.dirs.instructions, slideNrs)
     end
-
-    % Determine which part of practice stage we're in
-    CALIBRATING   = strcmp(tr.sub_stage,'calibration');
-    FAMILIARISE   = strcmp(tr.sub_stage,'familiarize');
-    PRACTICE      = strcmp(tr.sub_stage,'practice');
     
-    % Display instructions according to which part
-    if CALIBRATING
-        displayInstructions(ex, ex.dirs.instructions, 6)
-    elseif FAMILIARISE
-        displayInstructions(ex, ex.dirs.instructions, 5)
-    elseif PRACTICE
-        displayInstructions(ex, ex.dirs.instructions, 7)
+    % Display instructions according to which stage we're in
+    switch tr.sub_stage
+        case 'calibration'
+            displayInstructions(ex, ex.dirs.instructions, 6)
+        case 'familiarize'
+            displayInstructions(ex, ex.dirs.instructions, 5)
+        case 'practice'
+            displayInstructions(ex, ex.dirs.instructions, 7)
     end
     
 elseif tr.block == 1 % start of experiment
@@ -321,10 +333,13 @@ global  MVC totalReward YesResp
 pa = combineStruct(ex, tr);
 
 % Work out what kind of trial this is:
-CALIBRATING   = strcmp(tr.sub_stage,'calibration');
-FAMILIARISE   = strcmp(tr.sub_stage,'familiarize');
-PRACTICE      = strcmp(tr.sub_stage,'practice');
-PERFORM_TRIAL = strcmp(tr.sub_stage,'perform');
+if ismember(tr.sub_stage,{'calibration','familiarize','choice','perform'})
+    stage = tr.sub_stage;
+elseif strcmp(tr.sub_stage,'practice') && strcmp(ex.stage,'choice')
+    stage = 'choice';
+elseif strcmp(tr.sub_stage,'practice') && strcmp(ex.stage,'perform')
+    stage = 'perform';
+end
 
 % Prepare EXIT value; gets set to true if escape is pressed.
 EXIT = false;
@@ -333,472 +348,473 @@ EXIT = false;
 tr.MVC = MVC;
 
 % =========================================================================
-if CALIBRATING 
-    % The experiment starts with CALIBRATION if calibNeeded.
-    % if no calibration needed, just exit the trial.
-    if ~ex.calibNeeded; tr.R=1; return; end
-    
-    % trial 1: draw red bar - height = voltage divided by 3, no target line
-    % trial 2: target line at 1.1  * MVC from first trial
-    % trial 3: target line at 1.05 * MVC
-    % the number is the proportion of MVC to use as the top of the bar.
-    
-    % Prepare final instruction and target force setting
-    if strcmp(ex.language,'NL')
-        calibrationInstructions = {
-            'Knijp zo hard mogelijk!'  , 1.0,[0 0 0]
-            'Probeer boven de gele lijn te komen!'    , 1.1,[255 255 0]
-            'Probeer boven de gele lijn te komen!'    , 1.05,[255 255 0]
-            };
-    else
-        calibrationInstructions = {
-            'Squeeze as hard are you can!'  , 1.0,[0 0 0]
-            'Get above the yellow line!'    , 1.1,[255 255 0]
-            'Get above the yellow line!'    , 1.05,[255 255 0]
-            };
-    end
-    % Use the trial index to select one of the above three
-    % instructions+settings. If trial index > 3, keep using the third
-    % option, i.e. every time use 1.05 * MVC as the target line
-    if pa.trialIndex <= 3, ix = pa.trialIndex; else, ix = 3; end
-    
-    % Display instruction
-    drawTextCentred(scr, calibrationInstructions{ix,1} , ex.fgColour);
-    Screen('Flip',scr.w);
-    tr = LogEvent(ex,el,tr,'trialOnset');
-    WaitSecs(1);
-    
-    % Prepare gripforce feedback function
-    %   parameters:(scr, ex, colour, colourlevel, height, effortLevel)
-    fbfunc = @(f) drawCalibAndFlip(scr, ex, ex.fgColour, calibrationInstructions{ix,3}, f(pa.channel)/MVC, calibrationInstructions{ix,2} );
-    
-    % read data from force transducer:
-    %   parameters: ( timeOfLastAcquisition, maxTimeToWait, stopRecordingThreshold, ISI, feedbackFunction )
-    tr = LogEvent(ex,el,tr,'squeezeStart');
-    [data] = waitForForceData(ex,tr.startSqueezyAcquisition, ex.calibrationDuration, inf, 6, fbfunc);
-    tr = LogEvent(ex,el,tr,'squeezeEnd');
-    tr.maximumForce = max(data(:,pa.channel));
-    
-    % Process during blank screen
-    Screen('Flip', scr.w);
-    WaitSecs(0.5);           % Blank screen for 0.5 seconds
-    tr.data1 = data(:,1);    % store all force data for channel 1
-    tr.R = 1;                % report success
-    
-    % Which is larger, the current trial's force, or the current MVC?
-    %   update the MVC on calibration trials.
-    MVC = max(tr.maximumForce, MVC);
-    
-    % Display 'end of calibration' instruction
-    if pa.trialIndex == ex.numCalibration
-        if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
-        drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -200]);
-        if ~ex.calibOnly
-            if strcmp(ex.language,'NL'), txt='De onderzoeker zal nu het spel aan u gaan uitleggen'; else, txt='The researcher will now explain the game to you.'; end
-            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -100]);
-        else
-            if strcmp(ex.language,'NL'), txt='Einde calibratie deel'; else, txt='End of MVC calibration part'; end
-            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
-        end
-        Screen('Flip', scr.w);
-        EXIT = EXIT || waitForKeypress(ex);
-        tr.MVC = MVC; % Save MVC to trial only on last calibration
-    else
-        % If not last calibration, the MVC is not yet calibrated well, so
-        % do not save a value to the trial data
-        tr.MVC = NaN;
-    end
-    tr = LogEvent(ex,el,tr,'trialEnd');
-
-elseif FAMILIARISE
-
-    % Get trial number of familiarization stage
-    if ex.calibNeeded
-        famTrIndex = tr.trialIndex - ex.numCalibration;
-    else
-        famTrIndex = tr.trialIndex;
-    end
-    
-    % Get effort level
-    if pa.practiceAscending 
-        % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
-        numTrLvl = floor(ex.numFamiliarise/numel(ex.effortIndex));  % number of trials per level
-        tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
-    else
-        % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
-        tr.effortIx = 1 + mod(famTrIndex,numel(ex.effortIndex));
-    end
-    tr.effort = ex.effortLevel(tr.effortIx);
-    
-    % Log trial onset time
-    tr = LogEvent(ex,el,tr,'trialOnset');
-    
-    % On first practice trial, display instructions
-    if famTrIndex == 0     
+switch stage
+    case 'calibration'
+        % The experiment starts with CALIBRATION if calibNeeded.
+        % if no calibration needed, just exit the trial.
+        if ~ex.calibNeeded; tr.R=1; return; end
+        
+        % trial 1: draw red bar - height = voltage divided by 3, no target
+        % trial 2: target line at 1.1  * MVC from first trial
+        % trial 3: target line at 1.05 * MVC
+        % the number is the proportion of MVC to use as the top of the bar.
+        
+        % Prepare final instruction and target force setting
         if strcmp(ex.language,'NL')
-            txt='Knijp boven de lijn totdat de balk geel wordt, houd dit 2 seconden vol!'; 
+            calibrationInstructions = {
+                'Knijp zo hard mogelijk!'  , 1.0,[0 0 0]
+                'Probeer boven de gele lijn te komen!'    , 1.1,[255 255 0]
+                'Probeer boven de gele lijn te komen!'    , 1.05,[255 255 0]
+                };
         else
-            txt='Squeeze above the line until the bar turns yellow. Hold for 2 seconds';
+            calibrationInstructions = {
+                'Squeeze as hard are you can!'  , 1.0,[0 0 0]
+                'Get above the yellow line!'    , 1.1,[255 255 0]
+                'Get above the yellow line!'    , 1.05,[255 255 0]
+                };
         end
-        drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, -100])
+        % Use the trial index to select one of the above three
+        % instructions+settings. If trial index > 3, keep using the third
+        % option, i.e. every time use 1.05 * MVC as the target line
+        if pa.trialIndex <= 3, ix = pa.trialIndex; else, ix = 3; end
+        
+        % Display instruction
+        drawTextCentred(scr, calibrationInstructions{ix,1} , ex.fgColour);
         Screen('Flip',scr.w);
-        EXIT = EXIT || waitForKeypress(ex); % wait for a key to be pressed before starting
+        tr = LogEvent(ex,el,tr,'trialOnset');
         WaitSecs(1);
-    end
-    
-    % Function to draw tree without apples and the correct effort rung,
-    %   with "RESPOND NOW". Location 0 means centre of screen.
-    if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
-    fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
-    
-    % Get squeeze response data
-    tr = LogEvent(ex,el,tr,'squeezeStart');
-    [data,~,~] = waitForForceData(ex,tr.startSqueezyAcquisition, ex.responseDuration, inf, ...
-        (pa.responseDuration + pa.rewardDuration), fbfunc);
-    tr = LogEvent(ex,el,tr,'squeezeEnd');
-    
-    activeHandData  = data(:,pa.channel);                       % units are samples
-    tr.maximumForce = max(activeHandData);                      % Find maximum force
-    tr.maximumTime  = find(activeHandData==tr.maximumForce,1);  % find all samples with max force
-    tr.data         = data(:,pa.channel);                       % store all force data
-    
-    % Was the squeeze equal or greater than required for long enough?
-    squeezeTime     = sum(activeHandData >= tr.effort*MVC);
-    tr.success      = squeezeTime >= pa.minimumAcceptableSqueezeTime;
-    
-    % Give participant feedback on performance
-    if tr.success
-        if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
-        drawTextCentred(scr, txt, [0 255 0]);
-    elseif squeezeTime > 0
-        if strcmp(ex.language,'NL'), txt='Houd langer vol'; else, txt='Hold for longer'; end
-        drawTextCentred(scr, txt, [255 0 0]);
-    else
-        if strcmp(ex.language,'NL'), txt='Knijp harder'; else, txt='Squeeze harder'; end
-        drawTextCentred(scr, txt, [255 0 0]);
-    end
-    Screen('Flip',scr.w);
-    tr = LogEvent(ex,el,tr,'feedbackOnset');
-    tr = waitOrBreak(pa,tr,2);                  % wait 2 seconds
-    tr = LogEvent(ex,el,tr,'trialEnd');
-    
-    % CHECK KEYPRESSES
-    [~,~,keyCode] = KbCheck;                    % check for real key
-    if keyCode(pa.exitkey), EXIT=true; end      % check for ESCAPE
-    
-    % Wait with blank screen during time delay after response
-    Screen('Flip',scr.w);
-    tr = waitOrBreak(pa,tr,ex.delayAfterResponse);
-    
-elseif ~CALIBRATING && ~FAMILIARISE && ~PERFORM_TRIAL
-    
-    % Choice trials (practice and main experiment)
-    % ---------------------------------------------------------------------
-    % Randomly assign left/right key to yes/no option
-    tr.yesIsLeft = rand > 0.5;
-    
-    % Work out which keys are 'yes' and 'no', and set location on screen to
-    % present yes/no text
-    if tr.yesIsLeft
-        tr.yeslocation  = -300;
-        tr.yesKey       = pa.leftKey;
-        tr.noKey        = pa.rightKey;
-    else
-        tr.yeslocation  = 300;
-        tr.yesKey       = pa.rightKey;
-        tr.noKey        = pa.leftKey;
-    end
-    if strcmp(ex.language,'NL')
-        yestxt='Ja';
-        notxt='Nee';
-    else
-        yestxt='Yes';
-        notxt='No';
-    end
-    
-    % Log this trial's reward and effort levels based on the index
-    tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
-    tr.effortLevel = ex.effortLevel(tr.effortIx);
-    
-    % Log trial onset time
-    tr = LogEvent(ex,el,tr,'trialOnset');
         
-    % Draw fixation cross
-    Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
-    Screen('Flip', ex.scr.w);
-    
-    % Inter Trial Interval (ITI) at beginning of each trial
-    %   RB: Currently random, change to e.g. poisson??
-    WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));
-    
-    % Present tree with effort and stake in centre of screen, for choice
-    drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
-    tr = LogEvent(ex,el,tr,'stimOnset');
-    
-    % Wait before presenting yes/no response options
-    Tdelay = pa.timeBeforeChoice;
-    if ischar(pa.timeBeforeChoice)
-        if strcmpi(pa.timeBeforeChoice,'RandPoisson')
-            % Get Poisson distributed random number
-            lambda=10;
-            Tdelay = 2+poissrnd(lambda)/(lambda+1);
-        elseif strcmpi(pa.timeBeforeChoice,'RandNormal')
-            Tdelay = 2 + rand*2;
-        else
-            error('Unsupported value (%s) for ''timeBeforeChoice'' setting',pa.timeBeforeChoice);
-        end
-    end
-    WaitSecs(Tdelay);
-    
-    % Draw tree and add 'yes/no' response options, then flip to present
-    drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
-    drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation 200]);
-    drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
-    Screen('Flip',scr.w);
-    tr = LogEvent(ex,el,tr,'choiceOnset');
-    
-    % Wait for a valid response or until deadline
-    % ---------------------------------------------------------------------
-    % This sets the total trial length, which is the same for every trial.
-    % To change it, alter ex.maxTimeToWait
-    deadline = GetSecs + ex.maxTimeToWait;
-    if ex.useBitsiBB,  ex.BitsiBB.clearResponses(); end % empty input buffer
-    while GetSecs < deadline
-        if ex.useBitsiBB
-            tr.key = [];
-            while 1
-                [resp, respTime] = ex.BitsiBB.getResponse(0.1, true);
-                if resp > 0
-                    tr.key = resp;
-                    break;
-                end
-                if GetSecs >= deadline, break; end
-                
-                % also check escape key
-                [keyisdown,~,keyCode] = KbCheck;
-                if keyisdown && keyCode(ex.exitkey)
-                    tr.key = ex.exitkey;
-                    break;
-                end
+        % Prepare gripforce feedback function
+        %   parameters:(scr, ex, colour, colourlevel, height, effortLevel)
+        fbfunc = @(f) drawCalibAndFlip(scr, ex, ex.fgColour, calibrationInstructions{ix,3}, f(pa.channel)/MVC, calibrationInstructions{ix,2} );
+        
+        % read data from force transducer:
+        %   parameters: ( timeOfLastAcquisition, maxTimeToWait, stopRecordingThreshold, ISI, feedbackFunction )
+        tr = LogEvent(ex,el,tr,'squeezeStart');
+        [data] = waitForForceData(ex,tr.startSqueezyAcquisition, ex.calibrationDuration, inf, 6, fbfunc);
+        tr = LogEvent(ex,el,tr,'squeezeEnd');
+        tr.maximumForce = max(data(:,pa.channel));
+        
+        % Process during blank screen
+        Screen('Flip', scr.w);
+        WaitSecs(0.5);           % Blank screen for 0.5 seconds
+        tr.data1 = data(:,1);    % store all force data for channel 1
+        tr.R = 1;                % report success
+        
+        % Which is larger, the current trial's force, or the current MVC?
+        %   update the MVC on calibration trials.
+        MVC = max(tr.maximumForce, MVC);
+        
+        % Display 'end of calibration' instruction
+        if pa.trialIndex == ex.numCalibration
+            if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
+            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -200]);
+            if ~ex.calibOnly
+                if strcmp(ex.language,'NL'), txt='De onderzoeker zal nu het spel aan u gaan uitleggen'; else, txt='The researcher will now explain the game to you.'; end
+                drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -100]);
+            else
+                if strcmp(ex.language,'NL'), txt='Einde calibratie deel'; else, txt='End of MVC calibration part'; end
+                drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
             end
+            Screen('Flip', scr.w);
+            EXIT = EXIT || waitForKeypress(ex);
+            tr.MVC = MVC; % Save MVC to trial only on last calibration
         else
-            while ~KbCheck && GetSecs < deadline, WaitSecs(0.1); end
-            [~,respTime,keyCode] = KbCheck;   % get key code
-            tr.key = find(keyCode,1);
+            % If not last calibration, the MVC is not yet calibrated well, 
+            % so do not save a value to the trial data
+            tr.MVC = NaN;
         end
-        if isempty(tr.key), continue, end
+        tr = LogEvent(ex,el,tr,'trialEnd');
         
-        % If a response key was pressed, break out of the while loop
-        if any(tr.yesKey==tr.key) || any(tr.noKey==tr.key) || tr.key==ex.exitkey
-            break
-        else % Draw feedback about which button to use
-            drawTree(scr,ex,0,tr.rewardIx , tr.effortIx, 0, true, [], false);
-            if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
-            drawTextCentred(scr, txt, ex.forceColour, scr.centre + [0, -300])
-            drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [tr.yeslocation 200]);
-            drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
+    case 'familiarize'
+        
+        % Get trial number of familiarization stage
+        if ex.calibNeeded
+            famTrIndex = tr.trialIndex - ex.numCalibration;
+        else
+            famTrIndex = tr.trialIndex;
+        end
+        
+        % Get effort level
+        if pa.practiceAscending
+            % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
+            numTrLvl = floor(ex.numFamiliarise/numel(ex.effortIndex));  % number of trials per level
+            tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
+        else
+            % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
+            tr.effortIx = 1 + mod(famTrIndex,numel(ex.effortIndex));
+        end
+        tr.effort = ex.effortLevel(tr.effortIx);
+        
+        % Log trial onset time
+        tr = LogEvent(ex,el,tr,'trialOnset');
+        
+        % On first practice trial, display instructions
+        if famTrIndex == 0
+            if strcmp(ex.language,'NL')
+                txt='Knijp boven de lijn totdat de balk geel wordt, houd dit 2 seconden vol!';
+            else
+                txt='Squeeze above the line until the bar turns yellow. Hold for 2 seconds';
+            end
+            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, -100])
             Screen('Flip',scr.w);
+            EXIT = EXIT || waitForKeypress(ex); % wait for a key to be pressed before starting
+            WaitSecs(1);
         end
-        tr.key = [];
-    end
-    
-    % Process response
-    % ---------------------------------------------------------------------
-    doTree = true;
-    % No key pressed in allotted time?
-    if isempty(tr.key)
-        tr.Yestrial  = NaN;        % Too slow.
-        if strcmp(ex.language,'NL'), message='Reageer sneller alstublieft'; else, message='Please respond faster'; end
-        msgloc       = scr.centre + [0, -300];
-        msgcolour    = ex.forceColour;
-        
-        % If this was not a practice trial, mark it to repeat at the end of
-        % this block
-        if tr.block~=0
-            tr.R=ex.R_NEEDS_REPEATING_LATER;
-        end
-    else % Process response
-        switch tr.key
-            case num2cell(tr.yesKey)    % responded "yes"
-                tr.Yestrial  = 1;
-                message      = yestxt;
-                msgloc       = scr.centre + [tr.yeslocation, 200];
-                msgcolour    = ex.fgColour3;
-            case num2cell(tr.noKey)     % responded "no"
-                tr.Yestrial  = 0;
-                message      = notxt;
-                msgloc       = scr.centre + [-tr.yeslocation, 200];
-                msgcolour    = ex.fgColour3;
-            case ex.exitkey             % EXIT key was pressed
-                tr.Yestrial  = NaN;
-                EXIT         = true;
-                message      = 'User exit via Esc key';
-                doTree       = false;
-                msgloc       = scr.centre + [0, -300];
-                msgcolour    = ex.forceColour;
-            otherwise
-                tr.Yestrial  = 2;   % invalid response key pressed (can happen at timeout)
-                if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
-                message      = txt;
-                msgloc       = scr.centre + [0, -300];
-                msgcolour    = ex.forceColour;
-                if tr.block~=0 % If not a practice trial, repeat it
-                    tr.R=ex.R_NEEDS_REPEATING_LATER;
-                end
-        end
-    end
-    
-    % Log response onset and calculate response time
-    %   If no response, set to NaN
-    if isempty(tr.key)
-        tr = LogEvent(ex,el,tr,'responseOnset', nan);
-    else
-        tr = LogEvent(ex,el,tr,'responseOnset', respTime);
-    end
-    tr.timings.responseTime = tr.timings.responseOnset - tr.timings.choiceOnset;
-    
-    % Draw feedback
-    drawTextCentred(scr, message, msgcolour, msgloc)
-    if doTree
-        drawTree(scr,ex,0, tr.rewardIx, tr.effortIx, 0, true, [], true);
-    end
-    tr = LogEvent(ex,el,tr,'feedbackOnset');
-    
-    % Wait until the total trial length is up, so all trials are the same length (ex.maxTimeToWait)
-    WaitSecs(0.5);      %% RB: Always wait .5?? Should be while GetSecs() < deadline if the goal is indeed to get equal trial durations?
-    Screen('Flip', scr.w);
-    tr = LogEvent(ex,el,tr,'trialEnd');
-    
-    % Store whether the offer was accepted on each trial, for the purposes
-    % of the final perfomance block.
-    if ~PRACTICE
-        YesResp(tr.allTrialIndex) = tr.Yestrial;
-    end
-    
-elseif PERFORM_TRIAL
-    
-    %%%%%%%%%%%%%%%%%
-    % there are 10 performance trials, at the end of the experiment. They
-    % constitute the final block.  (Block 6 in this case).
-    % They are drawn with predetermined indices from the choices.
-    % select the corresponding choice trial
-    if ~ex.fatiguingExercise
-        location = 0; % tree in the middle
-        performTrial = ex.last_trial(tr.trialIndex);
-        tr.effortIx = ex.order_effort( performTrial );
-        tr.effort  = ex.effortLevel( tr.effortIx );
-        tr.stakeIx = ex.order_reward(  performTrial ); % n is stake index (1-5)
-        tr.stake   = ex.applesInStake(tr.stakeIx); % look up stake value (in apples), based on stake 'level' (1-5)
-    else
-        location = tr.location; % tree middle (0) or left(-1)/right(1) for two hands case
-        if location > 0, pa.channel = 2; else pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
-        performTrial = NaN; % only the tree, no apples, but with effort level
-        tr.effortIx = tr.effort; % should be a number delivered as type cell
-        tr.effort = tr.effort{1}; % convert from cell to number
-        tr.stakeIx = 0;
-        tr.stake = 1;
-    end
-    
-    % Draw tree with effort and stake in centre of screen, indicating
-    % previous choice.
-    drawTree(scr,ex, location, tr.stakeIx ,tr.effortIx, 0, false, [], true);
-    tr = LogEvent(ex,el,tr,'stimOnset');
-    WaitSecs(0.5);
-    
-    % Find out if trial 18 was a Yes response
-    if ~ex.fatiguingExercise
-        Yestrial = YesResp(performTrial); 
-    else
-        Yestrial = 1;
-    end
-    
-    if Yestrial == 1   % Accepted Performance trials (MV)
         
         % Function to draw tree without apples and the correct effort rung,
-        %   with "RESPOND NOW" text
+        %   with "RESPOND NOW". Location 0 means centre of screen.
         if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
-        fbfunc = @(f) drawTree(scr,ex,location ,tr.stakeIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
+        fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
         
         % Get squeeze response data
         tr = LogEvent(ex,el,tr,'squeezeStart');
-        [data,~,~] = waitForForceData(ex, tr.startSqueezyAcquisition, ex.responseDuration, inf, 4 , fbfunc);
+        [data,~,~] = waitForForceData(ex,tr.startSqueezyAcquisition, ex.responseDuration, inf, ...
+            (pa.responseDuration + pa.rewardDuration), fbfunc);
         tr = LogEvent(ex,el,tr,'squeezeEnd');
         
-        tr.data         = data(:,pa.channel); % store all force data from the given channel
-        tr.maximumForce = max(tr.data);
-        tr.maximumTime  = find(tr.data == tr.maximumForce,1); % units are SAMPLES
-        tr.MVC          = MVC;
+        activeHandData  = data(:,pa.channel);                       % units are samples
+        tr.maximumForce = max(activeHandData);                      % Find maximum force
+        tr.maximumTime  = find(activeHandData==tr.maximumForce,1);  % find all samples with max force
+        tr.data         = data(:,pa.channel);                       % store all force data
         
-        % Check for key press
-        [~,~,keyCode] = KbCheck;        % check for real key
-        if keyCode(pa.exitkey), EXIT = true; end   % check for ESCAPE
+        % Was the squeeze equal or greater than required for long enough?
+        squeezeTime     = sum(activeHandData >= tr.effort*MVC);
+        tr.success      = squeezeTime >= pa.minimumAcceptableSqueezeTime;
         
-        % Wait with blank screen
-        Screen('Flip',scr.w);
-        WaitSecs(ex.delayAfterResponse);
-        
-        % Determine whether successful
-        %   Trial successful if force stayed above effort level for
-        %   pa.minimumAcceptableSqueezeTime
-        %   Add winnings to total apples in basket
-        tr.timeAboveTarget = sum(tr.data >= tr.effort*MVC );
-        if tr.timeAboveTarget >= pa.minimumAcceptableSqueezeTime
-            tr.reward = tr.stake;   % success!
-        else                       
-            tr.reward = 0;          % failure!
-        end
-        totalReward = totalReward + tr.reward;
-        
-        % Display reward feedback
-        if ~ex.fatiguingExercise
-            if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
-            drawTextCentred(scr, sprintf('%s: %d', txt,tr.reward), pa.fgColour, scr.centre + [0,-100])
-            Screen('Flip',scr.w);
-            
-            % Log reward feedback onset time and wait for reward duration
-            tr = LogEvent(ex,el,tr,'feedbackOnset');
-            WaitSecs(pa.rewardDuration);
+        % Give participant feedback on performance
+        if tr.success
+            if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
+            drawTextCentred(scr, txt, [0 255 0]);
+        elseif squeezeTime > 0
+            if strcmp(ex.language,'NL'), txt='Houd langer vol'; else, txt='Hold for longer'; end
+            drawTextCentred(scr, txt, [255 0 0]);
         else
-            % If no feedback displayed, set onset to NaN
-            tr = LogEvent(ex,el,tr,'feedbackOnset', nan);
+            if strcmp(ex.language,'NL'), txt='Knijp harder'; else, txt='Squeeze harder'; end
+            drawTextCentred(scr, txt, [255 0 0]);
+        end
+        Screen('Flip',scr.w);
+        tr = LogEvent(ex,el,tr,'feedbackOnset');
+        tr = waitOrBreak(pa,tr,2);                  % wait 2 seconds
+        tr = LogEvent(ex,el,tr,'trialEnd');
+        
+        % CHECK KEYPRESSES
+        [~,~,keyCode] = KbCheck;                    % check for real key
+        if keyCode(pa.exitkey), EXIT=true; end      % check for ESCAPE
+        
+        % Wait with blank screen during time delay after response
+        Screen('Flip',scr.w);
+        tr = waitOrBreak(pa,tr,ex.delayAfterResponse);
+        
+    case 'choice'
+        
+        % Choice trials (practice and main experiment)
+        % -----------------------------------------------------------------
+        % Randomly assign left/right key to yes/no option
+        tr.yesIsLeft = rand > 0.5;
+        
+        % Work out which keys are 'yes' and 'no', and set location on 
+        % screen to present yes/no text
+        if tr.yesIsLeft
+            tr.yeslocation  = -300;
+            tr.yesKey       = pa.leftKey;
+            tr.noKey        = pa.rightKey;
+        else
+            tr.yeslocation  = 300;
+            tr.yesKey       = pa.rightKey;
+            tr.noKey        = pa.leftKey;
+        end
+        if strcmp(ex.language,'NL')
+            yestxt='Ja';
+            notxt='Nee';
+        else
+            yestxt='Yes';
+            notxt='No';
         end
         
-    else    % Declined performance trials
+        % Log this trial's reward and effort levels based on the index
+        tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
+        tr.effortLevel = ex.effortLevel(tr.effortIx);
         
-        % No reward on this trial
-        tr.reward = NaN;
+        % Log trial onset time
+        tr = LogEvent(ex,el,tr,'trialOnset');
         
-        % Display offer declined text
-        if strcmp(ex.language,'NL'), txt='Aanbod afgewezen'; else, txt='Offer declined'; end
-        drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
-        drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, false, [], true);
+        % Draw fixation cross
+        Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
+        Screen('Flip', ex.scr.w);
         
-        % Log decline feedback onset time
+        % Inter Trial Interval (ITI) at beginning of each trial
+        %   RB: Currently random, change to e.g. poisson??
+        WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));
+        
+        % Present tree with effort and stake in centre of screen
+        drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
+        tr = LogEvent(ex,el,tr,'stimOnset');
+        
+        % Wait before presenting yes/no response options
+        Tdelay = pa.timeBeforeChoice;
+        if ischar(pa.timeBeforeChoice)
+            if strcmpi(pa.timeBeforeChoice,'RandPoisson')
+                % Get Poisson distributed random number
+                lambda=10;
+                Tdelay = 2+poissrnd(lambda)/(lambda+1);
+            elseif strcmpi(pa.timeBeforeChoice,'RandNormal')
+                Tdelay = 2 + rand*2;
+            else
+                error('Unsupported value (%s) for ''timeBeforeChoice'' setting',pa.timeBeforeChoice);
+            end
+        end
+        WaitSecs(Tdelay);
+        
+        % Draw tree and add 'yes/no' response options, then flip to present
+        drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
+        drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation 200]);
+        drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
+        Screen('Flip',scr.w);
+        tr = LogEvent(ex,el,tr,'choiceOnset');
+        
+        % Wait for a valid response or until deadline
+        % -----------------------------------------------------------------
+        % This sets the total trial length, which is the same for every 
+        % trial(?) To change it, alter ex.maxTimeToWait
+        deadline = GetSecs + ex.maxTimeToWait;
+        if ex.useBitsiBB,  ex.BitsiBB.clearResponses(); end % empty input buffer
+        while GetSecs < deadline
+            if ex.useBitsiBB
+                tr.key = [];
+                while 1
+                    [resp, respTime] = ex.BitsiBB.getResponse(0.1, true);
+                    if resp > 0
+                        tr.key = resp;
+                        break;
+                    end
+                    if GetSecs >= deadline, break; end
+                    
+                    % also check escape key
+                    [keyisdown,~,keyCode] = KbCheck;
+                    if keyisdown && keyCode(ex.exitkey)
+                        tr.key = ex.exitkey;
+                        break;
+                    end
+                end
+            else
+                while ~KbCheck && GetSecs < deadline, WaitSecs(0.1); end
+                [~,respTime,keyCode] = KbCheck;   % get key code
+                tr.key = find(keyCode,1);
+            end
+            if isempty(tr.key), continue, end
+            
+            % If a response key was pressed, break out of the while loop
+            if any(tr.yesKey==tr.key) || any(tr.noKey==tr.key) || tr.key==ex.exitkey
+                break
+            else % Draw feedback about which button to use
+                drawTree(scr,ex,0,tr.rewardIx , tr.effortIx, 0, true, [], false);
+                if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
+                drawTextCentred(scr, txt, ex.forceColour, scr.centre + [0, -300])
+                drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [tr.yeslocation 200]);
+                drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
+                Screen('Flip',scr.w);
+            end
+            tr.key = [];
+        end
+        
+        % Process response
+        % -----------------------------------------------------------------
+        doTree = true;
+        % No key pressed in allotted time?
+        if isempty(tr.key)
+            tr.Yestrial  = NaN;        % Too slow.
+            if strcmp(ex.language,'NL'), message='Reageer sneller alstublieft'; else, message='Please respond faster'; end
+            msgloc       = scr.centre + [0, -300];
+            msgcolour    = ex.forceColour;
+            
+            % If this was not a practice trial, mark it to repeat at the 
+            % end of this block
+            if tr.block~=0
+                tr.R=ex.R_NEEDS_REPEATING_LATER;
+            end
+        else % Process response
+            switch tr.key
+                case num2cell(tr.yesKey)    % responded "yes"
+                    tr.Yestrial  = 1;
+                    message      = yestxt;
+                    msgloc       = scr.centre + [tr.yeslocation, 200];
+                    msgcolour    = ex.fgColour3;
+                case num2cell(tr.noKey)     % responded "no"
+                    tr.Yestrial  = 0;
+                    message      = notxt;
+                    msgloc       = scr.centre + [-tr.yeslocation, 200];
+                    msgcolour    = ex.fgColour3;
+                case ex.exitkey             % EXIT key was pressed
+                    tr.Yestrial  = NaN;
+                    EXIT         = true;
+                    message      = 'User exit via Esc key';
+                    doTree       = false;
+                    msgloc       = scr.centre + [0, -300];
+                    msgcolour    = ex.forceColour;
+                otherwise
+                    tr.Yestrial  = 2;   % invalid response key pressed (can happen at timeout)
+                    if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
+                    message      = txt;
+                    msgloc       = scr.centre + [0, -300];
+                    msgcolour    = ex.forceColour;
+                    if tr.block~=0 % If not a practice trial, repeat it
+                        tr.R=ex.R_NEEDS_REPEATING_LATER;
+                    end
+            end
+        end
+        
+        % Log response onset and calculate response time
+        %   If no response, set to NaN
+        if isempty(tr.key)
+            tr = LogEvent(ex,el,tr,'responseOnset', nan);
+        else
+            tr = LogEvent(ex,el,tr,'responseOnset', respTime);
+        end
+        tr.timings.responseTime = tr.timings.responseOnset - tr.timings.choiceOnset;
+        
+        % Draw feedback
+        drawTextCentred(scr, message, msgcolour, msgloc)
+        if doTree
+            drawTree(scr,ex,0, tr.rewardIx, tr.effortIx, 0, true, [], true);
+        end
         tr = LogEvent(ex,el,tr,'feedbackOnset');
         
-        % Wait equally long as after performed trials? Or only as long as
-        % rewardDuration?
-%         WaitSecs(pa.delayAfterResponse);
-        WaitSecs(pa.rewardDuration);
-    end
-    % Log end of trial
-    tr = LogEvent(ex,el,tr,'trialEnd');
-    
-    % Store total reward in tr struct
-    tr.totalReward = totalReward;
-    
-    % Present total reward feedback after the last perform trial
-    if pa.trialIndex >= length(ex.last_trial) && ~ex.fatiguingExercise
-        if strcmp(ex.language,'NL'), txt='Einde van de taak, dank voor uw deelname!'; else, txt='End of Task. Thank you for taking part!'; end
-        drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
-        if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total Apples gathered'; end
-        drawTextCentred( scr, sprintf( '%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100] )
-        if strcmp(ex.language,'NL'), txt='Druk een toets/knop om door te gaan'; else, txt='Press space bar to continue'; end
-        drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0,-200] )
+        % Wait until the total trial length is up, so all trials are the same length (ex.maxTimeToWait)
+        WaitSecs(0.5);      %% RB: Always wait .5?? Should be while GetSecs() < deadline if the goal is indeed to get equal trial durations?
         Screen('Flip', scr.w);
-        tr = LogEvent(ex,el,tr,'totalRewardOnset');  % Log onset of total reward feedback
-        waitForKeypress(ex); % wait for a key to be pressed (defined at end of this script)
-    end
+        tr = LogEvent(ex,el,tr,'trialEnd');
+        
+        % Store whether the offer was accepted on each trial, for the purposes
+        % of the final perfomance block.
+        if ~tr.isPractice
+            YesResp(tr.allTrialIndex) = tr.Yestrial;
+        end
+        
+    case 'perform'
+        
+        %%%%%%%%%%%%%%%%%
+        % there are 10 performance trials, at the end of the experiment. They
+        % constitute the final block.  (Block 6 in this case).
+        % They are drawn with predetermined indices from the choices.
+        % select the corresponding choice trial
+        if ~ex.fatiguingExercise
+            location = 0; % tree in the middle
+            performTrial = ex.last_trial(tr.trialIndex);
+            tr.effortIx = ex.order_effort( performTrial );
+            tr.effort  = ex.effortLevel( tr.effortIx );
+            tr.stakeIx = ex.order_reward(  performTrial ); % n is stake index (1-5)
+            tr.stake   = ex.applesInStake(tr.stakeIx); % look up stake value (in apples), based on stake 'level' (1-5)
+        else
+            location = tr.location; % tree middle (0) or left(-1)/right(1) for two hands case
+            if location > 0, pa.channel = 2; else pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
+            performTrial = NaN; % only the tree, no apples, but with effort level
+            tr.effortIx = tr.effort; % should be a number delivered as type cell
+            tr.effort = tr.effort{1}; % convert from cell to number
+            tr.stakeIx = 0;
+            tr.stake = 1;
+        end
+        
+        % Draw tree with effort and stake in centre of screen, indicating
+        % previous choice.
+        drawTree(scr,ex, location, tr.stakeIx ,tr.effortIx, 0, false, [], true);
+        tr = LogEvent(ex,el,tr,'stimOnset');
+        WaitSecs(0.5);
+        
+        % Find out if trial 18 was a Yes response
+        if ~ex.fatiguingExercise
+            Yestrial = YesResp(performTrial);
+        else
+            Yestrial = 1;
+        end
+        
+        if Yestrial == 1   % Accepted Performance trials (MV)
+            
+            % Function to draw tree without apples and the correct effort 
+            % rung, with "RESPOND NOW" text
+            if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
+            fbfunc = @(f) drawTree(scr,ex,location ,tr.stakeIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
+            
+            % Get squeeze response data
+            tr = LogEvent(ex,el,tr,'squeezeStart');
+            [data,~,~] = waitForForceData(ex, tr.startSqueezyAcquisition, ex.responseDuration, inf, 4 , fbfunc);
+            tr = LogEvent(ex,el,tr,'squeezeEnd');
+            
+            tr.data         = data(:,pa.channel); % store all force data from the given channel
+            tr.maximumForce = max(tr.data);
+            tr.maximumTime  = find(tr.data == tr.maximumForce,1); % units are SAMPLES
+            tr.MVC          = MVC;
+            
+            % Check for key press
+            [~,~,keyCode] = KbCheck;        % check for real key
+            if keyCode(pa.exitkey), EXIT = true; end   % check for ESCAPE
+            
+            % Wait with blank screen
+            Screen('Flip',scr.w);
+            WaitSecs(ex.delayAfterResponse);
+            
+            % Determine whether successful
+            %   Trial successful if force stayed above effort level for
+            %   pa.minimumAcceptableSqueezeTime
+            %   Add winnings to total apples in basket
+            tr.timeAboveTarget = sum(tr.data >= tr.effort*MVC );
+            if tr.timeAboveTarget >= pa.minimumAcceptableSqueezeTime
+                tr.reward = tr.stake;   % success!
+            else
+                tr.reward = 0;          % failure!
+            end
+            totalReward = totalReward + tr.reward;
+            
+            % Display reward feedback
+            if ~ex.fatiguingExercise
+                if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
+                drawTextCentred(scr, sprintf('%s: %d', txt,tr.reward), pa.fgColour, scr.centre + [0,-100])
+                Screen('Flip',scr.w);
+                
+                % Log reward feedback onset time and wait reward duration
+                tr = LogEvent(ex,el,tr,'feedbackOnset');
+                WaitSecs(pa.rewardDuration);
+            else
+                % If no feedback displayed, set onset to NaN
+                tr = LogEvent(ex,el,tr,'feedbackOnset', nan);
+            end
+            
+        else    % Declined performance trials
+            
+            % No reward on this trial
+            tr.reward = NaN;
+            
+            % Display offer declined text
+            if strcmp(ex.language,'NL'), txt='Aanbod afgewezen'; else, txt='Offer declined'; end
+            drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
+            drawTree(scr,ex,0,tr.stakeIx , tr.effortIx, 0, false, [], true);
+            
+            % Log decline feedback onset time
+            tr = LogEvent(ex,el,tr,'feedbackOnset');
+            
+            % Wait equally long as after performed trials? Or only as long 
+            % as rewardDuration?
+            %         WaitSecs(pa.delayAfterResponse);
+            WaitSecs(pa.rewardDuration);
+        end
+        % Log end of trial
+        tr = LogEvent(ex,el,tr,'trialEnd');
+        
+        % Store total reward in tr struct
+        tr.totalReward = totalReward;
+        
+        % Present total reward feedback after the last perform trial
+        if pa.trialIndex >= length(ex.last_trial) && ~ex.fatiguingExercise
+            if strcmp(ex.language,'NL'), txt='Einde van de taak, dank voor uw deelname!'; else, txt='End of Task. Thank you for taking part!'; end
+            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
+            if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total Apples gathered'; end
+            drawTextCentred( scr, sprintf( '%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100] )
+            if strcmp(ex.language,'NL'), txt='Druk een toets/knop om door te gaan'; else, txt='Press space bar to continue'; end
+            drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0,-200] )
+            Screen('Flip', scr.w);
+            tr = LogEvent(ex,el,tr,'totalRewardOnset');  % Log onset of total reward feedback
+            waitForKeypress(ex); % wait for a key to be pressed (defined at end of this script)
+        end
 end
 
 if ~EXIT
@@ -808,7 +824,7 @@ if ~EXIT
 else
     tr.R = pa.R_ESCAPE; % tells RunExperiment to exit.
 end
-return % end of experiment 
+return % end of experiment
 
 
 function tr = waitOrBreak(ex, tr, waitsecs)
