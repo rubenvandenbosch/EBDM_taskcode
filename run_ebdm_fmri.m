@@ -51,7 +51,7 @@ catch, error('Psychtoolbox is not added to the Matlab path.'); end
 % -------------------------------------------------------------------------
 % If applicable, use provided input arguments
 if nargin == 3
-    ex.subject  = varargin{1};
+    ex.subject   = varargin{1};
     ex.session   = varargin{2};
     ex.stage     = varargin{3};
 elseif nargin == 2
@@ -120,9 +120,15 @@ if ~ismember(lower(accept),{'y', 'yes', 'ja', 'j'})
 end
 
 % Load common settings
-%   Also initializes bitsi for gripforce and MRI, if applicable
+%   Also initializes bitsi for MRI and buttonbox, if applicable
 % -------------------------------------------------------------------------
 ex = commonSettings(ex);
+
+% Start grip force recording, if applicable
+% -------------------------------------------------------------------------
+if ex.useGripforce
+    ex = start_gripforce(ex, 'start');
+end
 
 % Start task
 % -------------------------------------------------------------------------
@@ -141,30 +147,6 @@ end
 
 % Stop gripforce buffer after task is complete
 if ex.useGripforce
-    % Get process ID
-    if ispc
-        [~,pinfo] = system('netstat -ano | findstr :1972');
-    elseif isunix
-        [~,pinfo] = system('netstat -anp | grep :1972');
-    end
-    if ~isempty(pinfo)
-        pinfo = textscan(strtrim(pinfo), '%[^\n\r]');
-        pinfo = pinfo{1}{1};
-        if size(pinfo,1) > 1
-            pid = strsplit(pinfo{1}, ' ');
-            if isunix
-                pid = strsplit(pid, '/');
-                pid = pid{1};
-            end
-            pid = str2double(pid{end});
-
-            % Kill process
-            if ispc && ~pid==0
-                system(sprintf('taskkill /PID %d /F', pid));
-            elseif isunix && ~pid==0
-                system(sprintf('kill -9 %d', pid));
-            end
-        end
-    end
+    start_gripforce(ex, 'stop');
 end
 end

@@ -18,10 +18,12 @@ ex.DEBUG = false;
 % Directories and files
 % =========================================================================
 % Required directories for recording gripforce input
-%   - Full path to conda environment to activate
+%   - Full path to directory with functions .m files
 %   - Full path to directory with gripforce recording code
+%   - Full path to conda environment to activate
+ex.dirs.functions = fullfile(ex.dirs.rootDir,'functions');
+ex.dirs.gripforce = fullfile(ex.dirs.functions,'gripforce');
 ex.dirs.condaEnv  = 'C:\Users\rubvdbos\AppData\Local\Continuum\anaconda3\envs\flair';
-ex.dirs.gripforce = fullfile(ex.dirs.rootDir,'gripforce');
 
 % Directory containing image files with instructions
 ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
@@ -47,14 +49,14 @@ ex.files.recovery = fullfile(ex.dirs.rootDir,'LastExperiment_recovery.mat');
 % What are the different levels of rewards that will be used. 
 %   Make sure jpgs of apple tree match this.
 %   Change to something that makes sense for our stimuli
-ex.rewardLevel = [1 3 6 9 12];  % [1 3 6 9]; 
+ex.rewardLevel = [1 3 6 9]; % [1 3 6 9 12];
 
 % Effort levels: proportions of MVC
-ex.effortLevel = [0.16 0.32 0.48 0.64 0.80]; % [0.2 0.4 0.6 0.8];
+ex.effortLevel = [0.1 0.33 0.56 0.8]; % [0.2 0.4 0.6 0.8]; % [0.16 0.32 0.48 0.64 0.80];
 
 % Order of familiarizing with force levels.
 % true = use force levels 1 1 2 2 3 3 etc, false = 1...6,1...6
-ex.practiceAscending    = false; 
+ex.practiceAscending = false; 
 
 % Elements to vary over trials or blocks
 % -------------------------------------------------------------------------
@@ -66,7 +68,7 @@ ex.practiceAscending    = false;
 ex.blockVariables.blocktype = 1;
 
 % Allow unequal number of trials per trial type within one block
-ex.allowUnequalTrials  = true;
+ex.allowUnequalTrials = true;
 
 % We probably want to use this option to specify reward type, reward
 % magnitude and effort level.
@@ -92,23 +94,23 @@ switch ex.stage
         %   - Practice choice task
         
         % Number of MVC calibration trials
-        ex.numCalibration       = 0; %3;
+        ex.numCalibration       = 3;
         ex.calibOnly            = false;  % If true, only MVC calibration is run
         
         % Number of trials to familiarize with effort levels. Ideally an
         % multiple of the number of effort levels (e.g. 3x4=12 to practice
         % each of 4 effort levels 3 times).
-        ex.numFamiliarise       = 0; %5; %12;
+        ex.numFamiliarise       = 4; %12;
         
         % Number of practice decisions about X effort for X reward
-        ex.practiceTrials   = 5;
+        ex.practiceTrials       = 4;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
         
         % Set total number of trials based on the above
-        ex.blockLen = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials;
-        ex.last_trial       = [];
+        ex.blockLen   = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials;
+        ex.last_trial = [];
         
         % Set the block number on which people are asked to actually 
         % perform selected effort for reward options during the choice task
@@ -116,22 +118,22 @@ switch ex.stage
         ex.choiceBlockNumber    = 99;
         
         % Stage performed inside MRI scanner?
-        ex.inMRIscanner = false;
+        ex.inMRIscanner         = false;
     
     case 'choice'
         % Choice stage:
         %   - decision trials about expending effort for reward, performed
         %     in the MRI scanner.
-        ex.inMRIscanner = true;
+        ex.inMRIscanner         = true;
         
         % Number of blocks and trials per block
         %   NB: with a 4x4 design, a block length of 16 or 32 allows for 
         %       equal number of occurance per trial type within a block
-        ex.blocks   = 1;   % Number of blocks
-        ex.blockLen = 16;  % number of  trials within each block
+        ex.blocks               = 1;   % Number of blocks
+        ex.blockLen             = 16;  % number of  trials within each block
 
         % Include this number of practice choice trials at the beginning?
-        ex.practiceTrials = 0;
+        ex.practiceTrials       = 0;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -157,12 +159,12 @@ switch ex.stage
         %     reward
         
         % Number of blocks and trials per block
-        ex.blocks   = 1;   % Number of blocks
-        ex.blockLen = 16;  % number of  trials within each block
+        ex.blocks               = 1;   % Number of blocks
+        ex.blockLen             = 16;  % number of  trials within each block
         
         % Practice a number of trials with different effort levels without
         % reward?
-        ex.practiceTrials = 0;
+        ex.practiceTrials       = 0;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -179,7 +181,7 @@ switch ex.stage
         ex.numFamiliarise       = 0;
         
         % Set total number of practice trials based on the above
-        ex.practiceTrials       = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials; 
+        ex.practiceTrials = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials; 
         assert(ex.practiceTrials <= ex.blockLen,'Set parameter "blockLen >= "practiceTrials"');
         
         % Stage performed inside MRI scanner?
@@ -196,7 +198,7 @@ else, ex.calibNeeded = false; ex.calibOnly = false; end
 % -------------------------------------------------------------------------
 % Do fatiguing experiment? Seems to be like perform trials, but effort 
 %   level is dynamically adjusted based on success rate
-ex.fatiguingExercise    = false;
+ex.fatiguingExercise = false;
 ex.fatiguingExerciseSTartEffortLevel = 0.3;
 
 % Timings (seconds)
@@ -315,59 +317,6 @@ switch ex.stage
         ex.useSqueezy        = false;  % Change to 1 to use handles! whether or not to use the squeezy devices
         ex.simulateGripforce = false;  % For testing without a gripforce
         ex.channel           = 1;      % Which data channel are you using for the handle?
-        
-        % Start recording gripforce input
-        % .................................................................
-        % First determine whether the gripforce buffer is already on
-        if ispc
-            [~,pinfo] = system('netstat -ano | findstr :1972');
-        elseif isunix
-            [~,pinfo] = system('netstat -anp | grep :1972');
-        end
-        % Figure out whether a new process for the gripforce should be
-        % started
-        if ~isempty(pinfo)
-            pinfo = textscan(strtrim(pinfo),'%[^\n\r]');
-            pinfo = pinfo{1};
-            if size(pinfo,1) > 1 
-                newP = false;
-            else
-                pid = strsplit(pinfo{1}, ' ');
-                if isunix, pid = strsplit(pid, '/'); pid = pid{1}; end
-                if pid(end) == '0', newP = true; else, newP = false; end
-            end
-        else
-            newP = true;
-        end
-        % If not running yet, call system command to start gripforce with 
-        % '&' to start a separate process instead of running the command 
-        % within matlab
-        if newP
-            if ispc
-                system([fullfile('gripforce','start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
-            elseif isunix
-                system([fullfile('gripforce','start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
-            end
-            WaitSecs(6); % Give process enough time to start
-        else
-            disp('Gripforce fieldtrip buffer is running. Not starting anew')
-        end
-        
-        % Initialize gripforce and store sampling rate of gripforce
-        if ex.useGripforce && ~ex.simulateGripforce
-            ex = initGripforce(ex);
-        elseif ex.useGripforce && ex.simulateGripforce
-            % If simulated gripforce, set sampling rate to 500 Hz
-            ex.MP_SAMPLE_RATE=500;
-        elseif ex.useSqueezy
-            % NB: also configured in RunExperiment!!
-            if ~isfield(ex, 'MP_SAMPLE_RATE'), ex.MP_SAMPLE_RATE=500; end
-        end
-        
-        % Set the required number of gripforce samples above threshold for 
-        % success, based on setting specified above.
-        ex.minimumAcceptableSqueezeTime = ex.MP_SAMPLE_RATE * ex.minSqueezeTime;
-
     case 'choice'
         % Don't use gripforce during choice stage
         ex.useGripforce      = false;
