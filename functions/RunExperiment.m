@@ -342,7 +342,7 @@ try
     %   Logs experiment start system time
     %   Shows welcome/restore screen
     assert(exist('exptStartEnd','var')==1, 'No experiment start function provided. Required for setting start time reference point, and showing instructions.')
-    exptStartEnd(ex,'start');
+    ex = exptStartEnd(ex,'start');
     
     % Practice trials
     % ---------------------------------------------------------------------

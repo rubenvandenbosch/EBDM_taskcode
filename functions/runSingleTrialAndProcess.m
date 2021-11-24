@@ -34,14 +34,20 @@ while  tr.R==ex.R_INCOMPLETE              % repeat trial immediately?
             error('Failed to start squeezy acquisition');
         end
         % Manually logging startSqueezyAcquisition time, because it seems
-        % needed for waitForForceData function
+        % needed for waitForForceData function.
+        %   Store in timings field, but also in main tr stuct for
+        %   compatibility with downstream functions
         tr.timings.startSqueezyAcquisition = GetSecs();
+        tr.startSqueezyAcquisition = GetSecs();
     end
     if ex.useGripforce         %%%% Gripforce (TSG/RU device) recording
         % Manually logging startSqueezyAcquisition time, because it seems
         % needed for waitForForceData function. For the gripforce device 
         % this information is not used.
+        %   Store in timings field, but also in main tr stuct for
+        %   compatibility with downstream functions
         tr.timings.startSqueezyAcquisition = GetSecs();
+        tr.startSqueezyAcquisition = GetSecs();
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Call External doTrial routine
