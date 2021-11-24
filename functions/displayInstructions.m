@@ -24,7 +24,7 @@ assert(ischar(instructionsDir), 'Input instructionsDir should be class char')
 assert(isnumeric(slides), 'Input slides should be numeric')
 
 if ~exist('stage','var'), stage = ex.stage; end
-assert(ismember(stage,{'practice', 'choice', 'perform','welcome','restore'}), 'Input stage should be one of: practice, choice, perform, welcome, restore')
+assert(ismember(stage,{'practice', 'choice', 'perform','welcome','restore','end'}), 'Input stage should be one of: practice, choice, perform, welcome, restore, end')
 
 % Prepare screen if necessary
 if ~isfield(ex, 'scr')
