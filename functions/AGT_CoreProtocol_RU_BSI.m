@@ -335,7 +335,7 @@ pa = combineStruct(ex, tr);
 % Work out what kind of trial this is:
 if ismember(tr.sub_stage,{'calibration','familiarize','choice','perform'})
     stage = tr.sub_stage;
-elseif strcmp(tr.sub_stage,'practice') && strcmp(ex.stage,'choice')
+elseif strcmp(tr.sub_stage,'practice') && ismember(ex.stage,{'practice','choice'})
     stage = 'choice';
 elseif strcmp(tr.sub_stage,'practice') && strcmp(ex.stage,'perform')
     stage = 'perform';
@@ -438,11 +438,11 @@ switch stage
         % Get effort level
         if pa.practiceAscending
             % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
-            numTrLvl = floor(ex.numFamiliarise/numel(ex.effortIx));  % number of trials per level
+            numTrLvl = floor(ex.numFamiliarise/numel(ex.trialVariables.effortIx));  % number of trials per level
             tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
         else
             % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
-            tr.effortIx = 1 + mod(famTrIndex,numel(ex.effortIx));
+            tr.effortIx = mod(famTrIndex,numel(ex.trialVariables.effortIx));
         end
         tr.effort = ex.effortLevel(tr.effortIx);
         

@@ -38,17 +38,21 @@ end
 
 % If not running yet, call system command to start gripforce with '&' to 
 % start a separate process instead of running the command within matlab
-if strcmpi(mode,'start') && ~running
-    % Start gripforce process
-    if ispc
-        system([fullfile(ex.dirs.gripforce,'start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
-    elseif isunix
-        system([fullfile(ex.dirs.gripforce,'start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
-    end
-    % Wait until process started
-    while ~running
-        running = checkGripforceProcess();
-        WaitSecs(0.5);
+if strcmpi(mode,'start')
+    if ~running
+        % Start gripforce process
+        if ispc
+            system([fullfile(ex.dirs.gripforce,'start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
+        elseif isunix
+            system([fullfile(ex.dirs.gripforce,'start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
+        end
+        % Wait until process started
+        while ~running
+            running = checkGripforceProcess();
+            WaitSecs(0.5);
+        end
+    else
+        disp('Gripforce fieldtrip buffer is running. Not starting anew');
     end
     
     % Initialize gripforce and store sampling rate of gripforce
@@ -58,8 +62,6 @@ if strcmpi(mode,'start') && ~running
     % on the time defined in seconds in ex.minSqueezeTime
     ex.minimumAcceptableSqueezeTime = ex.MP_SAMPLE_RATE * ex.minSqueezeTime;
 
-elseif strcmpi(mode,'start') && running
-    disp('Gripforce fieldtrip buffer is running. Not starting anew');
 elseif strcmp(mode,'stop') && running
     % Kill process
     if ispc
