@@ -231,7 +231,7 @@ Screen('Flip',scr.w);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Start of experiment
-function exptStartEnd(ex, timepoint)
+function ex = exptStartEnd(ex, timepoint)
 % Display start/end of experiment instruction slides
 % INPUTS
 % ex        : struct with experiment parameters
@@ -438,11 +438,11 @@ switch stage
         % Get effort level
         if pa.practiceAscending
             % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
-            numTrLvl = floor(ex.numFamiliarise/numel(ex.effortIndex));  % number of trials per level
+            numTrLvl = floor(ex.numFamiliarise/numel(ex.effortIx));  % number of trials per level
             tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
         else
             % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
-            tr.effortIx = 1 + mod(famTrIndex,numel(ex.effortIndex));
+            tr.effortIx = 1 + mod(famTrIndex,numel(ex.effortIx));
         end
         tr.effort = ex.effortLevel(tr.effortIx);
         
