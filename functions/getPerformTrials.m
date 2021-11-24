@@ -5,11 +5,12 @@ function trials = getPerformTrials(ex)
 % DESCRIPTION
 % Get trial information for the performance stage by selecting from
 % previously made choices.
-% Each combination of reward and effort level is sampled if possible, and,
-% again if possible, at least one trial on which the offer was accepted is 
-% selected per reward/effort combination.
-% For the remaining trials, random samples are drawn from the other choices
-% that were made.
+% Each combination of reward and effort level is sampled, if possible.
+% An equal number of choices per reward/effort combination is selected, as
+% much as possible.
+% If more perform trials are requested than some precise multiple of the
+% number of combinations, the rest of the required trials are randomly
+% drawn from the remaining choice trials.
 % 
 % INPUT
 % ex : struct with experiment settings. Must contain fields:
@@ -30,7 +31,7 @@ function trials = getPerformTrials(ex)
 assert(exist(ex.choices_file,'file') == 2, 'The choices output file does not exist: %s', ex.choices_file);
 choices = load(ex.choices_file,'result');
 assert(ex.blocks * ex.blockLen <= numel(choices.result.data) || ex.DEBUG, ...
-    'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, nChoices);
+    'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, numel(choices.result.data));
 
 % Get reward/effort combo indices in choices
 %   Also get vector of accepted offers yes/no per trial index
@@ -41,41 +42,45 @@ accepted = [choices.result.data.Yestrial];
 [nR, nE] = ndgrid(ex.trialVariables.rewardIx, ex.trialVariables.effortIx);
 combs = cat(2,nR(:),nE(:));
 
-% Find trial indices for each combination, and 
-%   find trial indices with accepted offers for each combination, and
-%   already randomly select one accepted offer per combination if possible
-trIxs = {};
-acceptIxs = {};
-selected = [];
+% Find trial indices for each combination
 for icomb = 1:size(combs,1)
     trIxs{icomb} = find(choicesREixs(1,:) == combs(icomb,1) & choicesREixs(2,:) == combs(icomb,2));
-    acceptIxs{icomb} = trIxs{icomb}(find(accepted(trIxs{icomb})));
-    
-    % For each combination, select one accepted offer if possible
-    if ~isempty(acceptIxs{icomb})
-        selected(end+1) = acceptIxs{icomb}(randsample(numel(acceptIxs{icomb}),1));
-    end
-    % Also randomly select one other choice for this combination if
-    % possible
-    if ~isempty(trIxs{icomb})
-        tmp = trIxs{icomb};
-        tmp(ismember(tmp,selected)) = [];
-        if ~isempty(tmp)
-            selected(end+1) = tmp(randsample(numel(tmp),1));
+end
+
+% Get the number of repetitions possible for all reward/effort
+% combinations, given the requested number of perform trials and number of
+% combinations.
+nTrials = ex.blocks * ex.blockLen;
+nRepsAll = floor(size(combs,1)/nTrials);
+
+% Select equal number of random choices for each combination.
+%   Missing combinations in choices are skipped
+%   Only unique choices are selected, i.e. if a combination only appears
+%   once in choices, it's only selected once.
+selected = [];
+for rep = 1:nRepsAll
+    for icomb = 1:size(combs,1)
+        if ~isempty(trIxs{icomb})
+            tmp = trIxs{icomb};
+            tmp(ismember(tmp,selected)) = [];
+            if ~isempty(tmp)
+                selected(end+1) = tmp(randsample(numel(tmp),1));
+            end
         end
     end
 end
 
-% Fill the rest of the required trial numbers with random draws from choice
-% trials for random reward/effort combinations
-nTrials = ex.blocks * ex.blockLen;
-while numel(selected) < nTrials
-    icomb = randsample(size(combs,1),1);
-    if ~isempty(trIxs{icomb})
-        selected(end+1) = trIxs{icomb}(randsample(numel(trIxs{icomb}),1));
-    end
-    % Discard duplicates in selection
-    selected = unique(selected);
+% If more perform trials are requested than some precise multiple of the
+% number of combinations, get the rest of the required trials with random 
+% draws from the remaining choice trials
+if numel(selected) < nTrials
+    nToSelect = nTrials-numel(selected);
+    
+    remainingTrials = cell2mat(trIxs);
+    remainingTrials(remainingTrials == selected) = [];
+    assert(numel(remainingTrials) >= nToSelect, 'Too many perform trials requested. No more choices to select from');
+    
+    selected = [selected, remainingTrials(randsample(numel(remainingTrials),nToSelect,false))];
 end
 
 % Get trial info for the selected trial indices, and shuffle trial order
