@@ -445,7 +445,10 @@ switch stage
             % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
             tr.effortIx = 1 + mod(famTrIndex - 1, numel(ex.trialVariables.effortIx));
         end
-        tr.effort = ex.effortLevel(tr.effortIx);
+        % Log this trial's reward and effort levels based on the index
+        tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
+        tr.effortLevel = ex.effortLevel(tr.effortIx);
+        tr.effort = tr.effortLevel; % Seems needed because of leftover code somewhere
         
         % Log trial onset time
         tr = LogEvent(ex,el,tr,'trialOnset');
@@ -701,6 +704,11 @@ switch stage
 %         % select the corresponding choice trial
         if ~ex.fatiguingExercise
             location = 0; % tree in the middle
+            
+            % Log this trial's reward and effort levels based on the index
+            tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
+            tr.effortLevel = ex.effortLevel(tr.effortIx);
+            
 %             performTrial = ex.last_trial(tr.trialIndex);
 %             tr.effortIx = ex.order_effort( performTrial );
 %             tr.effort  = ex.effortLevel( tr.effortIx );
