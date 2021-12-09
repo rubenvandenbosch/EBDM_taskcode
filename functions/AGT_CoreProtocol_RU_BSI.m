@@ -387,6 +387,7 @@ switch stage
         % Prepare gripforce feedback function
         %   parameters:(scr, ex, colour, colourlevel, height, effortLevel)
         fbfunc = @(f) drawCalibAndFlip(scr, ex, ex.fgColour, calibrationInstructions{ix,3}, f(pa.channel)/MVC, calibrationInstructions{ix,2} );
+        tr = LogEvent(ex,el,tr,'stimOnset');
         
         % read data from force transducer:
         %   parameters: ( timeOfLastAcquisition, maxTimeToWait, stopRecordingThreshold, ISI, feedbackFunction )
@@ -466,6 +467,7 @@ switch stage
         %   with "RESPOND NOW". Location 0 means centre of screen.
         if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
         fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
+        tr = LogEvent(ex,el,tr,'stimOnset');
         
         % Get squeeze response data
         tr = LogEvent(ex,el,tr,'squeezeStart');
