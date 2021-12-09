@@ -157,7 +157,7 @@ end
 output.trialDuration = output.trialEnd - output.trialOnset;
 
 % Trial info and response output
-vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesLocation'};
+vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward'};
 for ivar = 1:numel(vars)
     if isfield(tr,vars{ivar}) % Retrieve var from tr struct
         output.(vars{ivar}) = tr.(vars{ivar});
@@ -165,6 +165,7 @@ for ivar = 1:numel(vars)
         output.(vars{ivar}) = NaN;
     end
 end
+if tr.yesIsLeft, output.yesLocation = 'left'; else, output.yesLocation = 'right'; end
 
 % Write data
 % .........................................................................
