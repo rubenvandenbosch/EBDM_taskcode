@@ -724,6 +724,7 @@ switch stage
         end
         
         if Yestrial == 1   % Accepted Performance trials
+            tr.didAccept = 1;
             
             % Function to draw tree without apples and the correct effort 
             % rung, with "RESPOND NOW" text
@@ -775,6 +776,7 @@ switch stage
             end
             
         else    % Declined performance trials
+            tr.didAccept = 0;
             
             % No reward on this trial
             tr.success = NaN;
