@@ -689,31 +689,18 @@ switch stage
         Screen('Flip', scr.w);
         tr = LogEvent(ex,el,tr,'trialEnd');
         
-        % Store whether the offer was accepted on each trial, for the purposes
-        % of the final perfomance block.
-        if ~tr.isPractice
-            YesResp(tr.allTrialIndex) = tr.Yestrial;
-        end
+        % Copy Yestrial field to accept fiels in tr struct for consistent
+        % naming in output file
+        tr.accept = tr.Yestrial;
         
     case 'perform'
         
-%         %%%%%%%%%%%%%%%%%
-%         % there are 10 performance trials, at the end of the experiment. They
-%         % constitute the final block.  (Block 6 in this case).
-%         % They are drawn with predetermined indices from the choices.
-%         % select the corresponding choice trial
         if ~ex.fatiguingExercise
             location = 0; % tree in the middle
             
             % Log this trial's reward and effort levels based on the index
             tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
             tr.effortLevel = ex.effortLevel(tr.effortIx);
-            
-%             performTrial = ex.last_trial(tr.trialIndex);
-%             tr.effortIx = ex.order_effort( performTrial );
-%             tr.effort  = ex.effortLevel( tr.effortIx );
-%             tr.stakeIx = ex.order_reward(  performTrial ); % n is stake index (1-5)
-%             tr.stake   = ex.applesInStake(tr.stakeIx); % look up stake value (in apples), based on stake 'level' (1-5)
         else
             location = tr.location; % tree middle (0) or left(-1)/right(1) for two hands case
             if location > 0, pa.channel = 2; else pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
@@ -731,7 +718,7 @@ switch stage
         
         % Find out if trial was a Yes response
         if ~ex.fatiguingExercise
-            Yestrial = YesResp(performTrial);
+            Yestrial = tr.choiceInfo.Yestrial;
         else
             Yestrial = 1;
         end

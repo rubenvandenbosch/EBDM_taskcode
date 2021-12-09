@@ -543,9 +543,11 @@ try
                 end
                 
                 % Get trial parameters
+                %   Store in subfield of tr struct in order to not
+                %   overwrite stuff.
                 %   Set current trial's sub_stage to the overall ex.stage
                 %   Set tr.isPractice to false
-                tr = trials(b,t);
+                tr.choiceInfo = trials(b,t);
                 tr.sub_stage  = ex.stage;
                 tr.isPractice = false;
                 
