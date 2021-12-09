@@ -311,7 +311,7 @@ else  % starting a new block of the main experiment
         if strcmp(ex.language,'NL'), txt='Wanneer u er klaar voor bent, druk op een toets/knop om door te gaan'; else, txt='When you are ready, press the spacebar/button to continue'; end
         drawTextCentred(scr, txt, ex.fgColour);
         Screen('Flip',scr.w);
-        waitForKeypress(ex);
+%         waitForKeypress(ex);
         WaitSecs(0.5);
     end
 end
@@ -442,7 +442,7 @@ switch stage
             tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
         else
             % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
-            tr.effortIx = mod(famTrIndex,numel(ex.trialVariables.effortIx));
+            tr.effortIx = 1 + mod(famTrIndex - 1, numel(ex.trialVariables.effortIx));
         end
         tr.effort = ex.effortLevel(tr.effortIx);
         
@@ -536,16 +536,14 @@ switch stage
         tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
         tr.effortLevel = ex.effortLevel(tr.effortIx);
         
-        % Log trial onset time
-        tr = LogEvent(ex,el,tr,'trialOnset');
-        
-        % Draw fixation cross
+        % Draw fixation cross, and log trial onset time
         Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
         Screen('Flip', ex.scr.w);
+        tr = LogEvent(ex,el,tr,'trialOnset');
         
         % Inter Trial Interval (ITI) at beginning of each trial
         %   RB: Currently random, change to e.g. poisson??
-        WaitSecs(ex.minITI+rand(1)*(ex.maxITI-ex.minITI));
+        WaitSecs(ex.minITI + rand*(ex.maxITI-ex.minITI));
         
         % Present tree with effort and stake in centre of screen
         drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
@@ -556,10 +554,11 @@ switch stage
         if ischar(pa.timeBeforeChoice)
             if strcmpi(pa.timeBeforeChoice,'RandPoisson')
                 % Get Poisson distributed random number
-                lambda=10;
-                Tdelay = 2+poissrnd(lambda)/(lambda+1);
+                lambda = 10;
+                Tdelay = ex.minTimeBeforeChoice + poissrnd(lambda)/(lambda+1);
             elseif strcmpi(pa.timeBeforeChoice,'RandNormal')
-                Tdelay = 2 + rand*2;
+                Tdelay = (ex.minTimeBeforeChoice + rand*(ex.maxTimeBeforeChoice-ex.minTimeBeforeChoice));
+%                 Tdelay = 2 + rand*2;
             else
                 error('Unsupported value (%s) for ''timeBeforeChoice'' setting',pa.timeBeforeChoice);
             end
@@ -823,7 +822,7 @@ if ~EXIT
 else
     tr.R = pa.R_ESCAPE; % tells RunExperiment to exit.
 end
-return % end of experiment
+return
 
 
 function tr = waitOrBreak(ex, tr, waitsecs)
