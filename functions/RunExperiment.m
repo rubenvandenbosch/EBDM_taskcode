@@ -384,12 +384,19 @@ try
             %   Start with calibration, then familiarize, then practice
             %   For calibration and familiarize, load trial info of first
             %   practice trial (not used)
-            if ix <= ex.numCalibration
+            if ix <= prePracticeTrials
                 tr = prac(1,1);
-                tr.sub_stage = 'calibration';
-            elseif ix <= prePracticeTrials
-                tr = prac(1,1);
-                tr.sub_stage = 'familiarize';
+                % Set reward info to NaN for calibration and familiarize
+                tr.rewardIx  = nan;
+                tr.rewardLvl = nan;
+                if ix <= ex.numCalibration
+                    tr.sub_stage = 'calibration';
+                    % For calibration stage also set effort info to NaN
+                    tr.effortIx  = nan;
+                    tr.effortLvl = nan;
+                else
+                    tr.sub_stage = 'familiarize';
+                end
             else
                 % Get practice trial parameters for current trial
                 tr = prac(1+floor((practiceTrialIx-1)/ex_prac.blockLen),1+mod(practiceTrialIx,ex_prac.blockLen));
@@ -426,6 +433,11 @@ try
             % Run the practice trial
             %   set the block index to 0
             tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,ix);
+            
+            % Overwrite trialIndex with practiceTrialIndex to have negative
+            % trial index within block for calibration and familiarize and
+            % positive trial numbers for practice choices
+            tr.trialIndex = practiceTrialIx;
             
             % do not allow repeating practice trials
             if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
