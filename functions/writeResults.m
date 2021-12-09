@@ -24,8 +24,8 @@ function [result, ex] = writeResults(ex, result, tr, varargin)
 %           added when initializing.
 % result  : struct with all results of current experiment run. Not used
 %           (supply []) when init=true.
-% tr      : struct with results for the current trial. Not used (supply [])
-%           when init=true.
+% tr      : struct with results for the current trial. Not used when 
+%           init=true (supply []).
 % init    : true/false; defaults to false. Toggle initialize only mode. If
 %           set to true, the relevant text output files are opened and, if
 %           necessary, the header line is written. 
@@ -144,8 +144,20 @@ save(ex.files.recovery,'result');
 % Write data to output files
 % -------------------------------------------------------------------------
 % Get output variables and set unavailable vars to NaN
-vars = {'trialOnset','stimOnset','choiceOnset','responseOnset','responseTime','feedbackOnset','trialEnd', ...
-        'rewardIx','rewardLvl','effortIx','effortLvl','accept','didAccept','success','totalReward','yesLocation'};
+% .........................................................................
+% Timing info output
+vars = {'trialOnset','stimOnset','choiceOnset','responseOnset','responseTime','feedbackOnset','trialEnd'};
+for ivar = 1:numel(vars)
+    if isfield(tr.timings,vars{ivar}) % Retrieve var from tr struct
+        output.(vars{ivar}) = tr.timings.(vars{ivar});
+    else    % if unavailable, set to NaN
+        output.(vars{ivar}) = NaN;
+    end
+end
+output.trialDuration = output.trialEnd - output.trialOnset;
+
+% Trial info and response output
+vars = {'rewardIx','rewardLvl','effortIx','effortLvl','accept','didAccept','success','totalReward','yesLocation'};
 for ivar = 1:numel(vars)
     if isfield(tr,vars{ivar}) % Retrieve var from tr struct
         output.(vars{ivar}) = tr.(vars{ivar});
@@ -153,9 +165,9 @@ for ivar = 1:numel(vars)
         output.(vars{ivar}) = NaN;
     end
 end
-output.trialDuration = output.trialEnd - output.trialOnset;
 
 % Write data
+% .........................................................................
 for ifile = 1:numel(fields)
     % Determine delimiter
     [~,~,extension] = fileparts(ex.files.(fields{ifile}));
