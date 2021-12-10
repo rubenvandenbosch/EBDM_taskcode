@@ -84,7 +84,7 @@ if init
             % Create header
             header = ['subject session stage MVC block trialNr trialNr_block ' ...
                       'trialOnset stimOnset choiceOnset responseOnset responseTime squeezeStart squeezeEnd feedbackOnset trialEnd trialDuration ' ...
-                      'rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesLocation'];
+                      'rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft'];
             
             % Write header
             %   Replace white space with delimiter, and add newline char
@@ -157,7 +157,7 @@ end
 output.trialDuration = output.trialEnd - output.trialOnset;
 
 % Trial info and response output
-vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward'};
+vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesIsLeft'};
 for ivar = 1:numel(vars)
     if isfield(tr,vars{ivar}) % Retrieve var from tr struct
         output.(vars{ivar}) = tr.(vars{ivar});
@@ -165,7 +165,6 @@ for ivar = 1:numel(vars)
         output.(vars{ivar}) = NaN;
     end
 end
-if tr.yesIsLeft, output.yesLocation = 'left'; else, output.yesLocation = 'right'; end
 
 % Write data
 % .........................................................................
@@ -182,8 +181,8 @@ for ifile = 1:numel(fields)
     %   Header:
     %   subject session stage MVC block trialNr trialNr_block ...
     %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
-    %   rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesLocation
-    pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %s %d %d %d %s\n';
+    %   rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft
+    pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %s %d %d %d %d\n';
     
     % Write data line
     %   Replace whitespace in pattern with delimiter
@@ -191,6 +190,6 @@ for ifile = 1:numel(fields)
     fprintf(ex.fids.(fields{ifile}), pattern, ...
         ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
         output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
-        output.rewardIx, output.rewardLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesLocation);
+        output.rewardIx, output.rewardLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesIsLeft);
 end
 end
