@@ -46,18 +46,29 @@ if strcmpi(mode,'start')
         elseif isunix
             system([fullfile(ex.dirs.gripforce,'start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
         end
-        % Wait until process started
+        % Wait 3 seconds to give the process time to start, then check
+        % every half second that process has started
+        WaitSecs(3);
         while ~running
             running = checkGripforceProcess();
             WaitSecs(0.5);
+        end
+        % After process has started it takes some time before buffer is 
+        % ready. Keep trying to initialize buffer for 12 seconds 
+        tic; initialized = false;
+        while ~initialized && toc < 12
+            try
+                % Initialize gripforce and store sampling rate of gripforce
+                ex = initGripforce(ex);
+                initialized = true;
+            catch
+                WaitSecs(0.5);
+            end
         end
     else
         disp('Gripforce fieldtrip buffer is running. Not starting anew');
     end
     
-    % Initialize gripforce and store sampling rate of gripforce
-    ex = initGripforce(ex);
-
     % Set the required squeeze time for success in number of samples based
     % on the time defined in seconds in ex.minSqueezeTime
     ex.minimumAcceptableSqueezeTime = ex.MP_SAMPLE_RATE * ex.minSqueezeTime;
