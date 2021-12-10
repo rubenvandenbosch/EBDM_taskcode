@@ -386,9 +386,6 @@ try
             %   practice trial (not used)
             if ix <= prePracticeTrials
                 tr = prac(1,1);
-                % Set reward info to NaN for calibration and familiarize
-                tr.rewardIx  = nan;
-                tr.rewardLvl = nan;
                 if ix <= ex.numCalibration
                     tr.sub_stage = 'calibration';
                     % For calibration stage also set effort info to NaN
@@ -434,10 +431,16 @@ try
             %   set the block index to 0
             tr = runSingleTrialAndProcess(scr, el, ex, tr,doTrial,0,ix);
             
-            % Overwrite trialIndex with practiceTrialIndex to have negative
-            % trial index within block for calibration and familiarize and
-            % positive trial numbers for practice choices
+            % Overwrite tr fields with forced values for practice stage
+            % 	trialIndex with practiceTrialIndex to have negative trial
+            %   index within block for calibration and familiarize and
+            %   positive trial numbers for practice choices.
+            %   Set reward info to NaN for calibration and familiarize
             tr.trialIndex = practiceTrialIx;
+            if ix <= prePracticeTrials
+                tr.rewardIx  = nan;
+                tr.rewardLvl = nan;
+            end
             
             % do not allow repeating practice trials
             if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
@@ -515,17 +518,6 @@ try
             % Initialise record of trials to repeat at end of block
             repeatLater = [];
             
-            % Fix too many trials for last block
-            if b == ex.choiceBlockNumber
-                len = min(ex.blockLen,numel(ex.last_trial));
-                %               len = numel(ex.last_trial);
-                % dirty trick to allow more than 25 trials for actual squeeze
-                % task
-                %trials = [trials trials];
-            else
-                len = ex.blockLen;
-            end
-            
             % Set settings used for fatiguing experiment only
             %   start effort on level specified below * MVC
             fatEffort    = ex.fatiguingExerciseSTartEffortLevel;
@@ -535,7 +527,7 @@ try
             % Run each trial in this block
             % .............................................................
             firstMRItrial = 1;
-            for t = 1:len
+            for t = 1:ex.blockLen
                 % skip through trials already done
                 if b==last(1) && t<last(2)
                     firstMRItrial = t+1;
@@ -543,16 +535,14 @@ try
                 end
                 
                 % Get trial parameters
-                %   Store in subfield of tr struct in order to not
-                %   overwrite stuff.
                 %   Set current trial's sub_stage to the overall ex.stage
                 %   Set tr.isPractice to false
-                tr.choiceInfo = trials(b,t);
+                tr = trials(b,t);
                 tr.sub_stage  = ex.stage;
                 tr.isPractice = false;
                 
                 % Add MRI info to trial struct
-                if b==last(1) && t == firstMRItrial
+                if b==last(1) && ex.inMRIscanner && t == firstMRItrial
                     tr.firstTrialMRIrun = true;
                     tr.timings.firstMRItriggerT0 = trial1.timings.firstMRItriggerT0;
                 else
