@@ -11,6 +11,7 @@ Modifications include the use of a TSG manufactured gripforce device (making use
 The experiment is divided in three stages: 
 - practice  : calibration of maximum voluntary contraction (MVC), familiarization with effort-levels, practice decisions
 - choice 	: main experiment phase (MRI optional) of effort-based decision-making
+- perform  	: perform grip force effort for reward based on random selection from decisions in choice phase
 
 ## Dependencies 
 - todo
