@@ -145,8 +145,6 @@ function result = RunExperiment ( doTrial, ex, params, blockStart )
 
 % Setup parameters
 % =========================================================================
-global totalReward
-
 % values of responseType, supplied by doTrial.
 % send these values in tr.R to indicate the outcome of each trial
 ex.R_ERROR        = -99;            % trial was an error; leave it and do nothing
@@ -168,9 +166,9 @@ ex.experimentFile = dir(which(ex.experimentStack(end).file));
 % If params is given, overwrite (potentially ask first) the settings in
 % struct ex with those specified in params
 % -------------------------------------------------------------------------
-last = [1 1];                       % block and trial to start at
-if exist('params','var')           % if user specified a set of experimental
-    p=params;                       % parameters in the input parameters,
+last = [1 1];                               % block and trial to start at
+if exist('params','var') && ~isempty(params)% if user specified a set of experimental
+    p=params;                               % parameters in the input parameters,
     if isfield(p,'params'), p=p.params; end
     fnames=fieldnames(p);           % override parameters from the original (ex)
     for x = 1:length(fnames);       % with those from the input structure (p).
