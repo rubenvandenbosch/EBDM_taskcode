@@ -100,10 +100,10 @@ switch ex.stage
         % Number of trials to familiarize with effort levels. Ideally an
         % multiple of the number of effort levels (e.g. 3x4=12 to practice
         % each of 4 effort levels 3 times).
-        ex.numFamiliarise       = 4; %12;
+        ex.numFamiliarise       = 12;
         
         % Number of practice decisions about X effort for X reward
-        ex.practiceTrials       = 4;
+        ex.practiceTrials       = 16;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -129,8 +129,9 @@ switch ex.stage
         % Number of blocks and trials per block
         %   NB: with a 4x4 design, a block length of 16 or 32 allows for 
         %       equal number of occurance per trial type within a block
-        ex.blocks               = 1;   % Number of blocks
+        ex.blocks               = 5;   % Number of blocks
         ex.blockLen             = 16;  % number of  trials within each block
+        ex.blockBreakTime       = 10;  % Rest time betwen blocks (seconds)
 
         % Include this number of practice choice trials at the beginning?
         ex.practiceTrials       = 0;
@@ -159,8 +160,9 @@ switch ex.stage
         %     reward
         
         % Number of blocks and trials per block
-        ex.blocks               = 1;   % Number of blocks
+        ex.blocks               = 2;   % Number of blocks
         ex.blockLen             = 16;  % number of  trials within each block
+        ex.blockBreakTime       = 8;  % Rest time betwen blocks (seconds)
         
         % Practice a number of trials with different effort levels without
         % reward?
@@ -218,10 +220,13 @@ ex.maxTimeToWait        = 10;  % Time that a participant has to accept/reject of
 
 % Time between offer onset (tree with effort+stake) and "Yes/No" response
 % options onset.
-%   set to a number to have fixed delays
-%   set to 'RandPoisson' to have 2-4 seconds random delays (poisson distribution)
-%   set to 'RandNormal' to have 2-4 seconds random delays (normal distribution)
+%   set ex.timeBeforeChoice to a number to have fixed delays
+%   set ex.timeBeforeChoice to 'RandPoisson' or 'RandNormal' to have random
+%   or poisson drawn delay, respectively, between ex.minTimeBeforeChoice
+%   and ex.maxTimeBeforeChoice (in seconds).
 ex.timeBeforeChoice     = 'RandNormal';
+ex.minTimeBeforeChoice  = 2;
+ex.maxTimeBeforeChoice  = 4;
 
 % Performance phase
 % .........................................................................
