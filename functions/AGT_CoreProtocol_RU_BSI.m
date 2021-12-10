@@ -803,7 +803,7 @@ switch stage
         tr.totalReward = totalReward;
         
         % Present total reward feedback after the last perform trial
-        if pa.trialIndex >= ex.blocks*ex.blockLen && ~ex.fatiguingExercise
+        if pa.allTrialIndex >= ex.blocks*ex.blockLen && ~ex.fatiguingExercise
             if strcmp(ex.language,'NL'), txt='Einde van dit taakgedeelte'; else, txt='End of this task stage'; end
             drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
             if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
