@@ -94,7 +94,7 @@ ex.exptStartEnd = @exptStartEnd;
 
 % restore globals from previous experiment?
 if ~exist('params','var') || isempty(params)
-    params=struct();
+    params = struct([]);
 else
     if isfield(params, 'MVC'), MVC = params.MVC; end
     if isfield(params, 'data') && isfield(params.data(end),'totalReward')
@@ -232,6 +232,8 @@ Screen('Flip',scr.w);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Start of experiment
 function ex = exptStartEnd(ex, timepoint)
+global totalReward
+
 % Display start/end of experiment instruction slides
 % INPUTS
 % ex        : struct with experiment parameters
@@ -250,7 +252,19 @@ switch lower(timepoint)
         slideNrs = 1;
         if ex.restoredSession
             %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
+            
+            % Display total reward before continuing a restored session in
+            % the perform stage
+            if strcmp(ex.stage,'perform')
+                if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+                drawTextCentred(scr, sprintf('%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100])
+                WaitSecs(1);
+            end
         else
+            % Reset totalReward
+            totalReward = 0;
+            
+            % Display welcome screen
             %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
         end
     case 'end'
@@ -261,8 +275,7 @@ end
 %% Start of block:
 % this also controls calibration and practice at the start of the experiment
 function [ex, tr] = blockfn(scr, el, ex, tr)
-global  totalReward
-totalReward = 0; % start each block with zero total reward
+global totalReward
 
 % Display instructions
 %   Kept displayInstructions method of calling img files, at least for now
@@ -289,31 +302,27 @@ elseif tr.block == 1 % start of experiment
     slideNrs = 1:5;
     displayInstructions(ex, ex.dirs.instructions, slideNrs)
     
-elseif tr.block >= ex.choiceBlockNumber % the single trials to perform at the end
-    if ~ex.fatiguingExercise
-        slideNrs = 1;
-        displayInstructions(ex, ex.dirs.instructions, slideNrs)
-    else
-        warning('No instructions implemented for fatiguingExercise experiment')
-    end
-    
 else  % starting a new block of the main experiment
     
+    % End of block text
     if strcmp(ex.language,'NL'), txt='Einde van dit blok.'; else, txt='End of block.'; end
-    drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, -300]);
+    drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, -150]);
     
-    if ex.fatiguingExercise
-        if strcmp(ex.language,'NL'), txt='Let op, we starten weer over 3 seconden'; else, txt='Get ready, we will start again in 3 seconds'; end
-        drawTextCentred(scr, txt, ex.fgColour);
-        Screen('Flip',scr.w);
-        WaitSecs(3);
-    else
-        if strcmp(ex.language,'NL'), txt='Wanneer u er klaar voor bent, druk op een toets/knop om door te gaan'; else, txt='When you are ready, press the spacebar/button to continue'; end
-        drawTextCentred(scr, txt, ex.fgColour);
-        Screen('Flip',scr.w);
-%         waitForKeypress(ex);
-        WaitSecs(0.5);
+    % Inform how long before continuing
+    if strcmp(ex.language,'NL'), txt = sprintf('De taak gaat over %d seconden verder',ex.blockBreakTime);
+    else, txt = sprintf('The task will continue in %d seconds',ex.blockBreakTime); end
+    drawTextCentred(scr, txt, ex.fgColour);
+    
+    % If perform stage, display total reward collected
+    if strcmp(ex.stage,'perform')
+        if strcmp(ex.language,'NL'), txt = sprintf('Totaal verzamelde appels: %d',totalReward);
+        else, txt = sprintf('Total apples gathered: %d',totalReward); end
+        drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, 150]);
     end
+    
+    % Show text and wait
+    Screen('Flip',scr.w);
+    WaitSecs(ex.blockBreakTime);
 end
 
 % Wait for MRI scanner triggers and set T0 of this MRI run, if applicable
@@ -327,7 +336,7 @@ function tr = doTrial(scr, el, ex, tr)
 % el  = eyelink information
 % ex  = general experiment parameters
 % tr  = trial-specific parameters
-global  MVC totalReward YesResp
+global  MVC totalReward
 
 % Get parameters for this trial
 pa = combineStruct(ex, tr);
