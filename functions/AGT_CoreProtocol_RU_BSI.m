@@ -695,6 +695,7 @@ switch stage
         
     case 'perform'
         
+        % Set tree location and log/set reward and effort levels
         if ~ex.fatiguingExercise
             location = 0; % tree in the middle
             
@@ -718,11 +719,12 @@ switch stage
         
         % Find out if trial was a Yes response
         if ~ex.fatiguingExercise
-            Yestrial = tr.choiceInfo.Yestrial;
+            Yestrial = tr.Yestrial;
         else
             Yestrial = 1;
         end
         
+        % Run trial
         if Yestrial == 1   % Accepted Performance trials
             tr.didAccept = 1;
             
