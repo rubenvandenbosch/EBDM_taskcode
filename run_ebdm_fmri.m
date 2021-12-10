@@ -10,7 +10,7 @@ function result = run_ebdm_fmri(varargin)
 % Required info, either supplied directly or asked for interactively:
 %   subject
 %   session (1 = baseline / 2 = postintervention)
-%   stage (Experiment stage:  
+%   stage : Experiment stage
 %           - practice : calibration (MVC), familiarize effort levels, 
 %                        practice choices
 %           - choice   : choice task decisions (in MRI scanner)
