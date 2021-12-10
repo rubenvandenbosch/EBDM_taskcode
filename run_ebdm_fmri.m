@@ -8,19 +8,22 @@ function result = run_ebdm_fmri(varargin)
 %
 % INPUT
 % Required info, either supplied directly or asked for interactively:
-%   subject
-%   session (1 = baseline / 2 = postintervention)
-%   stage : Experiment stage
+%   subject : num; subject number
+%   session : num; session number (e.g. 1=baseline / 2=postintervention)
+%   stage   : Experiment stage
 %           - practice : calibration (MVC), familiarize effort levels, 
 %                        practice choices
-%           - choice   : choice task decisions (in MRI scanner)
+%           - choice   : choice task decisions (optionally in MRI scanner)
 %           - perform  : performance of selected effort levels for reward
 %                        from the choice stage
 % 
 % NB: adjust experiment settings in commonSettings.m
 % 
 % -------------------------------------------------------------------------
-%
+% Ruben van den Bosch, november 2021
+% Donders Institute, Radboud University Nijmegen
+% The Netherlands
+% 
 
 assert(nargin <= 3, 'Too many input arguments');
 
