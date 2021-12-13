@@ -205,28 +205,44 @@ ex.fatiguingExerciseSTartEffortLevel = 0.3;
 
 % Timings (seconds)
 % =========================================================================
-% Intertrial interval
-% Time will be randomly chosen in the interval minITI - maxITI    %% CHANGE TO E.G. A POISSON DRAW?
-ex.minITI               = 0.5;
-ex.maxITI               = 4;
-
 % Calibration phase
 % .........................................................................
 ex.calibrationDuration  = 5;   % Time for calibration squeeze
 
-% Decision phase
+% Choice phase
 % .........................................................................
-ex.maxTimeToWait        = 10;  % Time that a participant has to accept/reject offer. Starts from onset "Yes/No" response options
+% Intertrial interval (ITI)
+%   set ex.methodITI to a number to have fixed ITIs (in secs)
+%   set ex.methodITI to 'randUniform' to have random ITIs between
+%       ex.minITI and ex.maxITI
+%   set ex.methodITI to 'randNormal' to have random delays drawn
+%       from a normal distribution with mean of ex.meanITI (must be
+%       between min and max delay) that is truncated to produce draws
+%       between ex.minITI and ex.maxITI. The variance is set to
+%       (1/mean)*range, unless specified in ex.sigmaITI.
+ex.methodITI    = 'randNormal';
+ex.minITI       = 3;
+ex.maxITI       = 8;
+ex.meanITI      = 5;
 
 % Time between offer onset (tree with effort+stake) and "Yes/No" response
 % options onset.
-%   set ex.timeBeforeChoice to a number to have fixed delays
-%   set ex.timeBeforeChoice to 'RandPoisson' or 'RandNormal' to have random
-%   or poisson drawn delay, respectively, between ex.minTimeBeforeChoice
-%   and ex.maxTimeBeforeChoice (in seconds).
-ex.timeBeforeChoice     = 'RandNormal';
-ex.minTimeBeforeChoice  = 2;
-ex.maxTimeBeforeChoice  = 4;
+%   set ex.methodChoiceDelay to a number to have fixed delays (in secs)
+%   set ex.methodChoiceDelay to 'randUniform' to have random delays between
+%       ex.minChoiceDelay and ex.maxChoiceDelay
+%   set ex.methodChoiceDelay to 'randNormal' to have random delays drawn
+%       from a normal distribution with mean of ex.meanChoiceDelay (must be
+%       between min and max delay) that is truncated to produce draws
+%       between ex.minChoiceDelay and ex.maxChoiceDelay. The variance is
+%       set to (1/mean)*range, unless specified in ex.sigmaChoiceDelay.
+ex.methodChoiceDelay    = 'randNormal';
+ex.minChoiceDelay       = 3;
+ex.maxChoiceDelay       = 6;
+ex.meanChoiceDelay      = 4;
+
+% Time that a participant has to accept/reject offer. 
+%   Starts from onset "Yes/No" response options
+ex.maxRT                = 4;
 
 % Performance phase
 % .........................................................................

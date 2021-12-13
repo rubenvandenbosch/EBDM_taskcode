@@ -556,25 +556,53 @@ switch stage
         tr = LogEvent(ex,el,tr,'trialOnset');
         
         % Inter Trial Interval (ITI) at beginning of each trial
-        %   RB: Currently random, change to e.g. poisson??
-        WaitSecs(ex.minITI + rand*(ex.maxITI-ex.minITI));
+        Tdelay = pa.methodITI;
+        if ischar(pa.methodITI)
+            switch pa.methodITI
+                case 'randUniform'
+                    % Uniform random sample
+                    Tdelay = (ex.minITI + rand*(ex.maxITI-ex.minITI));
+                case 'randNormal'
+                    assert(ex.minITI < ex.meanITI < ex.maxITI, 'Mean choice delay falls outside min to max range. Check settings');
+                    
+                    % Get sigma
+                    if isfield(ex,'sigmaITI'), sigma = ex.sigmaITI;
+                    else, sigma = (1/ex.meanITI)*(ex.maxITI-ex.minITI); end
+                    
+                    % Create truncated normal distribution
+                    d = makedist('normal',ex.meanITI,sigma);
+                    d = truncate(d,ex.minITI,ex.maxITI);
+                    
+                    % Random draw
+                    Tdelay = random(d,1);
+            end
+        end
+        WaitSecs(Tdelay);
         
         % Present tree with effort and stake in centre of screen
         drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
         tr = LogEvent(ex,el,tr,'stimOnset');
         
         % Wait before presenting yes/no response options
-        Tdelay = pa.timeBeforeChoice;
-        if ischar(pa.timeBeforeChoice)
-            if strcmpi(pa.timeBeforeChoice,'RandPoisson')
-                % Get Poisson distributed random number
-                lambda = 10;
-                Tdelay = ex.minTimeBeforeChoice + poissrnd(lambda)/(lambda+1);
-            elseif strcmpi(pa.timeBeforeChoice,'RandNormal')
-                Tdelay = (ex.minTimeBeforeChoice + rand*(ex.maxTimeBeforeChoice-ex.minTimeBeforeChoice));
-%                 Tdelay = 2 + rand*2;
-            else
-                error('Unsupported value (%s) for ''timeBeforeChoice'' setting',pa.timeBeforeChoice);
+        Tdelay = pa.methodChoiceDelay;
+        if ischar(pa.methodChoiceDelay)
+            switch pa.methodChoiceDelay
+                case 'randUniform'
+                    % Uniform random sample
+                    Tdelay = (ex.minChoiceDelay + rand*(ex.maxChoiceDelay-ex.minChoiceDelay));
+                case 'randNormal'
+                    assert(ex.minChoiceDelay < ex.meanChoiceDelay < ex.maxChoiceDelay, 'Mean choice delay falls outside min to max range. Check settings');
+                    
+                    % Get sigma
+                    if isfield(ex,'sigmaChoiceDelay'), sigma = ex.sigmaChoiceDelay;
+                    else, sigma = (1/ex.meanChoiceDelay)*(ex.maxChoiceDelay-ex.minChoiceDelay); end
+                    
+                    % Create truncated normal distribution
+                    d = makedist('normal',ex.meanChoiceDelay,sigma);
+                    d = truncate(d,ex.minChoiceDelay,ex.maxChoiceDelay);
+                    
+                    % Random draw
+                    Tdelay = random(d,1);
             end
         end
         WaitSecs(Tdelay);
@@ -588,9 +616,8 @@ switch stage
         
         % Wait for a valid response or until deadline
         % -----------------------------------------------------------------
-        % This sets the total trial length, which is the same for every 
-        % trial(?) To change it, alter ex.maxTimeToWait
-        deadline = GetSecs + ex.maxTimeToWait;
+        % Deadline is the maximum response time, ex.maxRT
+        deadline = GetSecs + ex.maxRT;
         if ex.useBitsiBB,  ex.BitsiBB.clearResponses(); end % empty input buffer
         while GetSecs < deadline
             if ex.useBitsiBB
@@ -692,9 +719,9 @@ switch stage
             drawTree(scr,ex,0, tr.rewardIx, tr.effortIx, 0, true, [], true);
         end
         tr = LogEvent(ex,el,tr,'feedbackOnset');
+        WaitSecs(0.5);
         
-        % Wait until the total trial length is up, so all trials are the same length (ex.maxTimeToWait)
-        WaitSecs(0.5);      %% RB: Always wait .5?? Should be while GetSecs() < deadline if the goal is indeed to get equal trial durations?
+        
         Screen('Flip', scr.w);
         tr = LogEvent(ex,el,tr,'trialEnd');
         
