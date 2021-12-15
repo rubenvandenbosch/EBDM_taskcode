@@ -36,7 +36,7 @@ ex.files.recovery = fullfile(ex.dirs.rootDir,'LastExperiment_recovery.mat');
 
 % Stimulus image files
 %   last one must be fixationcross!
-ex.files.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
+ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
 
 % Trial structure settings
 % =========================================================================
@@ -101,7 +101,7 @@ switch ex.stage
         ex.numFamiliarise       = 12;
         
         % Number of practice decisions about X effort for X reward
-        ex.practiceTrials       = 16;
+        ex.practiceTrials       = 6;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -132,7 +132,7 @@ switch ex.stage
         ex.blockBreakTime       = 10;  % Rest time betwen blocks (seconds)
 
         % Include this number of practice choice trials at the beginning?
-        ex.practiceTrials       = 0;
+        ex.practiceTrials       = 4;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -158,8 +158,8 @@ switch ex.stage
         %     reward
         
         % Number of blocks and trials per block
-        ex.blocks               = 2;   % Number of blocks
-        ex.blockLen             = 16;  % number of  trials within each block
+        ex.blocks               = 2;  % Number of blocks
+        ex.blockLen             = 16; % number of  trials within each block
         ex.blockBreakTime       = 8;  % Rest time betwen blocks (seconds)
         
         % Practice a number of trials with different effort levels without
@@ -263,8 +263,8 @@ ex.rightKey    = KbName('RightArrow');
 
 % Bitsi buttonbox
 ex.COMportBitsiBB = 'COM2';  % set to '' to simulate bitsi buttonbox
-ex.leftButton  = 'a';
-ex.rightButton = 'b';
+ex.leftButton  = ['a', 'f'];
+ex.rightButton = ['b', 'e'];
 
 % Response keys: use buttonbox or keyboard?
 %   Current experimental setup: choice stage is in the scanner using the 
@@ -352,12 +352,9 @@ ex.useEyelink = false;
 % =========================================================================
 ex.rethrowErrors     = true;  % Rethrow actual error instead of printing message only
 
-% Trial and block structure to use when debugging
+% Use just 2 trials when debugging
 if ex.DEBUG
-    ex.order_effort = [ 5;5; 3;2; 4;4; 3;5; 2;4 ];
-    ex.order_reward = [ 5;3; 2;4; 5;3; 3;5; 3;4 ];
-    ex.blocks       = 1;
-    ex.blockLen     = 2;
-    ex.last_trial   = [ 1;2; 3;4; 5;6 ];
+    ex.blocks   = 1;
+    ex.blockLen = 2;
 end
 end
