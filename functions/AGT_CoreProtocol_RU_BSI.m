@@ -161,7 +161,7 @@ if stake > 0
     apples = ex.rewardLevel(stake);
     if doAppleText   % text for how many apples
         formatstring = 'Appels: %d ';
-        drawTextCentred(scr, sprintf(formatstring ,apples), ex.fgColour, scr.centre + [0 300]);
+        drawTextCentred(scr, sprintf(formatstring, apples), ex.fgColour, scr.centre + [0 300]);
     end
 end
 
@@ -251,7 +251,7 @@ switch lower(timepoint)
         % Show either a welcome screen OR a session restore info screen
         slideNrs = 1;
         if ex.restoredSession
-            %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
+            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
             
             % Display total reward before continuing a restored session in
             % the perform stage
@@ -265,11 +265,11 @@ switch lower(timepoint)
             totalReward = 0;
             
             % Display welcome screen
-            %             displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
+            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
         end
     case 'end'
         slideNrs = 1;
-        %         displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end')
+        displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end')
 end
 
 %% Start of block:
@@ -278,29 +278,63 @@ function [ex, tr] = blockfn(scr, el, ex, tr)
 global totalReward
 
 % Display instructions
-%   Kept displayInstructions method of calling img files, at least for now
 % -------------------------------------------------------------------------
-if tr.block == 0  % Practice block
+if tr.block == 0  % Practice blocks
     
-    % Display general practice instructions on first trial
-    if tr.practiceTrialIx == 1
-        slideNrs = 1:5;
-        %         displayInstructions(ex, ex.dirs.instructions, slideNrs)
-    end
-    
-    % Display instructions according to which stage we're in
-    switch tr.sub_stage
-        case 'calibration'
-            displayInstructions(ex, ex.dirs.instructions, 6)
-        case 'familiarize'
-            displayInstructions(ex, ex.dirs.instructions, 5)
+    % A practice block can be part of the practice stage, or it can be a 
+    % short practice block before starting the main experiment blocks
+    switch ex.stage
         case 'practice'
-            displayInstructions(ex, ex.dirs.instructions, 7)
+            % Display instructions according to which sub_stage of the
+            % practice stage we are in
+            switch tr.sub_stage
+                case 'calibration'
+                    % Only calibration instruction (rest of task 
+                    % instructions come after calibration)
+                    displayInstructions(ex, ex.dirs.instructions, 1, 'practice')
+
+                case {'familiarize','practice'}
+                    if ex.numFamiliarise > 0 && tr.practiceTrialIx < 1
+                        % If there are familiarize trials, start with 
+                        % general task instructions, then specific 
+                        % familiarize instruction
+                        displayInstructions(ex, ex.dirs.instructions, 2:6, 'practice')
+
+                    elseif ex.numFamiliarise < 1
+                        % If there are no familiarize trials, start with 
+                        % general task instructions, then specific choice 
+                        % practice instruction
+                        displayInstructions(ex, ex.dirs.instructions, [2:5,7:9], 'practice')
+
+                    elseif ex.numFamiliarise > 0 && tr.practiceTrialIx > 0
+                        % If there were familiarize trials, but we are now 
+                        % ready for the choice practice, only present the 
+                        % specific choice practice instruction
+                        displayInstructions(ex, ex.dirs.instructions, 7:9, 'practice')
+                    end
+            end
+            
+        case 'choice'
+            % Display instructions of choice task that come before the
+            % short practice block
+            displayInstructions(ex, ex.dirs.instructions, 1:3, 'choice')
+        case 'perform'
+            % Display instructions of perform task that come before the
+            % short practice block
+            displayInstructions(ex, ex.dirs.instructions, 1:3, 'perform')
     end
     
 elseif tr.block == 1 % start of experiment
-    slideNrs = 1:5;
-    displayInstructions(ex, ex.dirs.instructions, slideNrs)
+    switch ex.stage
+        case 'choice'
+            % Display final instruction slide before starting the first
+            % block of the choice stage
+            displayInstructions(ex, ex.dirs.instructions, 4)
+        case 'perform'
+            % Display final instruction slide before starting the first
+            % block of the perform stage
+            displayInstructions(ex, ex.dirs.instructions, 1)
+    end
     
 else  % starting a new block of the main experiment
     
@@ -720,12 +754,10 @@ switch stage
         end
         tr = LogEvent(ex,el,tr,'feedbackOnset');
         WaitSecs(0.5);
-        
-        
         Screen('Flip', scr.w);
         tr = LogEvent(ex,el,tr,'trialEnd');
         
-        % Copy Yestrial field to accept fiels in tr struct for consistent
+        % Copy Yestrial field to accept field in tr struct for consistent
         % naming in output file
         tr.accept = tr.Yestrial;
         
