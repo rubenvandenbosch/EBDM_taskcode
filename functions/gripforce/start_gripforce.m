@@ -67,6 +67,8 @@ if strcmpi(mode,'start')
         end
     else
         disp('Gripforce fieldtrip buffer is running. Not starting anew');
+        % Initialize gripforce and store sampling rate of gripforce
+        ex = initGripforce(ex);
     end
     
     % Set the required squeeze time for success in number of samples based
