@@ -182,7 +182,7 @@ for ifile = 1:numel(fields)
     %   subject session stage MVC block trialNr trialNr_block ...
     %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
     %   rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft
-    pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %s %d %d %d %d\n';
+    pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %d %d %d %d %d\n';
     
     % Write data line
     %   Replace whitespace in pattern with delimiter
