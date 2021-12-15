@@ -22,8 +22,7 @@ function scr=prepareScreen(ex)
 %  ex.targetPos = [dx,dy] - returns scr.xhairCoords(:,:,2) and (:,:,3) as
 %                          rects for crosshairs at these points relative to
 %                          centre: [+dx,+dy], [-dx,-dy]
-%  ex.files.imageFiles = {'f1'} 
-%                         - returns scr.imageData and scr.imageMap as data
+%  ex.imageFiles = {'f1'} - returns scr.imageData and scr.imageMap as data
 %                          from image files image, and a openGL texture
 %                          texture.
 %  ex.imageAlpha = n      - colour index n is converted to the background
@@ -67,10 +66,10 @@ if(isfield(ex,'xhairSize'))       % calculate crosshair coordinates if needed
                                  repmat(scr.centre-ex.targetPos,1,2)+xh([2 1 4 3]) ]; %left
     end
 end
-if isfield(ex.files,'imageFiles')       % load images if requested
-    for i=1:length(ex.files.imageFiles) % for each image
-        fn=ex.files.imageFiles{i};      % get file name
-        type = fn(end-2:end);           % get extension (last 3 chars)
+if isfield(ex,'imageFiles')       % load images if requested
+    for i=1:length(ex.imageFiles) % for each image
+        fn=ex.imageFiles{i};      % get file name
+        type = fn(end-2:end);     % get extension (last 3 chars)
         if fn(end-3)~='.' 
             if fn(end-4)=='.'
                 type=fn(end-3:end);
@@ -79,7 +78,7 @@ if isfield(ex.files,'imageFiles')       % load images if requested
             end
         end
         % load image from file - the pixel data and the colour map.
-        [scr.imageData{i},scr.imageMap{i}] = imread(ex.files.imageFiles{i},type);
+        [scr.imageData{i},scr.imageMap{i}] = imread(ex.imageFiles{i},type);
         % now make the PsychToolbox texture.
         if(isfield(ex,'imageAlpha')) % check if 'imageAlpha' is specified
             discrimImage1(scr.imageData{i}==ex.imageAlpha) = ex.bgColourIndex;
