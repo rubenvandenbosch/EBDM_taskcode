@@ -347,8 +347,9 @@ try
     % if there are practice trials, and we're not continuing from before:
     if isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1
         
-        % create a new set of random trials for the practice, in the same way as
-        % would be done for the real experiment.
+        % Create a new set of random trials for the practice, in the same 
+        % way as would be done for the real experiment.
+        % .................................................................
         if isfield(ex,'blockorder')
             ex_prac = rmfield(ex,'blockorder');
         else
@@ -366,8 +367,9 @@ try
         %   will be one of each trial type.
         prac = createTrials(ex_prac);
         
-        % Run practice trials, preceded by calibration and familiarization
+        % Run practice trials, preceded by calibration and familiarization,
         % if applicable
+        % .................................................................
         prePracticeTrials = ex.numCalibration + ex.numFamiliarise;
         for ix = 1:prePracticeTrials + ex.practiceTrials
             
@@ -409,7 +411,6 @@ try
             %   using block index 0 for practice block
             %   call blockstart method to display instructions on the first
             %   practice trial and the first of each new part
-            %   following trials
             blockstart_trials = unique([1, ...
                                         1 + ex.numCalibration, ...
                                         1 + ex.numCalibration + ex.numFamiliarise]);
