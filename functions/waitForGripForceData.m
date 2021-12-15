@@ -44,18 +44,17 @@ nTotalRead = 0;
 EXIT = 0;
 
 record = zeros(0,2);
-% not sure how to code that, or should I use button press and if they responded 'yes' then 'get ready to squeeze the left grip with your left hand'
-while(GetSecs < startRecordingTime + maxTimeToWait && ~EXIT)              % how do I do this for right and left hand
+while(GetSecs < startRecordingTime + maxTimeToWait && ~EXIT)
    %%%% CHECK KEYPRESSES
-   [keyisdown,secs,keycode] = KbCheck; % check for real key
+   [keyisdown,secs,keycode] = KbCheck;      % check for real key
    keys=find(keycode);
-   if(any(keys==27)), EXIT=1; end         % check for ESCAPE
+   if(any(keys==27)), EXIT=1; end           % check for ESCAPE
    
    % get current acquisition status (where are we, how many samples have
    % been acquired up to now)
    newhdr = ft_read_header(url);
    
-   if(newhdr.nSamples > oldhdr.nSamples)                 % any data in queue?
+   if (newhdr.nSamples > oldhdr.nSamples)   % any data in queue?
       data = ft_read_data(url,'begsample',oldhdr.nSamples+1,'endsample',newhdr.nSamples);
       lastread=GetSecs;
       nTotalRead=nTotalRead+(newhdr.nSamples-oldhdr.nSamples);
