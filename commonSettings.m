@@ -164,7 +164,7 @@ switch ex.stage
         
         % Practice a number of trials with different effort levels without
         % reward?
-        ex.practiceTrials       = 0;
+        ex.practiceTrials       = 3;
         
         % Random order of practice trials?
         ex.shufflePracticeTrials = true;
@@ -218,10 +218,17 @@ ex.calibrationDuration  = 5;   % Time for calibration squeeze
 %       between min and max delay) that is truncated to produce draws
 %       between ex.minITI and ex.maxITI. The variance is set to
 %       (1/mean)*range, unless specified in ex.sigmaITI.
-ex.methodITI    = 'randNormal';
-ex.minITI       = 3;
-ex.maxITI       = 8;
-ex.meanITI      = 5;
+switch ex.stage
+    case {'practice','choice'}
+        ex.methodITI    = 'randNormal';
+        ex.minITI       = 3;
+        ex.maxITI       = 8;
+        ex.meanITI      = 5;
+    case 'perform'
+        ex.methodITI    = 'randUniform';
+        ex.minITI       = 1;
+        ex.maxITI       = 4;
+end
 
 % Time between offer onset (tree with effort+stake) and "Yes/No" response
 % options onset.
