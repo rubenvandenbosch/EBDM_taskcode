@@ -321,7 +321,7 @@ if tr.block == 0  % Practice blocks
         case 'perform'
             % Display instructions of perform task that come before the
             % short practice block
-            displayInstructions(ex, ex.dirs.instructions, 1:3, 'perform')
+            displayInstructions(ex, ex.dirs.instructions, 1, 'perform')
     end
     
 elseif tr.block == 1 % start of experiment
@@ -859,16 +859,16 @@ switch stage
             % Log decline feedback onset time
             tr = LogEvent(ex,el,tr,'feedbackOnset');
             
+            % Check for key press
+            [~,~,keyCode] = KbCheck;        % check for real key
+            if keyCode(pa.exitkey), EXIT = true; end   % check for ESCAPE
+        
             % Wait as long as a perform trial would take
             waitTime = ex.minSqueezeTime + ex.delayAfterResponse + pa.rewardDuration;
             WaitSecs(waitTime);
         end
         % Log end of trial
         tr = LogEvent(ex,el,tr,'trialEnd');
-        
-        % Check for key press
-        [~,~,keyCode] = KbCheck;        % check for real key
-        if keyCode(pa.exitkey), EXIT = true; end   % check for ESCAPE
         
         % Store total reward in tr struct
         tr.totalReward = totalReward;
