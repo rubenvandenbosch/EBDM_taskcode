@@ -32,13 +32,15 @@ if ~isfield(ex, 'scr')
 end
 
 % Display selected instruction slides
-for n = 1:numel(slides)
+slideNr = 1;
+while slideNr <= numel(slides)
     % Get file name
-    filename = fullfile(instructionsDir,sprintf('instructions_%s_%s_%d.jpg',ex.language,stage,slides(n)));
+    filename = fullfile(instructionsDir,sprintf('instructions_%s_%s_%d.jpg',ex.language,stage,slides(slideNr)));
     
     % If requested file does not exist, warn and continue
     if ~(exist(filename,'file') == 2)
         warning('Instructions file does not exist: %s', filename)
+        slideNr = slideNr + 1;
         continue
     end
     
@@ -47,8 +49,25 @@ for n = 1:numel(slides)
     Screen('PutImage', ex.scr.w, image);
     Screen('Flip', ex.scr.w);
     
-    % Wait and wait for key press
+    % Wait before allowing key press
     WaitSecs(2);
-    myKbWait(ex);
-    WaitSecs(0.5);
+    
+    % Wait for a button press
+    if ex.useBitsiBB
+        ex.BitsiBB.clearResponses(); % empty input buffer
+        [resp, ~] = ex.BitsiBB.getResponse(Inf, true); % wait for any button press
+    else
+        [~,resp,~] = KbWait();
+    end
+    
+    % If left key was pressed, go back one slide (if possible). Otherwise
+    % continue to next slide or with experiment
+    if slideNr > 1 && resp(ex.leftKey)
+        slideNr = slideNr - 1;
+        WaitSecs(0.1);
+    else
+        slideNr = slideNr + 1;
+        WaitSecs(0.5);
+    end
+end
 end
