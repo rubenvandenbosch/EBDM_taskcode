@@ -365,7 +365,21 @@ try
         %   run create trials using the 'blockLen' of the practice trials.
         %   if this is a multiple of the number of trial types, then there
         %   will be one of each trial type.
-        prac = createTrials(ex_prac);
+        switch ex.stage
+            case 'choice'
+                % Create trials on choice stage
+                prac = createTrials(ex_prac);
+            case 'perform'
+                % Select trials from previous choices for the perform stage
+                prac = getPerformTrials(ex_prac);
+
+                % Set all practice trials to a yes-trial to perfrom, except
+                % for one (if more than one practice trials)
+                for ix = 1:numel(prac)
+                    prac(ix).Yestrial = 1;
+                end
+                if numel(prac) > 1, prac(randi(numel(prac),1)).Yestrial = 0; end
+        end
         
         % Run practice trials, preceded by calibration and familiarization,
         % if applicable
