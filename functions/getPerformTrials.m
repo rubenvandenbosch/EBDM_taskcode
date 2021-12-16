@@ -52,6 +52,7 @@ end
 % combinations
 nTrials = ex.blocks * ex.blockLen;
 nRepsAll = floor(nTrials/size(combs,1));
+if nRepsAll == 0, nRepsAll = 1; end
 
 % Select equal number of random choices for each combination.
 %   Missing combinations in choices are skipped
