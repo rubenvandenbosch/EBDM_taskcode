@@ -1,9 +1,7 @@
-*.jpg
-*.png
 *.mat
 *.asv
 *.pyc
+*.pptx
 /functions/gripforce/fieldtrip
 /diverse_code_downloaded
-/stimuli
 /old_stuff
