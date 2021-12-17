@@ -366,7 +366,7 @@ try
         %   if this is a multiple of the number of trial types, then there
         %   will be one of each trial type.
         switch ex.stage
-            case 'choice'
+            case {'practice', 'choice'}
                 % Create trials on choice stage
                 prac = createTrials(ex_prac);
             case 'perform'
