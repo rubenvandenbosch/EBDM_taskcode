@@ -113,7 +113,6 @@ fclose('all');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 %% STIMULI
 function drawTree( scr, ex, location, stake,effort, height, doAppleText, otherText, doFlip )
 % Generic merged function to draw tree, apples, rungs and force level
@@ -333,7 +332,7 @@ elseif tr.block == 1 % start of experiment
         case 'perform'
             % Display final instruction slide before starting the first
             % block of the perform stage
-            displayInstructions(ex, ex.dirs.instructions, 1)
+            displayInstructions(ex, ex.dirs.instructions, 2)
     end
     
 else  % starting a new block of the main experiment
@@ -442,7 +441,6 @@ switch stage
         % Process during blank screen
         Screen('Flip', scr.w);
         WaitSecs(0.5);           % Blank screen for 0.5 seconds
-        tr.data1 = data(:,1);    % store all force data for channel 1
         tr.R = 1;                % report success
         
         % Which is larger, the current trial's force, or the current MVC?
@@ -478,16 +476,41 @@ switch stage
         else
             famTrIndex = tr.trialIndex;
         end
+        % Number of trials per effort level
+        numTrLvl = floor(ex.numFamiliarise/numel(ex.trialVariables.effortIx));
         
         % Get effort level
         if pa.practiceAscending
             % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
-            numTrLvl = floor(ex.numFamiliarise/numel(ex.trialVariables.effortIx));  % number of trials per level
             tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
+            
+            % Determine whether this was the last practice trial for this
+            % effort level and we should ask for a VAS score after this
+            % trial (if ex.effortVAS is true)
+            if ex.effortVAS && ~mod(famTrIndex,numTrLvl)
+                getVAS = true;
+            else 
+                getVAS = false;
+            end
         else
             % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
             tr.effortIx = 1 + mod(famTrIndex - 1, numel(ex.trialVariables.effortIx));
+            
+            % Determine whether this was the last practice trial for this
+            % effort level and we should ask for a VAS score after this
+            % trial (if ex.effortVAS is true)
+            if numTrLvl > 1
+                lastEffortPrac = famTrIndex > numel(ex.trialVariables.effortIx) && floor(famTrIndex/numel(ex.trialVariables.effortIx)) >= numTrLvl-1;
+            else
+                lastEffortPrac = floor(famTrIndex/numel(ex.trialVariables.effortIx)) >= numTrLvl-1;
+            end
+            if ex.effortVAS && lastEffortPrac
+                getVAS = true;
+            else
+                getVAS = false;
+            end
         end
+        
         % Log this trial's reward and effort levels based on the index
         tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
         tr.effortLevel = ex.effortLevel(tr.effortIx);
@@ -546,13 +569,17 @@ switch stage
         tr = waitOrBreak(pa,tr,2);                  % wait 2 seconds
         tr = LogEvent(ex,el,tr,'trialEnd');
         
-        % CHECK KEYPRESSES
-        [~,~,keyCode] = KbCheck;                    % check for real key
-        if keyCode(pa.exitkey), EXIT=true; end      % check for ESCAPE
-        
         % Wait with blank screen during time delay after response
         Screen('Flip',scr.w);
         tr = waitOrBreak(pa,tr,ex.delayAfterResponse);
+        
+        % Run the VAS function to ask for subjective effort experience, if
+        % applicable
+        if ex.effortVAS && getVAS
+            [tr,EXIT] = doVAS(ex,scr,tr);
+        else
+            tr.VAS = nan;
+        end
         
     case 'choice'
         
@@ -597,7 +624,7 @@ switch stage
                     % Uniform random sample
                     Tdelay = (ex.minITI + rand*(ex.maxITI-ex.minITI));
                 case 'randNormal'
-                    assert(ex.minITI < ex.meanITI < ex.maxITI, 'Mean choice delay falls outside min to max range. Check settings');
+                    assert(ex.minITI < ex.meanITI && ex.meanITI < ex.maxITI, 'Mean choice delay falls outside min to max range. Check settings');
                     
                     % Get sigma
                     if isfield(ex,'sigmaITI'), sigma = ex.sigmaITI;
@@ -625,7 +652,7 @@ switch stage
                     % Uniform random sample
                     Tdelay = (ex.minChoiceDelay + rand*(ex.maxChoiceDelay-ex.minChoiceDelay));
                 case 'randNormal'
-                    assert(ex.minChoiceDelay < ex.meanChoiceDelay < ex.maxChoiceDelay, 'Mean choice delay falls outside min to max range. Check settings');
+                    assert(ex.minChoiceDelay < ex.meanChoiceDelay && ex.meanChoiceDelay < ex.maxChoiceDelay, 'Mean choice delay falls outside min to max range. Check settings');
                     
                     % Get sigma
                     if isfield(ex,'sigmaChoiceDelay'), sigma = ex.sigmaChoiceDelay;
@@ -895,6 +922,154 @@ else
     tr.R = pa.R_ESCAPE; % tells RunExperiment to exit.
 end
 return
+
+function [tr,EXIT] = doVAS(ex,scr,tr)
+% Function to run an interactive VAS scale to ask for the subjective effort
+% experience.
+% The VAS score is a continuous measure representing the percentage of the
+% scale bar covered from left to right. 
+% 
+% OUTPUT
+% The VAS score and response time are saved per question in the tr struct
+% as: tr.VAS.Q1_score and tr.VAS.Q1_RT (Q1 until Qn for n questions).
+%
+% EXIT; returned when when escape key is pressed
+
+EXIT = false;
+
+% VAS questions to ask
+switch ex.language
+    case 'NL'
+        % Questions
+        Qs = {'Hoe zwaar was de taak fysiek gezien?'; ...
+              'Hoe zwaar was de taak mentaal gezien?'};
+        % Corresponding response options to display on the VAS scale
+        Rs = {'Helemaal niet zwaar', 'Neutraal', 'Heel erg zwaar'; ...
+              'Helemaal niet zwaar', 'Neutraal', 'Heel erg zwaar'};
+    case 'EN'
+        % Questions
+        Qs = {'How effortful was the task physically?'; ...
+              'How effortful was the task mentally?'};
+        % Corresponding response options to display on the VAS scale
+        Rs = {'Not effortful', 'Neutral', 'Extremely effortful'; ...
+              'Not effortful', 'Neutral', 'Extremely effortful'};
+end
+
+% Window width and height
+wdw = ex.screenSize(1);
+wdh = ex.screenSize(2);
+
+% VAS scale color settings
+scalecol    = [160 160 160];
+barcol      = [255 200 0];
+slider      = [0 0 10 50];
+
+% VAS scale position settings
+xaxis       = [0.1*wdw 0.9*wdw; 0.7*wdh 0.7*wdh];
+yleft       = [0.1*wdw 0.1*wdw; 0.65*wdh 0.75*wdh];
+ymid        = [0.5*wdw 0.5*wdw; 0.65*wdh 0.75*wdh];
+yright      = [0.9*wdw 0.9*wdw; 0.65*wdh 0.75*wdh];
+
+% Text position settings
+xyInstr     = scr.centre + [0,-100]; % instruction text position
+xyQ         = scr.centre + [0,-300]; % question text position
+yR          = 0.8*wdh;               % ylocation only of response options
+
+% present black screen for sec before starting
+Screen('FillRect',scr.w,ex.bgColour);
+Screen('Flip', scr.w);
+WaitSecs(0.2);
+
+% Instruction text
+switch ex.language
+    case 'NL'
+        instructionTxt = 'Klik met de muis op de lijn op de plek die het best overeenkomt met uw gevoel.';
+    case 'EN'
+        instructionTxt = 'Use the mouse to click on the bar at the spot that best matches your feeling.';
+end
+
+% Loop over questions to ask
+for iQ = 1:numel(Qs)
+    
+    % Starting position slider
+    xpos         = ymid(1,1);
+    bottomslider = CenterRectOnPoint(slider,xpos,xaxis(2,1));
+    
+    % Draw instruction text, question and slider
+    drawTextCentred(scr, Qs{iQ}, ex.fgColour, xyInstr)
+    drawTextCentred(scr, instructionTxt, ex.fgColour, xyQ)
+    Screen('FillRect', scr.w, barcol, bottomslider);
+    
+    % Draw response options
+    drawTextCentred(scr, Rs{iQ,1}, barcol, [xaxis(1,1),yR])
+    drawTextCentred(scr, Rs{iQ,2}, barcol, [ymid(1,1),yR])
+    drawTextCentred(scr, Rs{iQ,3}, barcol, [xaxis(1,2),yR])
+    
+    % Draw scale
+    Screen('DrawLines',scr.w,xaxis,2,scalecol);
+    Screen('Drawlines',scr.w,yleft,2,scalecol);
+    Screen('Drawlines',scr.w,ymid,2,scalecol);
+    Screen('Drawlines',scr.w,yright,2,scalecol);
+    
+    % Present screen
+    Screen('Flip', scr.w);
+    
+    % Check for mouse button click (10 sec window)
+    ShowCursor(scr.w);
+    validResponse = false; tic;
+    while ~validResponse
+        clear x y buttons
+        [x,y,buttons] = GetMouse(scr.w);
+        
+        % Check that mouse click was within the bounds of the slider
+        if buttons(1) && (xaxis(1,1) < x && x < xaxis(1,2) && yleft(2,1) < y && y < yleft(2,2))
+            RT = toc;
+            validResponse = true;
+            
+            % Save RT and clicked position as the VAS output
+            tr.VAS.(sprintf('Q%d_score',iQ)) = (x - xaxis(1,1))/(xaxis(1,2)-xaxis(1,1));
+            tr.VAS.(sprintf('Q%d_RT',iQ))    = RT;
+        end
+        
+        % Check for escape key press
+        [~,~,keyCode] = KbCheck;        % check for real key
+        if keyCode(ex.exitkey), EXIT = true; return; end   % check for ESCAPE
+    end
+    
+    % Calculate new position slider
+    xpos = x;
+    bottomslider = CenterRectOnPoint(slider,xpos,xaxis(2,1));
+    
+    % Draw instruction text, question and slider
+    drawTextCentred(scr, Qs{iQ}, ex.fgColour, xyInstr)
+    drawTextCentred(scr, instructionTxt, ex.fgColour, xyQ)
+    Screen('FillRect', scr.w, barcol, bottomslider);
+    
+    % Draw response options
+    drawTextCentred(scr, Rs{iQ,1}, barcol, [xaxis(1,1),yR])
+    drawTextCentred(scr, Rs{iQ,2}, barcol, [ymid(1,1),yR])
+    drawTextCentred(scr, Rs{iQ,3}, barcol, [xaxis(1,2),yR])
+    
+    % Draw scale
+    Screen('DrawLines',scr.w,xaxis,2,scalecol);
+    Screen('Drawlines',scr.w,yleft,2,scalecol);
+    Screen('Drawlines',scr.w,ymid,2,scalecol);
+    Screen('Drawlines',scr.w,yright,2,scalecol);
+    
+    % Present screen and wait 1 sec
+    Screen('Flip', scr.w);
+    WaitSecs(1);
+end
+
+% When finished, say thanks and wait for buttonpress to continue
+if strcmp(ex.language,'NL'), txt = 'Bedankt!'; else, txt = 'Thank you!'; end
+drawTextCentred(scr, txt, ex.fgColour)
+if strcmp(ex.language,'NL'), txt = 'Druk op een knop om verder te gaan.'; 
+else, txt = 'Press a button to continue'; end
+drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 200])
+Screen('Flip', scr.w);
+waitForKeypress(ex);
+
 
 
 function tr = waitOrBreak(ex, tr, waitsecs)

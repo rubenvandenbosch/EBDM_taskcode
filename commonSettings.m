@@ -100,6 +100,11 @@ switch ex.stage
         % each of 4 effort levels 3 times).
         ex.numFamiliarise       = 12;
         
+        % Ask participants to indicate subjective effort experience on a
+        % VAS scale for each effort level? Appears after the final
+        % familiarize trial of each effort level
+        ex.effortVAS            = false;
+        
         % Number of practice decisions about X effort for X reward
         ex.practiceTrials       = 6;
         
@@ -267,6 +272,7 @@ ex.randomSeed = str2double(sprintf('%d%d', ex.subject,ex.session));
 KbName('UnifyKeyNames');   % Use OS-independent key naming scheme
 ex.leftKey     = KbName('LeftArrow');
 ex.rightKey    = KbName('RightArrow');
+ex.exitkey     = KbName('Escape');
 
 % Bitsi buttonbox
 ex.COMportBitsiBB = 'COM2';  % set to '' to simulate bitsi buttonbox
