@@ -50,7 +50,7 @@ while slideNr <= numel(slides)
     Screen('Flip', ex.scr.w);
     
     % Wait before allowing key press
-    WaitSecs(2);
+    WaitSecs(1);
     
     % Wait for a button press
     if ex.useBitsiBB
