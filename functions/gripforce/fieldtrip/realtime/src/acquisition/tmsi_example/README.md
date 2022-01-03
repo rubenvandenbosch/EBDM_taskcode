@@ -1,0 +1,2 @@
+March 2018, P.L.C. van den Broek, Radboud University:
+Changed provided example.c from TMSi version 7 driver (which is distributed along with installation of the driver in Program Files folder) to include streaming to Fieldtrip buffer with ODM (Online Data Manager) support to remotely start/stop/streaming/saving.

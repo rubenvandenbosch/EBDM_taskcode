@@ -1,0 +1,11 @@
+PrintFunction Apr  4 2018
+14,14,29,41,192,main,ExampleCode.exe $Revision: 143 $
+14,14,29,41,192,main,32bits exe
+14,14,29,41,192,main,Create system path for library
+14,14,29,41,192,main,Try to load the library in
+14,14,29,41,192,main,C:\Windows\system32\TMSiSDK32bit.dll
+14,14,29,41,208,main,Get pointers to the functions in the DLL
+14,14,29,41,223,main,Call LibraryInit
+14,14,29,41,223,main,Use USB
+14,14,29,41,223,main,Try to list all frontends
+14,14,29,41,223,main,Frontend list NOT available, errorcode = 0 (Success)
