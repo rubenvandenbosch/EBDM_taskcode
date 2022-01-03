@@ -42,9 +42,9 @@ if strcmpi(mode,'start')
     if ~running
         % Start gripforce process
         if ispc
-            system([fullfile(ex.dirs.gripforce,'start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
+            system([fullfile(ex.dirs.gripforce,'start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' ' ex.COMportGripforce ' &']);
         elseif isunix
-            system([fullfile(ex.dirs.gripforce,'start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' &']);
+            system([fullfile(ex.dirs.gripforce,'start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' ' ex.COMportGripforce ' &']);
         end
         % Wait 3 seconds to give the process time to start, then check
         % every half second that process has started

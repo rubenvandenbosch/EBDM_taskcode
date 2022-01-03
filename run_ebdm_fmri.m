@@ -20,7 +20,7 @@ function result = run_ebdm_fmri(varargin)
 % NB: adjust experiment settings in commonSettings.m
 % 
 % -------------------------------------------------------------------------
-% Ruben van den Bosch, november 2021
+% Ruben van den Bosch, November 2021
 % Donders Institute, Radboud University Nijmegen
 % The Netherlands
 % 

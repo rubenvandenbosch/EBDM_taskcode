@@ -343,6 +343,7 @@ ex.extraWidth        = 20;              % How much wider is the force-level indi
 % Gripforce options
 % -------------------------------------------------------------------------
 % Only for the practice and perform stages
+ex.COMportGripforce = 'COM5';
 switch ex.stage
     case {'practice','perform'}
         ex.useGripforce      = true;   % Change to 1 to use GripForce device (manufactured by TSG department, Radboud University)
