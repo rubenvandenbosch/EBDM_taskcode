@@ -258,8 +258,8 @@ ex.maxRT                = 4;
 % .........................................................................
 ex.responseDuration     = 5;   % Time allowed to reach required force+duration on practice and work-phase Yes trials
 ex.minSqueezeTime       = 2;   % Minimum required squeeze time at force level of trial to mark it success (converted to number of gripforce samples below).
-ex.delayAfterResponse   = 1;   % Time after squeeze period ends, and before reward appears (practice and work)
-ex.rewardDuration       = 3;   % Time from when reward appears, until screen blanks (practice and work-yes)
+ex.delayAfterResponse   = 1;   % Time after squeeze period ends, and before reward appears (practice and perform stage)
+ex.rewardDuration       = 3;   % Time from when reward appears, until screen blanks (practice and perform stage)
 
 % Technical setup
 % =========================================================================
