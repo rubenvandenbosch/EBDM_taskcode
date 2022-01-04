@@ -12,7 +12,7 @@ set comport=%3
 call activate %env_path%
 
 :: Change directory to the folder containing the gripforce files
-cd %grip_dir%
+pushd %grip_dir%
 
 :: Start gripforce recording
 start start_recording_buffer.bat
