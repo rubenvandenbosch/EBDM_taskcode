@@ -250,7 +250,7 @@ switch lower(timepoint)
         % Show either a welcome screen OR a session restore info screen
         slideNrs = 1;
         if ex.restoredSession
-            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore')
+            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore');
             
             % Display total reward before continuing a restored session in
             % the perform stage
@@ -264,11 +264,11 @@ switch lower(timepoint)
             totalReward = 0;
             
             % Display welcome screen
-            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome')
+            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome');
         end
     case 'end'
         slideNrs = 1;
-        displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end')
+        displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end');
 end
 
 %% Start of block:
@@ -290,37 +290,37 @@ if tr.block == 0  % Practice blocks
                 case 'calibration'
                     % Only calibration instruction (rest of task 
                     % instructions come after calibration)
-                    displayInstructions(ex, ex.dirs.instructions, 1, 'practice')
+                    EXIT = displayInstructions(ex, ex.dirs.instructions, 1, 'practice');
 
                 case {'familiarize','practice'}
                     if ex.numFamiliarise > 0 && tr.practiceTrialIx < 1
                         % If there are familiarize trials, start with 
                         % general task instructions, then specific 
                         % familiarize instruction
-                        displayInstructions(ex, ex.dirs.instructions, 2:6, 'practice')
+                        EXIT = displayInstructions(ex, ex.dirs.instructions, 2:6, 'practice');
 
                     elseif ex.numFamiliarise < 1
                         % If there are no familiarize trials, start with 
                         % general task instructions, then specific choice 
                         % practice instruction
-                        displayInstructions(ex, ex.dirs.instructions, [2:5,7:9], 'practice')
+                        EXIT = displayInstructions(ex, ex.dirs.instructions, [2:5,7:9], 'practice');
 
                     elseif ex.numFamiliarise > 0 && tr.practiceTrialIx > 0
                         % If there were familiarize trials, but we are now 
                         % ready for the choice practice, only present the 
                         % specific choice practice instruction
-                        displayInstructions(ex, ex.dirs.instructions, 7:9, 'practice')
+                        EXIT = displayInstructions(ex, ex.dirs.instructions, 7:9, 'practice');
                     end
             end
             
         case 'choice'
             % Display instructions of choice task that come before the
             % short practice block
-            displayInstructions(ex, ex.dirs.instructions, 1:3, 'choice')
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 1:3, 'choice');
         case 'perform'
             % Display instructions of perform task that come before the
             % short practice block
-            displayInstructions(ex, ex.dirs.instructions, 1, 'perform')
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 1, 'perform');
     end
     
 elseif tr.block == 1 % start of experiment
@@ -328,11 +328,11 @@ elseif tr.block == 1 % start of experiment
         case 'choice'
             % Display final instruction slide before starting the first
             % block of the choice stage
-            displayInstructions(ex, ex.dirs.instructions, 4)
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 4);
         case 'perform'
             % Display final instruction slide before starting the first
             % block of the perform stage
-            displayInstructions(ex, ex.dirs.instructions, 2)
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 2);
     end
     
 else  % starting a new block of the main experiment
@@ -355,7 +355,15 @@ else  % starting a new block of the main experiment
     
     % Show text and wait
     Screen('Flip',scr.w);
-    WaitSecs(ex.blockBreakTime);
+    tr = waitOrBreak(ex, tr, ex.blockBreakTime);
+end
+
+% If escape key was pressed, return with exit code
+if ~EXIT
+    tr.R = 1; % trial OK
+else
+    tr.R = ex.R_ESCAPE; % tells RunExperiment to exit.
+    return
 end
 
 % Wait for MRI scanner triggers and set T0 of this MRI run, if applicable
@@ -638,7 +646,7 @@ switch stage
                     Tdelay = random(d,1);
             end
         end
-        WaitSecs(Tdelay);
+        tr = waitOrBreak(ex, tr, Tdelay);
         
         % Present tree with effort and stake in centre of screen
         drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
@@ -666,7 +674,7 @@ switch stage
                     Tdelay = random(d,1);
             end
         end
-        WaitSecs(Tdelay);
+        tr = waitOrBreak(ex, tr, Tdelay);
         
         % Draw tree and add 'yes/no' response options, then flip to present
         drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
@@ -844,7 +852,7 @@ switch stage
             
             % Wait with blank screen
             Screen('Flip',scr.w);
-            WaitSecs(ex.delayAfterResponse);
+            tr = waitOrBreak(ex, tr, ex.delayAfterResponse);
             
             % Determine whether successful
             %   Trial successful if force stayed above effort level for
@@ -892,7 +900,7 @@ switch stage
         
             % Wait as long as a perform trial would take
             waitTime = ex.minSqueezeTime + ex.delayAfterResponse + pa.rewardDuration;
-            WaitSecs(waitTime);
+            tr = waitOrBreak(ex, tr, waitTime);
         end
         % Log end of trial
         tr = LogEvent(ex,el,tr,'trialEnd');

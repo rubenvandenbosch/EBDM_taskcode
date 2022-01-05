@@ -436,6 +436,10 @@ try
                 tr.block = 0;
                 [ex, tr] = blockStart(scr,el,ex,tr);
                 
+                % If there was an error or escape key, exit practice trials
+                if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE
+                    fatal_error=1; break;
+                end
             elseif ~exist('blockStart','var') && ex.inMRIscanner
                 error('No blockStart function provided. This code is needed when in the MRI scanner to sync the task to the scanner')
             end
@@ -524,6 +528,10 @@ try
                 % Run block start method
                 [ex, trial1] = blockStart(scr,el,ex,trial1);
                 
+                % If there was an error or escape key, exit
+                if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE
+                    fatal_error=1; break;
+                end
             elseif ~exist('blockStart','var') && ex.inMRIscanner
                 error('No blockStart function provided. This code is needed when in the MRI scanner to sync the task to the scanner')
             end

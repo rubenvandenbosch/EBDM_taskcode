@@ -1,4 +1,4 @@
-function displayInstructions(ex, instructionsDir, slides, varargin)
+function EXIT = displayInstructions(ex, instructionsDir, slides, varargin)
 % displayInstructions(ex, instructionsDir, slides, stage)
 % 
 % INPUTS
@@ -14,6 +14,10 @@ function displayInstructions(ex, instructionsDir, slides, varargin)
 %                       'restore' (show restored session slide),
 %                       'end' (show end of experiment slide)
 %                   If not specified, it is based on the value of ex.stage
+% 
+% OUTPUT
+% EXIT  : return exit code if escape/exit key was pressed. Tells program to
+%         quit experiment
 % -------------------------------------------------------------------------
 
 % Process input arguments
@@ -33,6 +37,7 @@ end
 
 % Display selected instruction slides
 slideNr = 1;
+EXIT = 0;
 while slideNr <= numel(slides)
     % Get file name
     filename = fullfile(instructionsDir,sprintf('instructions_%s_%s_%d.jpg',ex.language,stage,slides(slideNr)));
@@ -60,14 +65,18 @@ while slideNr <= numel(slides)
         [~,resp,~] = KbWait();
     end
     
-    % If left key was pressed, go back one slide (if possible). Otherwise
-    % continue to next slide or with experiment
-    if slideNr > 1 && resp(ex.leftKey)
+    % If the exit key was pressed, return with exit code.
+    % If left key was pressed, go back one slide (if possible). 
+    % Otherwise continue to next slide or continue the experiment. 
+    if resp(ex.exitkey)
+        EXIT = 1;
+        return
+    elseif slideNr > 1 && resp(ex.leftKey)
         slideNr = slideNr - 1;
         WaitSecs(0.1);
     else
         slideNr = slideNr + 1;
-        WaitSecs(0.5);
+        WaitSecs(0.1);
     end
 end
 end
