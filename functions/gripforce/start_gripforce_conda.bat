@@ -9,7 +9,7 @@ set grip_dir=%2
 set comport=%3
 
 :: Activate conda environment
-call %env_path%\Scripts\activate
+call activate %env_path%
 
 :: Change directory to the folder containing the gripforce files
 pushd %grip_dir%

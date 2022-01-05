@@ -41,11 +41,23 @@ end
 if strcmpi(mode,'start')
     if ~running
         % Start gripforce process
-        if ispc
-            system([fullfile(ex.dirs.gripforce,'start_gripforce.bat') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' ' ex.COMportGripforce ' &']);
-        elseif isunix
-            system([fullfile(ex.dirs.gripforce,'start_gripforce.sh') ' ' ex.dirs.condaEnv ' ' ex.dirs.gripforce ' ' ex.COMportGripforce ' &']);
+        % .................................................................
+        % Determine gripforce start script name, depending on whether
+        % python virtual environment is from Anaconda or not, and depending
+        % on OS (unix not tested).
+        if ex.dirs.venv.conda
+            scriptname = 'start_gripforce_conda';
+        else
+            scriptname = 'start_gripforce';
         end
+        if ispc, scriptname = [scriptname '.bat']; 
+        elseif isunix, scriptname = [scriptname '.sh'];
+        else, error('Unknown OS'); 
+        end
+        
+        % Start process
+        system([fullfile(ex.dirs.gripforce,scriptname) ' ' ex.dirs.venv.path ' ' ex.dirs.gripforce ' ' ex.COMportGripforce ' &']);
+                
         % Wait 3 seconds to give the process time to start, then check
         % every half second that process has started
         WaitSecs(3);
@@ -53,7 +65,8 @@ if strcmpi(mode,'start')
             running = checkGripforceProcess();
             WaitSecs(0.5);
         end
-        % After process has started it takes some time before buffer is 
+        
+        % After process has started it takes some time before buffer is
         % ready. Keep trying to initialize buffer for 12 seconds 
         tic; initialized = false;
         while ~initialized && toc < 12

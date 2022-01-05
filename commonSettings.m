@@ -20,10 +20,15 @@ ex.DEBUG = false;
 % Required directories for recording gripforce input
 %   - Full path to directory with functions .m files
 %   - Full path to directory with gripforce recording code
-%   - Full path to conda environment to activate
 ex.dirs.functions = fullfile(ex.dirs.rootDir,'functions');
 ex.dirs.gripforce = fullfile(ex.dirs.functions,'gripforce');
-ex.dirs.condaEnv  = 'C:\Users\rubvdbos\AppData\Local\Continuum\anaconda3\envs\flair';
+
+% Full path to virtual environment to activate 
+%   required packages: pyserial, numpy.
+%   Default path is "venv_EBDM" one level up from root code dir.
+%   If it is an Anaconda virtual environment, set dirs.venv.conda to true.
+ex.dirs.venv.path  = fullfile(ex.dirs.rootDir,'..','venv_EBDM');
+ex.dirs.venv.conda = false;
 
 % Directory containing image files with instructions
 ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
