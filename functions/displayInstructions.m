@@ -76,16 +76,29 @@ while slideNr <= numel(slides)
     % If the exit key was pressed, return with exit code.
     % If left key was pressed, go back one slide (if possible), except when
     % in the choice stage in MRI.
-    % Otherwise continue to next slide or continue the experiment. 
-    if any(resp==ex.exitkey)
-        EXIT = 1;
-        return
-    elseif slideNr > 1 && any(resp==ex.leftKey) && strcmp(ex.stage,'choice')
-        slideNr = slideNr - 1;
-        WaitSecs(0.1);
+    % Otherwise continue to next slide or continue the experiment.
+    if ex.useBitsiBB
+        if any(resp==ex.exitkey)
+            EXIT = 1;
+            return
+        elseif slideNr > 1 && any(resp==ex.leftKey) && ~strcmp(ex.stage,'choice')
+            slideNr = slideNr - 1;
+            WaitSecs(0.1);
+        else
+            slideNr = slideNr + 1;
+            WaitSecs(0.1);
+        end
     else
-        slideNr = slideNr + 1;
-        WaitSecs(0.1);
+        if resp(ex.exitkey)
+            EXIT = 1;
+            return
+        elseif slideNr > 1 && resp(ex.leftKey) && ~strcmp(ex.stage,'choice')
+            slideNr = slideNr - 1;
+            WaitSecs(0.1);
+        else
+            slideNr = slideNr + 1;
+            WaitSecs(0.1);
+        end
     end
 end
 end
