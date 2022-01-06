@@ -58,20 +58,29 @@ while slideNr <= numel(slides)
     WaitSecs(1);
     
     % Wait for a button press
+    resp = [];
     if ex.useBitsiBB
-        ex.BitsiBB.clearResponses(); % empty input buffer
-        [resp, ~] = ex.BitsiBB.getResponse(Inf, true); % wait for any button press
+        while isempty(resp)
+            ex.BitsiBB.clearResponses(); % empty input buffer
+            [resp, ~] = ex.BitsiBB.getResponse(0.2, true); % wait for any button press
+            if isempty(resp)
+                % Check whether exit key on keyboard was pressed
+                [~, ~, resp, ~] = KbCheck();
+                if resp(ex.exitkey), break; end
+            end
+        end
     else
         [~,resp,~] = KbWait();
     end
     
     % If the exit key was pressed, return with exit code.
-    % If left key was pressed, go back one slide (if possible). 
+    % If left key was pressed, go back one slide (if possible), except when
+    % in the choice stage in MRI.
     % Otherwise continue to next slide or continue the experiment. 
-    if resp(ex.exitkey)
+    if any(resp==ex.exitkey)
         EXIT = 1;
         return
-    elseif slideNr > 1 && resp(ex.leftKey)
+    elseif slideNr > 1 && any(resp==ex.leftKey) && strcmp(ex.stage,'choice')
         slideNr = slideNr - 1;
         WaitSecs(0.1);
     else

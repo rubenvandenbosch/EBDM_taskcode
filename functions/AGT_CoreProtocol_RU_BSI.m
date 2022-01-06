@@ -1118,7 +1118,7 @@ while ~spacepressed && ~escapepressed
     % check bitsi buttonbox (fmri only)
     if ex.useBitsiBB
         ex.BitsiBB.clearResponses(); % empty input buffer
-        [resp, time_resp] = ex.BitsiBB.getResponse(0.1, true); % don't wait longer than 30 s.
+        [resp, ~] = ex.BitsiBB.getResponse(0.1, true); % don't wait longer than 30 s.
         if resp > 0, spacepressed = true; end
     else
         WaitSecs(0.1);
