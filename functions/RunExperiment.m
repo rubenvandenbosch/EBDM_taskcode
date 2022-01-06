@@ -479,7 +479,7 @@ try
     if ~ex.calibOnly && ~strcmp(ex.stage,'practice')
         
         % Display "Start of experiment" and wait for key press to start
-        if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1)
+        if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1) && ~ex.restoredSession && ~fatal_error
             if ex.useScreen
                 Screen(scr.w, 'FillRect',ex.bgColour, scr.sszrect);
                 if strcmp(ex.language,'NL'), txt='De taak begint nu'; else, txt='The task starts now'; end
@@ -495,6 +495,10 @@ try
         % Loop over blocks
         %   Continue from last block
         for b = last(1):ex.blocks
+            
+            % If exit key was pressed during practice, break out of this
+            % loop
+            if fatal_error, break; end
             
             % Call the blockStart method if supplied
             %   Waiting for fMRI scanner triggers is implemented in
@@ -721,7 +725,7 @@ try
         
         % END OF EXPERIMENT
         %   Call experiment end function, if provided
-        if exist('exptStartEnd','var')
+        if exist('exptStartEnd','var') && ~fatal_error
             exptStartEnd(ex,'end');
         end
     else
