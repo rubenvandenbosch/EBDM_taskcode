@@ -257,6 +257,9 @@ ex.rewardDuration       = 3;   % Time from when reward appears, until screen bla
 % Set random number generator seed based on subject and session number
 ex.randomSeed = str2double(sprintf('%d%d', ex.subject,ex.session));
 
+% Remove potentially connected COM devices
+delete(instrfindall);
+
 % Response key settings
 % -------------------------------------------------------------------------
 % Keyboard
@@ -284,7 +287,6 @@ switch ex.stage
         % Initialize bitsi buttonbox object for response pads used in MRI
         %   Do it here to catch errors early
         if ex.useBitsiBB
-            delete(instrfindall);
             ex.BitsiBB = Bitsi_2016(ex.COMportBitsiBB); % create a serial object
             ex.BitsiBB.setTriggerMode();
             ex.leftKey   = ex.leftButton;
@@ -307,7 +309,6 @@ ex.triggerKeyCode = 65; %97;       % 97 = key 'a' (set to 65 if simulated bitsi)
 %  Only if inMRIscanner = true
 %  Do it here to catch errors early
 if ex.inMRIscanner
-    delete(instrfindall);
     ex.BitsiMRI = Bitsi_2016(ex.COMportMRI); % create a serial object
     ex.BitsiMRI.setTriggerMode();
 end
