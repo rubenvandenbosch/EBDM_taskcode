@@ -127,7 +127,8 @@ else % Write other trial results to result.data
     
     % Initialise data field in result struct if necessary (first trial)
     if ~isfield(result,'data')
-        result.data = []; 
+        result.data = [];
+        [result.data, tr] = ensureStructsAssignable(result.data,tr);
     else
         assert(isstruct(result.data), 'result.data should be class struct');
         [result.data, tr] = ensureStructsAssignable(result.data,tr);
