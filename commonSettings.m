@@ -67,15 +67,7 @@ ex.blockVariables.blocktype = 1;
 % Allow unequal number of trials per trial type within one block
 ex.allowUnequalTrials = true;
 
-% We probably want to use this option to specify reward type, reward
-% magnitude and effort level.
-% ....................................
-%   ex.trialVariables.reward_type = {'lowCal','highCal'};
-%   ex.trialVariables.reward_magn = {'low','high'};
-%   ex.trialVariables.effort = 1:4;
-% Having two varying reward variables might make things complicated.
-% Instead use a 4-level reward coding? 
-%   1=lowCal_lowMag, 2=lowCal_highMag, 3=highCal_lowMag, 4=highCal_highMag
+% Reward and effort index (based on reward/effort levels specified above
 ex.trialVariables.rewardIx = 1:numel(ex.rewardLevel);
 ex.trialVariables.effortIx = 1:numel(ex.effortLevel);
 
