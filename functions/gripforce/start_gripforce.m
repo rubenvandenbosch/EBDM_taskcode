@@ -17,7 +17,7 @@ function ex = start_gripforce(ex, mode)
 % Process input arguments
 % -------------------------------------------------------------------------
 assert(isstruct(ex), 'Input ex should be class struct');
-assert(ismember(lower(mode), {'start','stop'}), "Input mode should be either 'start' or 'stop'");
+assert(ismember(lower(mode), {'start','stop'}), 'Input mode should be either "start" or "stop"');
 
 % If simulate grip force is true, initialize simulation settings and return
 % -------------------------------------------------------------------------
