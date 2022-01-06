@@ -133,8 +133,8 @@ else % Write other trial results to result.data
         [result.data, tr] = ensureStructsAssignable(result.data,tr);
     end
     
-    % Append trial data to result.data struct
-    result.data = [result.data tr];
+    % Add trial data to result.data struct
+    result.data(tr.allTrialIndex) = tr;
 end
 
 % Save experiment recovery file
