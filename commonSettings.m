@@ -33,12 +33,6 @@ ex.dirs.venv.conda = false;
 % Directory containing image files with instructions
 ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
 
-% Recovery file
-%   Full path to the experiment recovery file that is saved after every
-%   trial and can be used to restore a session, e.g. after a crash.
-%   This file is overwritten on each new experiment session.
-ex.files.recovery = fullfile(ex.dirs.rootDir,'LastExperiment_recovery.mat');
-
 % Stimulus image files
 %   last one must be fixationcross!
 ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};

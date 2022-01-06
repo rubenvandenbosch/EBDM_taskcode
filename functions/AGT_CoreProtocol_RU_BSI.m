@@ -41,67 +41,73 @@ function result = AGT_CoreProtocol_RU_BSI(params,ex)
 %          Michele Veldsman, Campbell Le Heron, Trevor Chong 2012-2018
 %%
 
-% these Need to be global.
+% These need to be global.
 global MVC totalReward
 
 % Open output files for writing
 % -------------------------------------------------------------------------
-% .mat output file name to save result struct of current session and stage
-[p, f, ~] = fileparts(ex.files.output_session_stage);
-outfile_mat = fullfile(p,[f '.mat']);
+% .mat output file to save result struct of current session and stage
+outfile_mat = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_task-EBDM_stage-%s.mat', ex.subject,ex.session,ex.stage));
 
-% Open output files and write header lines
+% Open output files and write header lines if necessary
 [~, ex] = writeResults(ex, [], [], true);
 
-% Get subject's MVC from previous calibration, or set to arbitrary number
-% before calibration
+% If this is not a restored session, prepare required info before starting
 % -------------------------------------------------------------------------
-if ~ex.calibNeeded
-    % Get MVC from output mat file of the practice stage
-    filename = strrep(outfile_mat,sprintf('stage-%s',ex.stage),'stage-practice');
-    assert(exist(filename,'file')==2, 'Practice stage file that includes MVC is missing');
-    
-    % load the 'result' variable from the file.
-    load(filename,'result');
-    % an error will occur here if the selected file isn't a valid result file.
-    MVC = result.MVC;         % grab MVC
-    clear result % Clear result file to make way for new one.
-else
-    % Arbitrary MVC value that is overwritten after first calibration
-    MVC = 3;
-end
-
-% For the perform stage, load subject's choices from the choice stage
-% -------------------------------------------------------------------------
-if strcmp(ex.stage,'perform')
-    % Get choices output mat file and assert it exists
-    ex.choices_file = strrep(outfile_mat,'stage-perform','stage-choice');
-    assert(exist(ex.choices_file,'file') == 2, 'The choices output file does not exist: %s',ex.choices_file);
-    
-    % Assert that the number of perform trials is not greater than the
-    % number of decisions made in the choice stage
-    choices  = load(ex.choices_file,'result');
-    nChoices = numel(choices.result.data);
-    assert(ex.blocks * ex.blockLen <= nChoices || ex.DEBUG, ...
-        'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, nChoices);
-    clear choices;  % Clear previous results from memory hear
-end
-
-% RUN EXPERIMENT
-% -------------------------------------------------------------------------
-% Add function handle for experiment start/end function to ex struct
-ex.exptStartEnd = @exptStartEnd;
-
-% restore globals from previous experiment?
 if ~exist('params','var') || isempty(params)
+    % params should be empty struct
     params = struct([]);
-else
+    
+    % Get subject's MVC from previous calibration, or set to arbitrary 
+    % number before calibration
+    % ---------------------------------------------------------------------
+    if ~ex.calibNeeded
+        % Get MVC from output mat file of the practice stage
+        filename = strrep(outfile_mat,sprintf('stage-%s',ex.stage),'stage-practice');
+        assert(exist(filename,'file')==2, 'Practice stage file that includes MVC is missing');
+
+        % Load the 'result' variable from the file.
+        tmp = load(filename,'result');
+        % Grab MVC
+        MVC = tmp.result.MVC;
+        % Clear tmp variable
+        clear tmp
+    else
+        % Arbitrary MVC value that is overwritten after first calibration
+        MVC = 3;
+    end
+
+    % For the perform stage, load subject's choices from the choice stage
+    % to check that there are enough choices to start the perform stage
+    % ---------------------------------------------------------------------
+    if strcmp(ex.stage,'perform')
+        % Get choices output mat file and assert it exists
+        ex.choices_file = strrep(outfile_mat,'stage-perform','stage-choice');
+        assert(exist(ex.choices_file,'file') == 2, 'The choices output file does not exist: %s',ex.choices_file);
+
+        % Assert that the number of perform trials is not greater than the
+        % number of decisions made in the choice stage
+        choices  = load(ex.choices_file,'result');
+        nChoices = numel(choices.result.data);
+        assert(ex.blocks * ex.blockLen <= nChoices || ex.DEBUG, ...
+            'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, nChoices);
+        clear choices;  % Clear previous results from memory hear
+    end
+    
+    % Add function handle for experiment start/end function to ex struct
+    % ---------------------------------------------------------------------
+    ex.exptStartEnd = @exptStartEnd;
+    
+else    % Restored session
+    % Restore globals from previous experiment
     if isfield(params, 'MVC'), MVC = params.MVC; end
     if isfield(params, 'data') && isfield(params.data(end),'totalReward')
         totalReward = params.data(end).totalReward;
     end
 end
 
+% RUN EXPERIMENT
+% -------------------------------------------------------------------------
 % start experiment
 result = RunExperiment(@doTrial, ex, params, @blockfn);
 
@@ -275,6 +281,7 @@ end
 % this also controls calibration and practice at the start of the experiment
 function [ex, tr] = blockfn(scr, el, ex, tr)
 global totalReward
+EXIT = 0;
 
 % Display instructions
 % -------------------------------------------------------------------------

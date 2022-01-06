@@ -163,59 +163,56 @@ fatal_error       = 0;              % true if the task must end suddenly
 %  - includes the modification date and size! (2018)
 ex.experimentFile = dir(which(ex.experimentStack(end).file));
 
-% If params is given, overwrite (potentially ask first) the settings in
-% struct ex with those specified in params
+% If params is given, restore previous experiment settings
 % -------------------------------------------------------------------------
-last = [1 1];                               % block and trial to start at
-if exist('params','var') && ~isempty(params)% if user specified a set of experimental
-    p=params;                               % parameters in the input parameters,
-    if isfield(p,'params'), p=p.params; end
-    fnames=fieldnames(p);           % override parameters from the original (ex)
-    for x = 1:length(fnames);       % with those from the input structure (p).
-        if isfield(ex,fnames{x})    % Is the field already in ex?
-            if ~equals(p.(fnames{x}),ex.(fnames{x})) % if the values are unequal,
-                if(isfield(p,'overrideParameters')) % if 'overrideParameters' is set, then use that value
-                    override=p.overrideParameters;
-                    if(override)        % overwrite all parameters if 'overrideParameters' is specified
-                        warning(['Using "' fnames{x} '" = "' p.(fnames{x}) '" from passed parameters.']);
-                    else
-                        warning(['Using "' fnames{x} '" = "' ex.(fnames{x}) '" from experiment program.']);
-                    end
-                else                    % otherwise ask specifically for each parameter
-                    override=(input(['Override "' fnames{x} '": "' p.(fnames{x}) ...
-                        '" instead of "' ex.(fnames{x}) '" (1/0) ?'] ))
-                end
-            end
-        end % field exists?
-        ex.(fnames{x}) = p.(fnames{x});  % store field in ex
-    end
-    if isfield(params,'last')   last    = params.last; end    % go straight to the last-executed trial
-    if isfield(params,'data')   results = params.data; end    % keep results of old trials
-    if isfield(params,'trials') trials  = params.trials; end  % keep old trial structure and randomisation
+% block and trial to start at
+last = [1 1];
+
+% If restoring, overwrite the settings in struct ex with those specified in
+% params
+if exist('params','var') && ~isempty(params)
+    
+    % Combine ex and params in struct ex, overwriting existing fields in ex
+    ex = combineStruct(ex, params);
+    
+    % go straight to the last-executed trial
+    % keep old trial structure and randomisation
+    % keep results of old trials
+    % also keep results of old practice trials
+    if isfield(params,'last'),           last = params.last; end
+    if isfield(params,'trials'),         trials = params.trials; end
+    if isfield(params,'data'),           result.data = params.data; end
+    if isfield(params,'practiceResult'), result.practiceResult = params.practiceResult; end
+    
+    % keep a list of EDF files used in previous runs
     if isfield(params,'edfFiles')
-        result.edfFiles=params.edfFiles;  % keep a list of EDF files used in previous runs
+        result.edfFiles=params.edfFiles;
     else
         result.edfFiles={};
     end
-    if isfield(params,'startTimes')       % keep a list of times that each run begins
+    
+    % keep a list of times that each run begins
+    if isfield(params,'startTimes')
         result.startTimes=params.startTimes;
     else
         result.startTimes={};
     end
     
-    % Indicate that we're using a restored session. 
-    %   Also log here from which trial we're restarting?
+    % Indicate that we're using a restored session
     ex.restoredSession = true;
+    
+    % Log which trial we restored from
+    ex.restoredFrom = last;
 else
     ex.restoredSession = false;
 end
 
 % Set default values for unspecified parameters
 % -------------------------------------------------------------------------
-if ~isfield(ex,'useEyelink') ex.useEyelink=0; end  % default No Eyelink
-if ~isfield(ex,'useScreen')  ex.useScreen=1;  end  % default Yes Screen
-if ~isfield(ex,'useSqueezy') ex.useSqueezy=0; end  % default No Squeezy
-if ~isfield(ex,'useGripforce') ex.useGripforce=0; end  % default No Gripforce
+if ~isfield(ex,'useEyelink'), ex.useEyelink=0; end  % default No Eyelink
+if ~isfield(ex,'useScreen'),  ex.useScreen=1;  end  % default Yes Screen
+if ~isfield(ex,'useSqueezy'), ex.useSqueezy=0; end  % default No Squeezy
+if ~isfield(ex,'useGripforce'), ex.useGripforce=0; end  % default No Gripforce
 if ex.useEyelink, ex.useScreen=1; end               % can't have eyelink without screen
 if ~ex.useScreen,  scr=0; end                       % not using screen?
 if ~ex.useEyelink,  el=0; end                       % not using eyelink?
@@ -272,7 +269,7 @@ try
     
     % Initialise screen (scr struct)
     if ex.useScreen
-        if ~isfield(ex,'scr')
+        if ~isfield(ex,'scr') || ex.restoredSession
             scr = prepareScreen(ex);
             ex.scr = scr;
             ex.screenSize = scr.ssz;
@@ -344,7 +341,7 @@ try
     
     % Practice trials
     % ---------------------------------------------------------------------
-    % if there are practice trials, and we're not continuing from before:
+    % If there are practice trials, and we're not continuing from before:
     if isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1
         
         % Create a new set of random trials for the practice, in the same 
@@ -459,7 +456,7 @@ try
                 tr.rewardLvl = nan;
             end
             
-            % do not allow repeating practice trials
+            % Do not allow repeating practice trials
             if(isfield(ex,'R_NEEDS_REPEATING_LATER') && tr.R==ex.R_NEEDS_REPEATING_LATER)
                 tr.R = 1;
             end
@@ -529,7 +526,7 @@ try
                 [ex, trial1] = blockStart(scr,el,ex,trial1);
                 
                 % If there was an error or escape key, exit
-                if tr.R == ex.R_ERROR || tr.R == ex.R_ESCAPE
+                if trial1.R == ex.R_ERROR || trial1.R == ex.R_ESCAPE
                     fatal_error=1; break;
                 end
             elseif ~exist('blockStart','var') && ex.inMRIscanner
@@ -620,8 +617,8 @@ try
                     fprintf('\teffort level=%f\n',fatEffort);
                 end
                 
-                % keep track of what the last complete trial is
-                result.last   = [b,t];
+                % Keep track of what the last complete trial is
+                result.last = [b,t];
                 
                 % Write results to result struct, output txt files, and
                 % save a recovery file after each trial
@@ -737,8 +734,8 @@ catch e                                  % in case of an error
     for ix=1:length(e.stack)
         disp(e.stack(ix));
         save 'errordump';
-        if exist('results','var')
-            result.data=results; % and still give back the data so far
+        if exist('result','var')
+            result.data=result; % and still give back the data so far
         end
     end
 end
