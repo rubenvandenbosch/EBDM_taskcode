@@ -120,32 +120,49 @@ fclose('all');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% STIMULI
-function drawTree( scr, ex, location, stake,effort, height, doAppleText, otherText, doFlip )
+function drawTree(scr, ex, location, rewardIx, effortIx, height, doAppleText, otherText, doFlip)
+% 
 % Generic merged function to draw tree, apples, rungs and force level
+% 
+% INPUTS
 % location = -1 for left, 0 for centre, 1 for right
-% stake    = 0 for no apples, or 1-5 for stake levels
-% effort   = 0 for no force,  or 1-5 for force levels
-%            corresponding to 0.16/0.32/0.48/0.64/0.80.
-% provide effort number as type cell to specify any possible value
+% rewardIx = 0 for no reward
+% effortIx = 0 for no force
+%       provide effortIx as type cell to specify any possible value
 % height   = current squeeze, relative to MVC.
-% if doAppleText, then write the stake & effort below the centre of screen
-% if not, then write the string in otherText below the centre if screen.
+% 
+% if doAppleText, write reward & effort level below the centre of screen
+%   if not, then write the string in otherText below the centre if screen.
 % if doFlip, then the screen is flipped at the end of the function.
+% -------------------------------------------------------------------------
+% 
 
-BP = ex.forceBarPos;        % bar position
-x0 = scr.centre(1);
-y0 = scr.centre(2);         % where to place the tree?
-x0 = x0 + location * BP(1); % translate whole tree
-W  = ex.forceBarWidth;      % bar width
-S  = ex.forceScale;         % vertical distance between rungs
-if iscell(effort)
-    % ugly trick to treat effort as direct force value instead of an index into a
-    % pre-defined array with default values.
-    effort = effort{1};
-    force = effort;
+% Prepare location and reward/effort variables
+% -------------------------------------------------------------------------
+% Stimuli positions on screen
+BP  = ex.forceBarPos;        % bar position
+x0  = scr.centre(1);
+y0  = scr.centre(2);         % where to place the tree?
+x0  = x0 + location * BP(1); % translate whole tree
+W   = ex.forceBarWidth;      % bar width
+S   = ex.forceScale;         % vertical distance between rungs
+lW  = 5;                     % line width for rungs of effort level ladder
+tlW = 7;                     % width of target line for current effort lvl
+
+% Get reward level from index
+rewardLevel = ex.rewardLevel(rewardIx);
+
+% Get effort level from index in variable force
+if iscell(effortIx)
+    % ugly trick to treat effort as direct force value instead of an index 
+    % of a pre-defined array with default values.
+    effortIx = effortIx{1};
+    force = effortIx;
 else
-    force = ex.effortLevel(effort); % the proportion of MVC
+    force = ex.effortLevel(effortIx); % the proportion of MVC
 end
+
+% Set force bar level at 0 or based on current squeeze force
 if ex.fatiguingExercise
     % no maximum limit during fatiguing experiment
     height = max(0,height);
@@ -153,57 +170,54 @@ else
     height = max(0,min(1.5,height));
 end
 
+% Draw stimuli
+% -------------------------------------------------------------------------
 % Draw trunk brown
 Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]);
-
-if ~ex.fatiguingExercise
-    Screen('DrawTexture', scr.w, scr.imageTexture(stake+1),[], ...
-        [ (x0-3*W) (y0 + BP(2) - ex.effortLevel(end)*S - numel(ex.effortLevel)*W) (x0 + 3*W) (y0 + BP(2) - ex.effortLevel(end)*S) ]);
-end
-
-% Draw apples according to stake level
-if stake > 0
-    apples = ex.rewardLevel(stake);
-    if doAppleText   % text for how many apples
-        formatstring = 'Appels: %d ';
-        drawTextCentred(scr, sprintf(formatstring, apples), ex.fgColour, scr.centre + [0 300]);
-    end
-end
 
 % Draw rungs of ladder at each effortLevel
 if ~ex.fatiguingExercise
     for ix = 1:length(ex.effortLevel) % width of lines is 5 (i.e. this is not a hardcoded level of something)
-        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*S BP(2)-ex.effortLevel(ix)*S ], 5, ex.silver, [x0 y0], 0);
-    end
-end
-
-% Display the effort level as on-screen text.
-%   (note previous versions only displayed effort visually as a forcebar)
-if force > 0
-    if doAppleText   % text for how many apples
-        if strcmpi(ex.language,'NL'), formatstring = 'Inspanningsniveau: %d ';
-        else, formatstring = 'Effort level: %d '; end
-        drawTextCentred(scr, sprintf(formatstring,floor(effort)), ex.fgColour, scr.centre + [0 350]);
+        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*S BP(2)-ex.effortLevel(ix)*S ], lW, ex.silver, [x0 y0], 0);
     end
 end
 
 % Show current trial's force level as a wider rung at the relevant height
 if ex.fatiguingExercise
-    % NB: Fixed force level set to 0.7 (always plot the target yellow bar at this location)
-    % draw wider line for fixed force=0.7 level
-    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], 7, ex.yellow, [x0 y0], 0);
+    % NB: Fixed force level set to 0.7 (always plot the target yellow bar 
+    %     at this location)
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], tlW, ex.yellow, [x0 y0], 0);
 else
-    % draw wider line for current force level
-    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-force*S BP(2)-force*S ], 7, ex.yellow, [x0 y0], 0);
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-force*S BP(2)-force*S ], tlW, ex.yellow, [x0 y0], 0);
+end
+
+% Draw apples in tree image according to reward level
+if ~ex.fatiguingExercise
+    Screen('DrawTexture', scr.w, scr.imageTexture(rewardIx+1),[], ...
+        [ (x0-3*W) (y0 + BP(2) - ex.effortLevel(end)*S - numel(ex.effortLevel)*W) (x0 + 3*W) (y0 + BP(2) - ex.effortLevel(end)*S) ]);
+end
+
+% Display reward and effort level in text
+%   (note previous versions only displayed effort visually as a forcebar)
+if rewardIx > 0
+    if doAppleText
+        % Reward level in number of apples
+        formatstring = 'Appels: %d ';
+        drawTextCentred(scr, sprintf(formatstring, rewardLevel), ex.fgColour, scr.centre + [0 300]);
+        % Effort level
+        if strcmpi(ex.language,'NL'), formatstring = 'Inspanningsniveau: %d ';
+        else, formatstring = 'Effort level: %d '; end
+        drawTextCentred(scr, sprintf(formatstring, effortIx), ex.fgColour, scr.centre + [0 350]);
+    end
 end
 
 % Draw the momentary force height
+% -------------------------------------------------------------------------
 if height < force
     clr = ex.forceColour;
 elseif height >= force
     clr = ex.yellow;
 end
-
 if ex.fatiguingExercise
     % adapt plot height level to match 0.7 for actually requested force during fatiguing experiment
     height = height * (0.7/force);
@@ -212,9 +226,14 @@ if ex.fatiguingExercise
 end
 Screen('FillRect', scr.w, clr, [x0-W/2 y0+BP(2)-height*S x0+W/2 y0+BP(2)]);
 
+% Wrapping up
+% -------------------------------------------------------------------------
+% Display text in input otherText, if applicable
 if ~doAppleText && ~isempty(otherText)
     drawTextCentred( scr, otherText, ex.forceColour, scr.centre + [0 200]);
 end
+
+% Flip screen
 if doFlip
     Screen('Flip',scr.w);
 end
