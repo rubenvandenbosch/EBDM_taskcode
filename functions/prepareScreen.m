@@ -66,19 +66,18 @@ if(isfield(ex,'xhairSize'))       % calculate crosshair coordinates if needed
                                  repmat(scr.centre-ex.targetPos,1,2)+xh([2 1 4 3]) ]; %left
     end
 end
-if isfield(ex,'imageFiles')       % load images if requested
-    for i=1:length(ex.imageFiles) % for each image
-        fn=ex.imageFiles{i};      % get file name
-        type = fn(end-2:end);     % get extension (last 3 chars)
-        if fn(end-3)~='.' 
-            if fn(end-4)=='.'
-                type=fn(end-3:end);
-            else
-                type='gif';      % if no extension, then assume gif format.
-            end
+if isfield(ex,'imageFiles')        % load images if requested
+    for i=1:length(ex.imageFiles)  % for each image
+        fn=ex.imageFiles{i};       % get file name
+        [~,~,ext] = fileparts(fn); % get extension (last 3 chars)
+        type = erase(ext,'.');     % remove dot to get imformat from ext
+        if isempty(type)           % if no extension, assume gif format
+            type='gif';
         end
+        
         % load image from file - the pixel data and the colour map.
         [scr.imageData{i},scr.imageMap{i}] = imread(ex.imageFiles{i},type);
+        
         % now make the PsychToolbox texture.
         if(isfield(ex,'imageAlpha')) % check if 'imageAlpha' is specified
             discrimImage1(scr.imageData{i}==ex.imageAlpha) = ex.bgColourIndex;
@@ -88,10 +87,11 @@ if isfield(ex,'imageFiles')       % load images if requested
             scr.imageTexture(i)=Screen('MakeTexture', scr.w, ...
                 scr.imageData{i});
         end
+        
         % store the image size too.
         scr.imageSize{i} = [size(scr.imageData{i},2) size(scr.imageData{i},1)];
-    end;
-end;
+    end
+end
 
 if isfield(ex,'useCedrus')       % open the Cedrus buttonbox COM port?
   cedrus=serial('COM6');
