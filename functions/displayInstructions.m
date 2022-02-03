@@ -58,12 +58,12 @@ while slideNr <= numel(slides)
     WaitSecs(1);
     
     % Wait for a button press
-    resp = [];
+    resp = 0;
     if ex.useBitsiBB
-        while isempty(resp)
+        while resp == 0
             ex.BitsiBB.clearResponses(); % empty input buffer
             [resp, ~] = ex.BitsiBB.getResponse(0.2, true); % wait for any button press
-            if isempty(resp)
+            if resp == 0
                 % Check whether exit key on keyboard was pressed
                 [~, ~, resp, ~] = KbCheck();
                 if resp(ex.exitkey), break; end
