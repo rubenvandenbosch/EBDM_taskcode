@@ -15,7 +15,7 @@ function ex = commonSettings(ex)
 %   'apple' : original apple gathering task scenario
 %   'food'  : food-related effort-based decision making task scenario with
 %             vending machine stimulus.
-ex.TaskVersion = 'food';
+ex.TaskVersion = 'apple';
 
 % If doing the food-related EBDM scenario, choose whether to use sweet or
 % savory food rewards
@@ -24,7 +24,7 @@ if strcmpi(ex.TaskVersion,'food')
 end
 
 % Description of protocol to save in results struct
-ex.description = 'Food-related effort-based decision making task';
+ex.description = 'Apple gathering task: effort-based decision making';
 
 % Language of instructions ('NL' OR 'EN')
 ex.language = 'NL';
@@ -53,14 +53,29 @@ ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
 % Stimulus image files
 %   first one must be the no-reward image of an empty tree/vending machine!
 %   last one must be fixationcross!
+% 
+%   Only file names (files are looked for in the stimuli directory)
+%   file name pattern: '<number><itemName>.jpg', e.g. '3apple.jpg'
 switch ex.TaskVersion
     case 'apple'
         ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.jpg'};
     case 'food'
+        % Image files and names of food stimuli
         if strcmpi(ex.FoodVersion,'sweet')
             ex.imageFiles = {'vending_machine.jpg','1blueberry.jpg','1m&m.jpg','4blueberry.jpg','4m&m.jpg','fixationcross.jpg'};
+            
+            % Store food stimuli names (list in increasing calories)
+            %   English name must match name in image file name
+            ex.foodStimNames.EN = {'blueberry','m&m'};
+            ex.foodStimNames.NL = {'blauwe bes','m&m'};
+            
         elseif strcmpi(ex.FoodVersion,'savory')
             ex.imageFiles = {'vending_machine.jpg','1cucumber.jpg','1pringle.jpg','4cucumber.jpg','4pringle.jpg','fixationcross.jpg'};
+            
+            % Store food stimuli names (list in increasing calories)
+            %   English name must match name in image file name
+            ex.foodStimNames.EN = {'cucumber','pringle'};
+            ex.foodStimNames.NL = {'komkommer','pringle'};
         end
 end
 
@@ -70,12 +85,11 @@ end
 % -------------------------------------------------------------------------
 % 4 x 4 effort x reward
 
-% What are the different levels of rewards that will be used. 
-%   Make sure jpgs of apple tree match this.
-%   Change to something that makes sense for our stimuli
+% Levels of reward magnitude
+%   Make sure the numbers in the names of jpgs of apple tree match this.
 ex.rewardLevel = [1 3 6 9]; % [1 3 6 9 12];
 
-% Effort levels: proportions of MVC
+% Effort levels: proportions of maximum voluntary contraction (MVC)
 ex.effortLevel = [0.1 0.33 0.56 0.8]; % [0.16 0.32 0.48 0.64 0.80];
 
 % Order of familiarizing with force levels.
@@ -94,7 +108,8 @@ ex.blockVariables.blocktype = 1;
 % Allow unequal number of trials per trial type within one block
 ex.allowUnequalTrials = true;
 
-% Reward and effort index (based on reward/effort levels specified above
+% Variables to vary over trials
+%   Reward and effort index (based on reward/effort levels specified above)
 ex.trialVariables.rewardIx = 1:numel(ex.rewardLevel);
 ex.trialVariables.effortIx = 1:numel(ex.effortLevel);
 
