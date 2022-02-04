@@ -1,40 +1,38 @@
-function result = AGT_CoreProtocol_RU_BSI(params,ex)
-% result = AGT_CoreProtocol(params)
-% Apple gathering task
+function result = ebdm_CoreProtocol(params,ex)
+% result = ebdm_CoreProtocol(params,ex)
+% 
+% DESCRIPTION
+% Effort-based decision making task
 %  * The main bulk of the exeriment is making yes/no decsions
-%    (by pressing the arrow keys) about whether the
-%    stake offered is "worth it" for the effort required.
-%  * This script is for the transdiagnostic patient studies.
-%  * The order of trials and blocks is FIXED in advance
-%  * Hold escape to exit.
-%  * If you already have performed calbriaton and practice
-%    you can select the previous result file and start from the
-%    experimental blocks, by setting "calibNeeded".
+%    (by pressing the left/right keys) about whether the
+%    reward offered is "worth it" for the effort required.
 %
-% You need to have:
-%  * Add latest "matlib" to the path -ppe requires RunExperiment.m,
-%    createTrials.m, prepareScreen
-%  * All the apple.jpg images in the folder you are working from
+% There are 3 stages to the experiment
+% 1. practice : the practice stage also has three phases
+%       - calibration of maximum grip strength (MVC)
+%       - familiarization with the effort levels calibrated to MVC
+%       - practicing the choices of deciding whether the effort is worth
+%         the reward.
+% 2. choice   : choice task decisions of reward for effort (optionally in 
+%               performed in MRI scanner)
+% 3. perform  : performance of computer-selected effort/reward combinations
+%               that were accepted from the offers in the choice stage.
+% 
+% HOW TO RUN
+% - Use the run_ebdm_fmri function to define subject and session, and
+%   initialize settings and devices. run_ebdm_fmri then calls this function
+%   to start the task.
+% - Define experiment settings in commonSettings.m
+%
+% REQUIRED DEVICE:
 %  * Hand dynamometer eg. SS25LA connected to MP150 via DA100C
 %    and UIM100C, set up already, configured to Channel 1
 %  * or alternatively, TSG RU manufactured gripforce device in combination
 %    with a fieldtrip saving buffer to stream the gripforce data.
 %
-%%% STRUCTURE
-%
-% There are 4 phases to the experiment
-% 1  calibration - calculate their max grip strength (MVC) initial squeeze
-%    and then 2 attempts at the yellow line (=110% then 105% MVC)
-% 2. Practice - 2 practices of each force level
-% 3. Decisions - Self-paced (10s time out) choices of effort for reward,
-%    no squeezing, 5 effort x 5 reward levels, 25 trials x 5 blocks.
-% 4. Execute 25 trials selected randomly (but with all effort/reward combinations
-%    once) from the choices in part 3. Forced squeezing required for trials
-%    that were accepted.
-%
-
 
 %%% Notes
+% Nov-Dec 2021: Adapted from AGT_CoreProtocol_RU_BSI by Ruben van den Bosch
 % 2018-06-29 : Adapted script from AGT_Simplified.
 % Squeezy implementation: interfaces with MP150 and transducers, records  from channels 1.
 % Authors: Sanjay Manohar, Annika Kienast, Matthew Apps, Valerie Bonnelle,

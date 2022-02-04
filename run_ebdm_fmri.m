@@ -164,7 +164,7 @@ end
 
 % Load common settings
 %   Also initializes bitsi for MRI and buttonbox, if applicable
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 ex = commonSettings(ex);
 
 % Start grip force recording, if applicable
@@ -175,7 +175,7 @@ end
 
 % Start task
 % -------------------------------------------------------------------------
-result = AGT_CoreProtocol_RU_BSI(params,ex);
+result = ebdm_CoreProtocol(params,ex);
 
 % Cleanup
 % -------------------------------------------------------------------------
