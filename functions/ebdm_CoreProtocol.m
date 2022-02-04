@@ -117,10 +117,11 @@ fclose('all');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% STIMULI
+%% STIMULI apple gathering scenario
 function drawTree(scr, ex, location, rewardIx, effortIx, height, doAppleText, otherText, doFlip)
 % 
-% Generic merged function to draw tree, apples, rungs and force level
+% Function to draw tree, apples, rungs and force level in the apple
+% gatherin scenario of the ebdm task.
 % 
 % INPUTS
 % location = -1 for left, 0 for centre, 1 for right
@@ -138,9 +139,9 @@ function drawTree(scr, ex, location, rewardIx, effortIx, height, doAppleText, ot
 % Prepare location and reward/effort variables
 % -------------------------------------------------------------------------
 % Stimuli positions on screen
-BP  = ex.forceBarPos;        % bar position
 x0  = scr.centre(1);
-y0  = scr.centre(2);         % where to place the tree?
+y0  = scr.centre(2);         
+BP  = ex.forceBarPos;        % bar position
 x0  = x0 + location * BP(1); % translate whole tree
 W   = ex.forceBarWidth;      % bar width
 S   = ex.forceScale;         % vertical distance between rungs
@@ -148,12 +149,11 @@ lW  = 5;                     % line width for rungs of effort level ladder
 tlW = 7;                     % width of target line for current effort lvl
 
 % Get reward level from index
-rewardLevel = ex.rewardLevel(rewardIx);
+if rewardIx > 0, rewardLevel = ex.rewardLevel(rewardIx); end
 
 % Get effort level from index in variable force
 if iscell(effortIx)
-    % ugly trick to treat effort as direct force value instead of an index 
-    % of a pre-defined array with default values.
+    % ugly trick to treat effort as direct force value instead of an index
     effortIx = effortIx{1};
     force = effortIx;
 else
@@ -175,7 +175,7 @@ Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]);
 
 % Draw rungs of ladder at each effortLevel
 if ~ex.fatiguingExercise
-    for ix = 1:length(ex.effortLevel) % width of lines is 5 (i.e. this is not a hardcoded level of something)
+    for ix = 1:length(ex.effortLevel)
         Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*S BP(2)-ex.effortLevel(ix)*S ], lW, ex.silver, [x0 y0], 0);
     end
 end
@@ -191,7 +191,18 @@ end
 
 % Draw apples in tree image according to reward level
 if ~ex.fatiguingExercise
-    Screen('DrawTexture', scr.w, scr.imageTexture(rewardIx+1),[], ...
+    
+    % Find index of correct image for reward stimulus based rewardLevel
+    %   If no reward, show empty tree
+    if rewardIx > 0
+        imageName = sprintf('%dapple', rewardLevel);
+    else
+        imageName = 'tree';
+    end
+    imageIx   = contains(imageName,scr.imageName);
+    
+    % Draw image
+    Screen('DrawTexture', scr.w, scr.imageTexture(imageIx),[], ...
         [ (x0-3*W) (y0 + BP(2) - ex.effortLevel(end)*S - numel(ex.effortLevel)*W) (x0 + 3*W) (y0 + BP(2) - ex.effortLevel(end)*S) ]);
 end
 
@@ -228,7 +239,7 @@ Screen('FillRect', scr.w, clr, [x0-W/2 y0+BP(2)-height*S x0+W/2 y0+BP(2)]);
 % -------------------------------------------------------------------------
 % Display text in input otherText, if applicable
 if ~doAppleText && ~isempty(otherText)
-    drawTextCentred( scr, otherText, ex.forceColour, scr.centre + [0 200]);
+    drawTextCentred(scr, otherText, ex.forceColour, scr.centre + [0 200]);
 end
 
 % Flip screen
@@ -236,8 +247,173 @@ if doFlip
     Screen('Flip',scr.w);
 end
 
+%% STIMULI food-related EBDM
+function drawVM(scr, ex, location, rewardIx, caloriesIx, effortIx, height, doOfferText, otherText, doFlip)
+% 
+% Function to draw vending machine (VM) with food reward stimuli and the 
+% force bar with effort level target in the food-related EBDM scenario.
+% 
+% INPUTS
+% location = -1 for VM to the left of the force bar, 1 for to the right,
+%            0 for forcebar in middle of screen (in case no VM presented)
+% rewardIx = 0 for no reward
+% effortIx = 0 for no force
+%       provide effortIx as type cell to specify any possible value
+% height   = current squeeze, relative to MVC.
+% 
+% if doAppleText, write reward & effort level below the centre of screen
+%   if not, then write the string in otherText below the centre if screen.
+% if doFlip, then the screen is flipped at the end of the function.
+% -------------------------------------------------------------------------
+% 
+
+% Prepare location and reward/effort variables
+% -------------------------------------------------------------------------
+% Stimuli positions on screen
+% .........................................................................
+x0  = scr.centre(1);
+y0  = scr.centre(2);         
+
+% Force bar position
+BP    = ex.forceBarPos;
+BP(1) = x0 + -location * BP(1);
+W     = ex.forceBarWidth;   % bar width
+ydist = BP(2)*2;            % height of force bar rectangle
+lTh   = 4;                  % line thickness of force bar rect outline
+lW    = 5;                  % line width for rungs of effort level ladder
+tlW   = 7;                  % width of target line for current effort level
+
+% Vending machine dimensions and position
+VMdim  = ex.VMdim;
+VMxpos = x0 + location * (ex.forceBarPos(1) + VMdim(1)/2);
+
+% Reward and effort information
+% .........................................................................
+% Get reward level from index
+if rewardIx > 0, rewardLevel = ex.rewardLevel(rewardIx); end
+
+% Get effort level from index in variable force
+if iscell(effortIx)
+    % ugly trick to treat effort as direct force value instead of an index
+    effortIx = effortIx{1};
+    force = effortIx;
+else
+    force = ex.effortLevel(effortIx); % the proportion of MVC
+end
+
+% Set force bar level at 0 or based on current squeeze force
+if ex.fatiguingExercise
+    % no maximum limit during fatiguing experiment
+    height = max(0,height);
+else
+    height = max(0,min(1.5,height));
+end
+
+% Draw stimuli
+% -------------------------------------------------------------------------
+% Draw force levels indicator. Make it have an open top side
+Screen('FillRect', scr.w, ex.darkgrey, [BP(1)-W/2 y0-BP(2) BP(1)+W/2 y0+BP(2)], lTh);
+Screen('Drawlines', scr.w, [-W/2 W/2 ; BP(2) BP(2)], lTh, ex.fgColour, [BP(1) y0], 0);
+Screen('Drawlines', scr.w, [-W/2 -W/2 ; BP(2) -BP(2)], lTh, ex.fgColour, [BP(1) y0], 0);
+Screen('Drawlines', scr.w, [ W/2 W/2 ; BP(2) -BP(2)], lTh, ex.fgColour, [BP(1) y0], 0);
+
+% Draw rungs of ladder at each effortLevel
+if ~ex.fatiguingExercise
+    for ix = 1:length(ex.effortLevel) 
+        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*ydist BP(2)-ex.effortLevel(ix)*ydist ], lW, ex.silver, [BP(1) y0], 0);
+    end
+end
+
+% Show current trial's force level as a wider rung at the relevant height
+if ex.fatiguingExercise
+    % NB: Fixed force level set to 0.7 (always plot the target yellow bar 
+    %     at this location)
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], tlW, ex.yellow, [BP(1) y0], 0);
+else
+    Screen('Drawlines',scr.w, [ -W/2-ex.extraWidth W/2+ex.extraWidth  ; BP(2)-force*ydist BP(2)-force*ydist ], tlW, ex.yellow, [BP(1) y0], 0);
+end
+
+% Draw vending machine image with correct food items according to
+% caloriesIx and rewardLevel
+if ~ex.fatiguingExercise
+    assert(~(location==0), 'location of force bar must not be in the middle when also presenting the vending machine. Set location to -1 or 1.');
+    
+    % Get correct image for reward stimulus based on reward magnitude and 
+    % calories. If no reward, show empty vending machine
+    if rewardIx > 0
+        imageName = sprintf('%d%s', rewardLevel,ex.foodStimNames.EN{caloriesIx});
+    else
+        imageName = 'vending_machine';
+    end
+    imageTexture   = scr.imageTexture(contains(scr.imageName,imageName));
+    
+    % Draw image
+    Screen('DrawTexture', scr.w, imageTexture,[], ...
+        [ VMxpos-VMdim(1)/2  y0-VMdim(2)/2  VMxpos+VMdim(1)/2  y0+VMdim(2)/2 ]);
+end
+
+% Display reward and effort level in text
+if rewardIx > 0
+    if doOfferText
+        % Reward level in magnitude and calories
+        switch ex.language
+            case 'EN'
+                if rewardLevel == 1
+                    formatstring = sprintf('%s : %d piece', ex.foodStimNames.EN{caloriesIx},rewardLevel);
+                else
+                    formatstring = sprintf('%s : %d pieces', ex.foodStimNames.EN{caloriesIx},rewardLevel);
+                end
+            case 'NL'
+                if rewardLevel == 1
+                    formatstring = sprintf('%s : %d stuk', ex.foodStimNames.NL{caloriesIx},rewardLevel);
+                else
+                    formatstring = sprintf('%s : %d stuks', ex.foodStimNames.NL{caloriesIx},rewardLevel);
+                end
+        end
+        drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 300]);
+        
+        % Effort level
+        switch ex.language
+            case 'EN'
+                formatstring = sprintf('Effort level: %d', effortIx);
+            case 'NL'
+                formatstring = sprintf('Inspanningsniveau: %d', effortIx);
+        end
+        drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 350]);
+    end
+end
+
+% Draw the momentary force height
+% -------------------------------------------------------------------------
+if height < force
+    clr = ex.forceColour;
+elseif height >= force
+    clr = ex.yellow;
+end
+if ex.fatiguingExercise
+    % adapt plot height level to match 0.7 for actually requested force during fatiguing experiment
+    height = height * (0.7/force);
+    % but we don't want to exceed the trunk, so limit height
+    height = min(1.0,height);
+end
+Screen('FillRect', scr.w, clr, [BP(1)-W/2 y0+BP(2)-height*ydist BP(1)+W/2 y0+BP(2)]);
+
+% Wrapping up
+% -------------------------------------------------------------------------
+% Display text in input to otherText, if applicable
+if ~doOfferText && ~isempty(otherText)
+    drawTextCentred(scr, otherText, ex.forceColour, scr.centre + [0 300]);
+end
+
+% Flip screen
+if doFlip
+    Screen('Flip',scr.w);
+end
 
 function drawCalibAndFlip(scr, ex, colour, colourlevel, height, effortLevel)
+% For gripforce calibration; maximum voluntary contraction (MVC)
+% Only force bar stimulus
+%
 height = max(0,min(1.5,height));
 x0     = scr.centre(1);
 y0     = scr.centre(2);
@@ -415,6 +591,10 @@ elseif strcmp(tr.sub_stage,'practice') && strcmp(ex.stage,'perform')
     stage = 'perform';
 end
 
+% If food-related ebdm scenario, set location of vending machine to left of
+% right of force bar (-1 for left, +1 for right).
+tr.VMlocation = -1;
+
 % Prepare EXIT value; gets set to true if escape is pressed.
 EXIT = false;
 
@@ -564,10 +744,16 @@ switch stage
             WaitSecs(1);
         end
         
-        % Function to draw tree without apples and the correct effort rung,
-        %   with "RESPOND NOW". Location 0 means centre of screen.
+        % Function to draw stimuli without reward and the correct target 
+        % effort rung, with "RESPOND NOW". 
+        %   Location 0 means centre of screen.
         if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
-        fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
+        switch ex.TaskVersion
+            case 'apple'
+                fbfunc = @(f) drawTree(scr, ex, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
+            case 'food'
+                fbfunc = @(f) drawVM(scr, ex, tr.VMlocation, 0, 0, tr.effortIx, f(pa.channel)/MVC, false, txt, true );
+        end
         tr = LogEvent(ex,el,tr,'stimOnset');
         
         % Get squeeze response data
@@ -672,8 +858,13 @@ switch stage
         end
         tr = waitOrBreak(ex, tr, Tdelay);
         
-        % Present tree with effort and stake in centre of screen
-        drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
+        % Present stimulus with reward and effort info in centre of screen
+        switch ex.TaskVersion
+            case 'apple'
+                drawTree(scr,ex,0,tr.rewardIx, tr.effortIx, 0, true, [], true);
+            case 'food'
+                drawVM(scr, ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, true, [], true);
+        end
         tr = LogEvent(ex,el,tr,'stimOnset');
         
         % Wait before presenting yes/no response options
@@ -700,10 +891,17 @@ switch stage
         end
         tr = waitOrBreak(ex, tr, Tdelay);
         
-        % Draw tree and add 'yes/no' response options, then flip to present
-        drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
-        drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation 200]);
-        drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
+        % Draw stimuli and add 'yes/no' response options, then flip
+        switch ex.TaskVersion
+            case 'apple'
+                drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
+                yoffset = 200;
+            case 'food'
+                drawVM(scr, ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, true, [], false);
+                yoffset = 300;
+        end
+        drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation yoffset]);
+        drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation yoffset]);
         Screen('Flip',scr.w);
         tr = LogEvent(ex,el,tr,'choiceOnset');
         
@@ -741,8 +939,13 @@ switch stage
             if any(tr.yesKey==tr.key) || any(tr.noKey==tr.key) || tr.key==ex.exitkey
                 break
             else % Draw feedback about which button to use
-                drawTree(scr,ex,0,tr.rewardIx , tr.effortIx, 0, true, [], false);
-                if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter pijl toets/knop'; else, txt='Use the Left and Right arrow keys'; end
+                switch ex.TaskVersion
+                    case 'apple'
+                        drawTree(scr, ex, 0, tr.rewardIx , tr.effortIx, 0, true, [], false);
+                    case 'food'
+                        drawVM(scr, ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, true, [], false);
+                end
+                if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter toets/knop'; else, txt='Use the Left and Right keys'; end
                 drawTextCentred(scr, txt, ex.forceColour, scr.centre + [0, -300])
                 drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [tr.yeslocation 200]);
                 drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
@@ -809,7 +1012,12 @@ switch stage
         % Draw feedback
         drawTextCentred(scr, message, msgcolour, msgloc)
         if doTree
-            drawTree(scr,ex,0, tr.rewardIx, tr.effortIx, 0, true, [], true);
+            switch ex.TaskVersion
+                case 'apple'
+                    drawTree(scr, ex, 0, tr.rewardIx, tr.effortIx, 0, true, [], true);
+                case 'food'
+                    drawVM(scr, ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, true, [], true);
+            end
         end
         tr = LogEvent(ex,el,tr,'feedbackOnset');
         WaitSecs(0.5);
@@ -831,8 +1039,7 @@ switch stage
             tr.effortLevel = ex.effortLevel(tr.effortIx);
         else
             location = tr.location; % tree middle (0) or left(-1)/right(1) for two hands case
-            if location > 0, pa.channel = 2; else pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
-            performTrial = NaN; % only the tree, no apples, but with effort level
+            if location > 0, pa.channel = 2; else, pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
             tr.effortIx = tr.effort; % should be a number delivered as type cell
             tr.effort = tr.effort{1}; % convert from cell to number
             tr.stakeIx = 0;
@@ -840,7 +1047,12 @@ switch stage
         end
         
         % Draw tree with reward/effort indication of previous choice.
-        drawTree(scr,ex, location, tr.rewardIx ,tr.effortIx, 0, false, [], true);
+        switch ex.TaskVersion
+            case 'apple'
+                drawTree(scr,ex, location, tr.rewardIx ,tr.effortIx, 0, false, [], true);
+            case 'food'
+                drawVM(scr, ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, [], true);
+        end
         tr = LogEvent(ex,el,tr,'stimOnset');
         WaitSecs(0.5);
         
@@ -855,10 +1067,15 @@ switch stage
         if Yestrial == 1   % Accepted Performance trials
             tr.didAccept = 1;
             
-            % Function to draw tree without apples and the correct effort 
-            % rung, with "RESPOND NOW" text
+            % Function to draw stimuli with reward and effort target, with 
+            % "RESPOND NOW" text
             if strcmp(ex.language,'NL'), txt = 'Knijp nu!'; else, txt = 'Squeeze now!'; end
-            fbfunc = @(f) drawTree(scr,ex,location ,tr.rewardIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
+            switch ex.TaskVersion
+                case 'apple'
+                    fbfunc = @(f) drawTree(scr,ex, location, tr.rewardIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
+                case 'food'
+                    fbfunc = @(f) drawVM(scr,ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, f(pa.channel)/MVC, false, txt, true);
+            end
             
             % Get squeeze response data
             tr = LogEvent(ex,el,tr,'squeezeStart');
@@ -913,8 +1130,12 @@ switch stage
             % Display "offer declined" text
             if strcmp(ex.language,'NL'), txt='Aanbod afgewezen'; else, txt='Offer declined'; end
             drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
-            drawTree(scr,ex,0,tr.rewardIx , tr.effortIx, 0, false, [], true);
-            
+            switch ex.TaskVersion
+                case 'apple'
+                    drawTree(scr,ex, 0, tr.rewardIx, tr.effortIx, 0, false, [], true);
+                case 'food'
+                    drawTree(scr,ex, -1, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, [], true);
+            end
             % Log decline feedback onset time
             tr = LogEvent(ex,el,tr,'feedbackOnset');
             

@@ -6,8 +6,20 @@ function ex = commonSettings(ex)
 % -------------------------------------------------------------------------
 % 
 
+% Switch between task versions
+%   'apple' : original apple gathering task scenario
+%   'food'  : food-related effort-based decision making task scenario with
+%             vending machine stimulus.
+ex.TaskVersion = 'food';
+
+% If doing the food-related EBDM scenario, choose whether to use sweet or
+% savory food rewards
+if strcmpi(ex.TaskVersion,'food')
+    ex.FoodVersion = 'sweet';
+end
+
 % Description of protocol to save in results struct
-ex.type = 'Food-related effort-based decision making task';
+ex.description = 'Food-related effort-based decision making task';
 
 % Language of instructions ('NL' OR 'EN')
 ex.language = 'NL';
@@ -34,22 +46,51 @@ ex.dirs.venv.conda = false;
 ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
 
 % Stimulus image files
+%   first one must be the no-reward image of an empty tree/vending machine!
 %   last one must be fixationcross!
-ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.png'};
+% 
+%   Only file names (files are looked for in the stimuli directory)
+%   file name pattern: '<number><itemName>.jpg', e.g. '3apple.jpg'
+switch ex.TaskVersion
+    case 'apple'
+        ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.jpg'};
+    case 'food'
+        % Image files and names of food stimuli
+        if strcmpi(ex.FoodVersion,'sweet')
+            ex.imageFiles = {'vending_machine.jpg','1blueberry.jpg','1m&m.jpg','4blueberry.jpg','4m&m.jpg','fixationcross.jpg'};
+            
+            % Store food stimuli names (list in increasing calories)
+            %   English name must match name in image file name
+            ex.foodStimNames.EN = {'blueberry','m&m'};
+            ex.foodStimNames.NL = {'blauwe bes','m&m'};
+            
+        elseif strcmpi(ex.FoodVersion,'savory')
+            ex.imageFiles = {'vending_machine.jpg','1cucumber.jpg','1pringle.jpg','4cucumber.jpg','4pringle.jpg','fixationcross.jpg'};
+            
+            % Store food stimuli names (list in increasing calories)
+            %   English name must match name in image file name
+            ex.foodStimNames.EN = {'cucumber','pringle'};
+            ex.foodStimNames.NL = {'komkommer','pringle'};
+        end
+end
 
 % Trial structure settings
 % =========================================================================
 % Effort and reward levels specification
 % -------------------------------------------------------------------------
-% 4 x 4 effort x reward
+% 2 x 2 x 4 design
+% reward_magnitude x calories x effort
+% low(1 piece)/high(4 pieces) x low cal(1)/high cal(2) x 4 effort levels
 
-% What are the different levels of rewards that will be used. 
-%   Make sure jpgs of apple tree match this.
-%   Change to something that makes sense for our stimuli
-ex.rewardLevel = [1 3 6 9]; % [1 3 6 9 12];
+% Levels of reward magnitude
+%   Make sure the numbers in the names of jpgs of stimuli match this.
+ex.rewardLevel = [1 4];
 
-% Effort levels: proportions of MVC
-ex.effortLevel = [0.1 0.33 0.56 0.8]; % [0.2 0.4 0.6 0.8]; % [0.16 0.32 0.48 0.64 0.80];
+% Levels of food reward calories variable
+ex.caloriesLevel = {'low','high'};
+
+% Effort levels: proportions of maximum voluntary contraction (MVC)
+ex.effortLevel = [0.1 0.33 0.56 0.8];
 
 % Order of familiarizing with force levels.
 % true = use force levels 1 1 2 2 3 3 etc, false = 1...6,1...6
@@ -67,9 +108,11 @@ ex.blockVariables.blocktype = 1;
 % Allow unequal number of trials per trial type within one block
 ex.allowUnequalTrials = true;
 
-% Reward and effort index (based on reward/effort levels specified above
-ex.trialVariables.rewardIx = 1:numel(ex.rewardLevel);
-ex.trialVariables.effortIx = 1:numel(ex.effortLevel);
+% Variables to vary over trials
+%   Reward and effort index (based on reward/effort levels specified above)
+ex.trialVariables.rewardIx   = 1:numel(ex.rewardLevel);
+ex.trialVariables.caloriesIx = 1:numel(ex.caloriesLevel);
+ex.trialVariables.effortIx   = 1:numel(ex.effortLevel);
 
 % Block settings depending on experiment stage
 % =========================================================================
@@ -322,15 +365,19 @@ ex.bgColour          = [0 0 0];         % background
 ex.fgColour          = [255 255 255];   % text colour, white
 ex.fgColour2         = [  0 255   0];   % lime green to highlight Yes/No choice
 ex.fgColour3         = [  0   0 255];   % text colour, blue
+ex.darkgrey          = [30 30 30];      % dark grey color
 ex.silver            = [176 196 172];   % used for rungs of ladder
 ex.brown             = [160  82  45];   % brown tree trunk
 ex.yellow            = [255 255   0];   % wider (current) rung
 ex.size_text         = 24;              % size of text
-ex.forceBarPos       = [300 150];       % location of force bars on Screen, in pixels; Original was [300 150]
+ex.forceBarPos       = [100 150];       % location offset from center for force bars (pixels); [<x-offset> <half of height>]; was [300 150]
 ex.forceBarWidth     = 50;              % width of force bars, in px
 ex.forceColour       = [255 0 0];       % bar colour for force, red
 ex.forceScale        = 200;             % scale of size of force bars (pixels); Original ws 200
-ex.extraWidth        = 20;              % How much wider is the force-level indicator than the bar (px).
+ex.extraWidth        = 20;              % How much wider is the force-level indicator than the bar (px)
+if strcmpi(ex.TaskVersion,'food')
+    ex.VMdim         = [400 560];       % Dimensions of vending machine stimulus image (pixels)
+end
 
 % Gripforce options
 % -------------------------------------------------------------------------
