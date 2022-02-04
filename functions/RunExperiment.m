@@ -219,7 +219,7 @@ if ~ex.useEyelink,  el=0; end                       % not using eyelink?
 
 if ~exist('blockStart','var') && isfield(ex,'blockStart'), blockStart = ex.blockStart; end
 if ~exist('exptStartEnd','var') && isfield(ex,'exptStartEnd'), exptStartEnd = ex.exptStartEnd; end
-if ~isfield(ex,'blocks'), warning('Assuming 1 block only'); ex.blocks = 1; end
+if ~isfield(ex,'blocks'), disp('Assuming 1 block only'); ex.blocks = 1; end
 
 % store time of experiment start
 if ~exist('result','var'), result.startTimes = {}; end
