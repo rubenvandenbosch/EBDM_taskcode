@@ -211,7 +211,8 @@ end
 if rewardIx > 0
     if doAppleText
         % Reward level in number of apples
-        formatstring = 'Appels: %d ';
+        if strcmpi(ex.language,'NL'), formatstring = 'Appels: %d ';
+        else, formatstring = 'Apples: %d '; end
         drawTextCentred(scr, sprintf(formatstring, rewardLevel), ex.fgColour, scr.centre + [0 300]);
         % Effort level
         if strcmpi(ex.language,'NL'), formatstring = 'Inspanningsniveau: %d ';
@@ -284,8 +285,13 @@ lW    = 5;                  % line width for rungs of effort level ladder
 tlW   = 7;                  % width of target line for current effort level
 
 % Vending machine dimensions and position
-VMdim  = ex.VMdim;
-VMxpos = x0 + location * (ex.forceBarPos(1) + VMdim(1)/2);
+VMdim   = ex.VMdim;
+remdist = ex.forceBarPos(1) - VMdim(1)/2;  % Remaining x distance from x0 for VM compared with force bar
+if remdist > 0
+    VMxpos = x0 + location * (VMdim(1)/2 + remdist);
+else
+    VMxpos = x0 + location * (VMdim(1)/2 + 10);
+end
 
 % Reward and effort information
 % .........................................................................
@@ -359,18 +365,18 @@ if rewardIx > 0
         switch ex.language
             case 'EN'
                 if rewardLevel == 1
-                    formatstring = sprintf('%s : %d piece', ex.foodStimNames.EN{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d piece', ex.foodStimNames.EN{caloriesIx},rewardLevel);
                 else
-                    formatstring = sprintf('%s : %d pieces', ex.foodStimNames.EN{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d pieces', ex.foodStimNames.EN{caloriesIx},rewardLevel);
                 end
             case 'NL'
                 if rewardLevel == 1
-                    formatstring = sprintf('%s : %d stuk', ex.foodStimNames.NL{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d stuk', ex.foodStimNames.NL{caloriesIx},rewardLevel);
                 else
-                    formatstring = sprintf('%s : %d stuks', ex.foodStimNames.NL{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d stuks', ex.foodStimNames.NL{caloriesIx},rewardLevel);
                 end
         end
-        drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 300]);
+        drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 350]);
         
         % Effort level
         switch ex.language
@@ -379,7 +385,7 @@ if rewardIx > 0
             case 'NL'
                 formatstring = sprintf('Inspanningsniveau: %d', effortIx);
         end
-        drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 350]);
+        drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 400]);
     end
 end
 
@@ -402,7 +408,7 @@ Screen('FillRect', scr.w, clr, [BP(1)-W/2 y0+BP(2)-height*ydist BP(1)+W/2 y0+BP(
 % -------------------------------------------------------------------------
 % Display text in input to otherText, if applicable
 if ~doOfferText && ~isempty(otherText)
-    drawTextCentred(scr, otherText, ex.forceColour, scr.centre + [0 300]);
+    drawTextCentred(scr, otherText, ex.forceColour, scr.centre + [0 350]);
 end
 
 % Flip screen
@@ -447,14 +453,18 @@ switch lower(timepoint)
         else, ex.exptStartT0 = [ex.exptStartT0 {GetSecs()}]; end
         
         % Show either a welcome screen OR a session restore info screen
-        slideNrs = 1;
         if ex.restoredSession
-            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'restore');
+            displayInstructions(ex, ex.dirs.instructions, 'restore');
             
             % Display total reward before continuing a restored session in
             % the perform stage
             if strcmp(ex.stage,'perform')
-                if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+                switch ex.TaskVersion
+                    case 'apple'
+                        if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+                    case 'food'
+                        if strcmp(ex.language,'NL'), txt='Totaal verzamelde pakjes'; else, txt='Total food items gathered'; end
+                end
                 drawTextCentred(scr, sprintf('%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100])
                 WaitSecs(1);
             end
@@ -463,11 +473,10 @@ switch lower(timepoint)
             totalReward = 0;
             
             % Display welcome screen
-            displayInstructions(ex, ex.dirs.instructions, slideNrs, 'welcome');
+            displayInstructions(ex, ex.dirs.instructions, 'welcome');
         end
     case 'end'
-        slideNrs = 1;
-        displayInstructions(ex, ex.dirs.instructions, slideNrs, 'end');
+        displayInstructions(ex, ex.dirs.instructions, 'end');
 end
 
 %% Start of block:
@@ -490,37 +499,40 @@ if tr.block == 0  % Practice blocks
                 case 'calibration'
                     % Only calibration instruction (rest of task 
                     % instructions come after calibration)
-                    EXIT = displayInstructions(ex, ex.dirs.instructions, 1, 'practice');
-
+                    EXIT = displayInstructions(ex, ex.dirs.instructions, 'calibration');
                 case {'familiarize','practice'}
                     if ex.numFamiliarise > 0 && tr.practiceTrialIx < 1
                         % If there are familiarize trials, start with 
                         % general task instructions, then specific 
                         % familiarize instruction
-                        EXIT = displayInstructions(ex, ex.dirs.instructions, 2:6, 'practice');
-
+                        EXIT = displayInstructions(ex, ex.dirs.instructions, 'general');
+                        if ~EXIT
+                            EXIT = displayInstructions(ex, ex.dirs.instructions, 'familiarize');
+                        end
                     elseif ex.numFamiliarise < 1
                         % If there are no familiarize trials, start with 
                         % general task instructions, then specific choice 
                         % practice instruction
-                        EXIT = displayInstructions(ex, ex.dirs.instructions, [2:5,7:9], 'practice');
-
+                        EXIT = displayInstructions(ex, ex.dirs.instructions, 'general');
+                        if ~EXIT
+                            EXIT = displayInstructions(ex, ex.dirs.instructions, 'practice');
+                        end
                     elseif ex.numFamiliarise > 0 && tr.practiceTrialIx > 0
                         % If there were familiarize trials, but we are now 
                         % ready for the choice practice, only present the 
                         % specific choice practice instruction
-                        EXIT = displayInstructions(ex, ex.dirs.instructions, 7:9, 'practice');
+                        EXIT = displayInstructions(ex, ex.dirs.instructions, 'practice');
                     end
             end
             
         case 'choice'
             % Display instructions of choice task that come before the
             % short practice block
-            EXIT = displayInstructions(ex, ex.dirs.instructions, 1:3, 'choice');
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 'choice');
         case 'perform'
             % Display instructions of perform task that come before the
             % short practice block
-            EXIT = displayInstructions(ex, ex.dirs.instructions, 1, 'perform');
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 'perform');
     end
     
 elseif tr.block == 1 % start of experiment
@@ -528,11 +540,11 @@ elseif tr.block == 1 % start of experiment
         case 'choice'
             % Display final instruction slide before starting the first
             % block of the choice stage
-            EXIT = displayInstructions(ex, ex.dirs.instructions, 4);
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 'choiceStart');
         case 'perform'
             % Display final instruction slide before starting the first
             % block of the perform stage
-            EXIT = displayInstructions(ex, ex.dirs.instructions, 2);
+            EXIT = displayInstructions(ex, ex.dirs.instructions, 'performStart');
     end
     
 else  % starting a new block of the main experiment
@@ -548,8 +560,14 @@ else  % starting a new block of the main experiment
     
     % If perform stage, display total reward collected
     if strcmp(ex.stage,'perform')
-        if strcmp(ex.language,'NL'), txt = sprintf('Totaal verzamelde appels: %d',totalReward);
-        else, txt = sprintf('Total apples gathered: %d',totalReward); end
+        switch ex.TaskVersion
+            case 'apple'
+                if strcmp(ex.language,'NL'), txt = sprintf('Totaal verzamelde appels: %d',totalReward);
+                else, txt = sprintf('Total apples gathered: %d',totalReward); end
+            case 'food'
+                if strcmp(ex.language,'NL'), txt = sprintf('Totaal verzamelde pakjes: %d',totalReward);
+                else, txt = sprintf('Total food items gathered: %d',totalReward); end
+        end
         drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, 150]);
     end
     
@@ -726,7 +744,9 @@ switch stage
         % Log this trial's reward and effort levels based on the index
         tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
         tr.effortLevel = ex.effortLevel(tr.effortIx);
-        tr.effort = tr.effortLevel; % Seems needed because of leftover code somewhere
+        if strcmpi(ex.TaskVersion,'food')
+            tr.caloriesLevel = ex.caloriesLevel{tr.caloriesIx};
+        end
         
         % Log trial onset time
         tr = LogEvent(ex,el,tr,'trialOnset');
@@ -768,7 +788,7 @@ switch stage
         tr.data         = data(:,pa.channel);                       % store all force data
         
         % Was the squeeze equal or greater than required for long enough?
-        squeezeTime     = sum(activeHandData >= tr.effort*MVC);
+        squeezeTime     = sum(activeHandData >= tr.effortLevel*MVC);
         tr.success      = squeezeTime >= pa.minimumAcceptableSqueezeTime;
         
         % Give participant feedback on performance
@@ -828,6 +848,9 @@ switch stage
         % Log this trial's reward and effort levels based on the index
         tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
         tr.effortLevel = ex.effortLevel(tr.effortIx);
+        if strcmpi(ex.TaskVersion,'food')
+            tr.caloriesLevel = ex.caloriesLevel{tr.caloriesIx};
+        end
         
         % Draw fixation cross, and log trial onset time
         Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
@@ -895,13 +918,13 @@ switch stage
         switch ex.TaskVersion
             case 'apple'
                 drawTree(scr,ex,0, tr.rewardIx , tr.effortIx, 0, true, [], false);
-                yoffset = 200;
+                respYoffset = 200;
             case 'food'
                 drawVM(scr, ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, true, [], false);
-                yoffset = 300;
+                respYoffset = 350;
         end
-        drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation yoffset]);
-        drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation yoffset]);
+        drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [ tr.yeslocation respYoffset]);
+        drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation respYoffset]);
         Screen('Flip',scr.w);
         tr = LogEvent(ex,el,tr,'choiceOnset');
         
@@ -974,12 +997,12 @@ switch stage
                 case num2cell(tr.yesKey)    % responded "yes"
                     tr.Yestrial  = 1;
                     message      = yestxt;
-                    msgloc       = scr.centre + [tr.yeslocation, 200];
+                    msgloc       = scr.centre + [tr.yeslocation, respYoffset];
                     msgcolour    = ex.fgColour3;
                 case num2cell(tr.noKey)     % responded "no"
                     tr.Yestrial  = 0;
                     message      = notxt;
-                    msgloc       = scr.centre + [-tr.yeslocation, 200];
+                    msgloc       = scr.centre + [-tr.yeslocation, respYoffset];
                     msgcolour    = ex.fgColour3;
                 case ex.exitkey             % EXIT key was pressed
                     tr.Yestrial  = NaN;
@@ -1037,6 +1060,9 @@ switch stage
             % Log this trial's reward and effort levels based on the index
             tr.rewardLevel = ex.rewardLevel(tr.rewardIx);
             tr.effortLevel = ex.effortLevel(tr.effortIx);
+            if strcmpi(ex.TaskVersion,'food')
+                tr.caloriesLevel = ex.caloriesLevel{tr.caloriesIx};
+            end
         else
             location = tr.location; % tree middle (0) or left(-1)/right(1) for two hands case
             if location > 0, pa.channel = 2; else, pa.channel = 1; end % which hand/channel, left (location/channel) = (-1/1) or right (1,2)
