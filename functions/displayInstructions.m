@@ -1,56 +1,62 @@
-function EXIT = displayInstructions(ex, instructionsDir, slides, varargin)
-% displayInstructions(ex, instructionsDir, slides, stage)
+function EXIT = displayInstructions(ex, instructionsDir, stage)
+% displayInstructions(ex, instructionsDir, stage)
 % 
 % INPUTS
 % ex              : struct; experiment parameters
 % instructionsDir : char; directory containing image files of instruction
 %                   slides
-% slides          : num array; which slide(s) to display
 % stage           : char; which experiment stage to display experiment
-%                   slides from. 
+%                   slides for.
 %                   Possible values: 
-%                       'practice', 'choice', 'perform', 
-%                       'welcome' (show welcome slide),
-%                       'restore' (show restored session slide),
-%                       'end' (show end of experiment slide)
-%                   If not specified, it is based on the value of ex.stage
+%                  - 'general'     : general task explanation
+%                  - 'calibration' : calibration instructions
+%                  - 'familiarize' : familiarize instructions
+%                  - 'practice'    : practice choices instructions
+%                  - 'choice'      : choice task instructions
+%                  - 'choiceStart' : final slide(s) before start choices
+%                  - 'perform'     : perform stage instructions
+%                  - 'performStart': final slide(s) before start perform
+%                  - 'welcome'     : show welcome slide
+%                  - 'restore'     : show restored session slide
+%                  - 'end'         : show end of experiment slide
 % 
 % OUTPUT
 % EXIT  : return exit code if escape/exit key was pressed. Tells program to
 %         quit experiment
 % -------------------------------------------------------------------------
+% 
 
 % Process input arguments
-assert(nargin <= 4, 'Too many input arguments')
-if nargin == 4; stage = varargin{1}; assert(ischar(stage), 'Input stage should be class char'); end
+% -------------------------------------------------------------------------
 assert(isstruct(ex), 'Input ex should be class struct')
 assert(ischar(instructionsDir), 'Input instructionsDir should be class char')
-assert(isnumeric(slides), 'Input slides should be numeric')
-
-if ~exist('stage','var'), stage = ex.stage; end
-assert(ismember(stage,{'practice', 'choice', 'perform','welcome','restore','end'}), 'Input stage should be one of: practice, choice, perform, welcome, restore, end')
+assert(ischar(stage), 'Input stage should be class char')
+assert(ismember(stage,{'general','calibration','familiarize','practice', 'choice','choiceStart', 'perform','performStart','welcome','restore','end'}), ...
+    'Input stage should be one of: general, calibration, familiarize, practice, choice, choiceStart, perform, performStart, welcome, restore, end')
 
 % Prepare screen if necessary
+% -------------------------------------------------------------------------
 if ~isfield(ex, 'scr')
     ex.scr = prepareScreen(ex);
 end
 
-% Display selected instruction slides
+% Get all instruction slide images for the requested task stage
+% -------------------------------------------------------------------------
+list = dir(fullfile(instructionsDir,sprintf('instructions_%s_%s_*.*', ex.language,stage)));
+imgfiles = cell(numel(list),1);
+for ifile = 1:numel(list)
+    imgfiles{ifile} = fullfile(list(ifile).folder,list(ifile).name);
+end
+imgfiles = sort(imgfiles);
+
+% Display instruction slide images
+% -------------------------------------------------------------------------
 slideNr = 1;
 EXIT = 0;
-while slideNr <= numel(slides)
-    % Get file name
-    filename = fullfile(instructionsDir,sprintf('instructions_%s_%s_%d.jpg',ex.language,stage,slides(slideNr)));
-    
-    % If requested file does not exist, warn and continue
-    if ~(exist(filename,'file') == 2)
-        warning('Instructions file does not exist: %s', filename)
-        slideNr = slideNr + 1;
-        continue
-    end
+while slideNr <= numel(imgfiles)
     
     % Read and display image
-    image = imread(filename);
+    image = imread(imgfiles{slideNr});
     Screen('PutImage', ex.scr.w, image);
     Screen('Flip', ex.scr.w);
     
