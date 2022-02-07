@@ -3,8 +3,7 @@ function ex = commonSettings(ex)
 % Example of settings to run the apple gathering scenario of the
 % effort-based decision making task. Rename this file to commonSettings.m
 % to use it.
-% 
-% 
+%
 % DESCRIPTION
 % Define experiment settings.
 % 
@@ -364,15 +363,19 @@ ex.bgColour          = [0 0 0];         % background
 ex.fgColour          = [255 255 255];   % text colour, white
 ex.fgColour2         = [  0 255   0];   % lime green to highlight Yes/No choice
 ex.fgColour3         = [  0   0 255];   % text colour, blue
+ex.darkgrey          = [40 40 40];      % dark grey color
 ex.silver            = [176 196 172];   % used for rungs of ladder
 ex.brown             = [160  82  45];   % brown tree trunk
 ex.yellow            = [255 255   0];   % wider (current) rung
 ex.size_text         = 24;              % size of text
-ex.forceBarPos       = [300 150];       % location of force bars on Screen, in pixels; Original was [300 150]
+ex.forceBarPos       = [100 150];       % location offset from center for force bars (pixels); [<x-offset> <half of height>]; was [300 150]
 ex.forceBarWidth     = 50;              % width of force bars, in px
 ex.forceColour       = [255 0 0];       % bar colour for force, red
 ex.forceScale        = 200;             % scale of size of force bars (pixels); Original ws 200
-ex.extraWidth        = 20;              % How much wider is the force-level indicator than the bar (px).
+ex.extraWidth        = 20;              % How much wider is the force-level indicator than the bar (px)
+if strcmpi(ex.TaskVersion,'food')
+    ex.VMdim         = [400 560];       % Dimensions of vending machine stimulus image (pixels)
+end
 
 % Gripforce options
 % -------------------------------------------------------------------------
