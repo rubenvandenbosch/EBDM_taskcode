@@ -20,8 +20,8 @@ function [result, ex] = writeResults(ex, result, tr, varargin)
 % 
 % INPUTS
 % ex      : struct; main experiment info struct. Should contain at least
-%           the fields: dirs, files. A field with file IDs (fids) is
-%           added when initializing.
+%           the fields: dirs, files, TaskVersion. A field with file IDs 
+%           (fids) is added when initializing.
 % result  : struct with all results of current experiment run. Not used
 %           (supply []) when init=true.
 % tr      : struct with results for the current trial. Not used when 
@@ -82,9 +82,17 @@ if init
             end
             
             % Create header
-            header = ['subject session stage MVC block trialNr trialNr_block ' ...
-                      'trialOnset stimOnset choiceOnset responseOnset responseTime squeezeStart squeezeEnd feedbackOnset trialEnd trialDuration ' ...
-                      'rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft'];
+            switch ex.TaskVersion
+                case 'apple'
+                    header = ['subject session stage MVC block trialNr trialNr_block ' ...
+                        'trialOnset stimOnset choiceOnset responseOnset responseTime squeezeStart squeezeEnd feedbackOnset trialEnd trialDuration ' ...
+                        'rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft'];
+                case 'food'
+                    % Include extra columns for calories Level
+                    header = ['subject session stage MVC block trialNr trialNr_block ' ...
+                        'trialOnset stimOnset choiceOnset responseOnset responseTime squeezeStart squeezeEnd feedbackOnset trialEnd trialDuration ' ...
+                        'rewardIx rewardLevel caloriesIx caloriesLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft'];
+            end
             
             % Write header
             %   Replace white space with delimiter, and add newline char
@@ -158,7 +166,12 @@ end
 output.trialDuration = output.trialEnd - output.trialOnset;
 
 % Trial info and response output
-vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesIsLeft'};
+switch ex.TaskVersion
+    case 'apple'
+        vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesIsLeft'};
+    case 'food'
+        vars = {'rewardIx','rewardLevel','caloriesIx','caloriesLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesIsLeft'};
+end
 for ivar = 1:numel(vars)
     if isfield(tr,vars{ivar}) % Retrieve var from tr struct
         output.(vars{ivar}) = tr.(vars{ivar});
@@ -179,18 +192,35 @@ for ifile = 1:numel(fields)
     end
     
     % Create pattern for variables to write
-    %   Header:
-    %   subject session stage MVC block trialNr trialNr_block ...
-    %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
-    %   rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft
-    pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %d %d %d %d %d\n';
+    switch ex.TaskVersion
+        case 'apple'
+            %   Header:
+            %   subject session stage MVC block trialNr trialNr_block ...
+            %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
+            %   rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft
+            pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %d %d %d %d %d\n';
+        case 'food'
+            %   Header:
+            %   subject session stage MVC block trialNr trialNr_block ...
+            %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
+            %   rewardIx rewardLevel caloriesIx caloriesLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft
+            pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %s %d %f %d %d %d %d %d\n';
+    end
     
     % Write data line
     %   Replace whitespace in pattern with delimiter
     pattern = strrep(pattern,' ',delimiter);
-    fprintf(ex.fids.(fields{ifile}), pattern, ...
-        ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
-        output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
-        output.rewardIx, output.rewardLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesIsLeft);
+    switch ex.TaskVersion
+        case 'apple'
+            fprintf(ex.fids.(fields{ifile}), pattern, ...
+                ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
+                output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
+                output.rewardIx, output.rewardLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesIsLeft);
+        case 'food'
+            fprintf(ex.fids.(fields{ifile}), pattern, ...
+                ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
+                output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
+                output.rewardIx, output.rewardLevel, output.caloriesIx, output.caloriesLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesIsLeft);
+    end
 end
 end
