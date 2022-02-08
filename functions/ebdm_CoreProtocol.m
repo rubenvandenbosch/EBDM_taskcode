@@ -1135,7 +1135,12 @@ switch stage
             
             % Display reward feedback
             if ~ex.fatiguingExercise
-                if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
+                switch ex.TaskVersion
+                    case 'apple'
+                        if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
+                    case 'food'
+                        if strcmp(ex.language,'NL'), txt='Verzamelde pakjes'; else, txt='Items gathered'; end
+                end
                 drawTextCentred(scr, sprintf('%s: %d', txt,tr.rewardLevel), pa.fgColour, scr.centre + [0,-100])
                 Screen('Flip',scr.w);
                 
@@ -1160,7 +1165,7 @@ switch stage
                 case 'apple'
                     drawTree(scr,ex, 0, tr.rewardIx, tr.effortIx, 0, false, [], true);
                 case 'food'
-                    drawTree(scr,ex, -1, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, [], true);
+                    drawVM(scr,ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, [], true);
             end
             % Log decline feedback onset time
             tr = LogEvent(ex,el,tr,'feedbackOnset');
@@ -1183,7 +1188,12 @@ switch stage
         if pa.allTrialIndex >= ex.blocks*ex.blockLen && ~ex.fatiguingExercise
             if strcmp(ex.language,'NL'), txt='Einde van dit taakgedeelte'; else, txt='End of this task stage'; end
             drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
-            if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+            switch ex.TaskVersion
+                case 'apple'
+                    if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+                case 'food'
+                    if strcmp(ex.language,'NL'), txt='Totaal verzamelde pakjes'; else, txt='Total food items gathered'; end
+            end
             drawTextCentred( scr, sprintf( '%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100] )
             if strcmp(ex.language,'NL'), txt='Druk op een knop om door te gaan'; else, txt='Press a button to continue'; end
             drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0,-200] )
