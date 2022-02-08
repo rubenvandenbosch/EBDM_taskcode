@@ -400,8 +400,8 @@ try
                 if ix <= ex.numCalibration
                     tr.sub_stage = 'calibration';
                     % For calibration stage also set effort info to NaN
-                    tr.effortIx  = nan;
-                    tr.effortLvl = nan;
+                    tr.effortIx    = nan;
+                    tr.effortLevel = nan;
                 else
                     tr.sub_stage = 'familiarize';
                 end
@@ -452,8 +452,8 @@ try
             %   Set reward info to NaN for calibration and familiarize
             tr.trialIndex = practiceTrialIx;
             if ix <= prePracticeTrials
-                tr.rewardIx  = nan;
-                tr.rewardLvl = nan;
+                tr.rewardIx    = nan;
+                tr.rewardLevel = nan;
             end
             
             % Do not allow repeating practice trials
