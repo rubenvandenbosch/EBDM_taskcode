@@ -1144,7 +1144,8 @@ switch stage
                     case 'food'
                         if strcmp(ex.language,'NL'), txt='Verzamelde pakjes'; else, txt='Items gathered'; end
                 end
-                drawTextCentred(scr, sprintf('%s: %d', txt,tr.rewardLevel), pa.fgColour, scr.centre + [0,-100])
+                if tr.success, wins = tr.rewardLevel; else, wins = 0; end
+                drawTextCentred(scr, sprintf('%s: %d', txt, wins), pa.fgColour, scr.centre + [0,-100])
                 Screen('Flip',scr.w);
                 
                 % Log reward feedback onset time and wait reward duration
