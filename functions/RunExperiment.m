@@ -344,38 +344,20 @@ try
     % If there are practice trials, and we're not continuing from before:
     if isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1
         
-        % Create a new set of random trials for the practice, in the same 
-        % way as would be done for the real experiment.
+        % Create a new set of random trials for the practice
         % .................................................................
-        if isfield(ex,'blockorder')
-            ex_prac = rmfield(ex,'blockorder');
-        else
-            ex_prac = ex;
-        end
-        ex_prac.blocks = 1;
-        ex_prac.blockLen = ex.practiceTrials;
-        if isfield(ex, 'shufflePracticeTrials')
-            ex_prac.shuffleTrials = ex.shufflePracticeTrials;
-        end
-        
-        % Create practice trials
-        %   run create trials using the 'blockLen' of the practice trials.
-        %   if this is a multiple of the number of trial types, then there
-        %   will be one of each trial type.
-        switch ex.stage
-            case {'practice', 'choice'}
-                % Create trials on choice stage
-                prac = createTrials(ex_prac);
-            case 'perform'
-                % Select trials from previous choices for the perform stage
-                prac = getPerformTrials(ex_prac);
-
-                % Set all practice trials to a yes-trial to perfrom, except
-                % for one (if more than one practice trials)
-                for ix = 1:numel(prac)
-                    prac(ix).Yestrial = 1;
-                end
-                if numel(prac) > 1, prac(randi(numel(prac),1)).Yestrial = 0; end
+        %   Use a random sample from the created trial list. Prevents
+        %   having the same N practice trials as the first N real trials
+        prac = trials(:);
+        prac = prac(randsample(numel(prac),ex.practiceTrials));
+                
+        if strcmpi(ex.stage,'perform')
+           % Set all practice trials to a yes-trial to perfrom, except for 
+           % one (if more than one practice trials)
+           for ix = 1:numel(prac)
+               prac(ix).Yestrial = 1;
+           end
+           if numel(prac) > 1, prac(randi(numel(prac),1)).Yestrial = 0; end
         end
         
         % Run practice trials, preceded by calibration and familiarization,
@@ -407,7 +389,7 @@ try
                 end
             else
                 % Get practice trial parameters for current trial
-                tr = prac(1+floor((practiceTrialIx-1)/ex_prac.blockLen),1+mod(practiceTrialIx,ex_prac.blockLen));
+                tr = prac(practiceTrialIx);
                 tr.sub_stage = 'practice';
             end
             
