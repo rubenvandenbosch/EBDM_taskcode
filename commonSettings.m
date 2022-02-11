@@ -370,13 +370,13 @@ ex.silver            = [176 196 172];   % used for rungs of ladder
 ex.brown             = [160  82  45];   % brown tree trunk
 ex.yellow            = [255 255   0];   % wider (current) rung
 ex.size_text         = 24;              % size of text
-ex.forceBarPos       = [100 150];       % location offset from center for force bars (pixels); [<x-offset> <half of height>]; was [300 150]
+ex.forceBarPos       = [100 150];       % location/length of force bar (pixels); [<x-offset> <half of length>]; was [300 150]
 ex.forceBarWidth     = 50;              % width of force bars, in px
 ex.forceColour       = [255 0 0];       % bar colour for force, red
 ex.forceScale        = 200;             % scale of size of force bars (pixels); Original ws 200
 ex.extraWidth        = 20;              % How much wider is the force-level indicator than the bar (px)
 if strcmpi(ex.TaskVersion,'food')
-    ex.VMdim         = [400 560];       % Dimensions of vending machine stimulus image (pixels)
+    ex.VMdim         = [325 455];       % Dimensions of vending machine stimulus image (pixels)
 end
 
 % Gripforce options
