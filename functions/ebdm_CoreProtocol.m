@@ -275,23 +275,18 @@ function drawVM(scr, ex, location, rewardIx, caloriesIx, effortIx, height, doOff
 x0  = scr.centre(1);
 y0  = scr.centre(2);         
 
-% Force bar position
-BP    = ex.forceBarPos;
-BP(1) = x0 + -location * BP(1);
-W     = ex.forceBarWidth;   % bar width
-ydist = BP(2)*2;            % height of force bar rectangle
-lTh   = 4;                  % line thickness of force bar rect outline
-lW    = 5;                  % line width for rungs of effort level ladder
-tlW   = 7;                  % width of target line for current effort level
+% Vending machine image dimensions and location
+VMdim = ex.VMdim;
+VMy   = y0-50;     % y-coordinate of center of vending machine image
 
-% Vending machine dimensions and position
-VMdim   = ex.VMdim;
-remdist = ex.forceBarPos(1) - VMdim(1)/2;  % Remaining x distance from x0 for VM compared with force bar
-if remdist > 0
-    VMxpos = x0 + location * (VMdim(1)/2 + remdist);
-else
-    VMxpos = x0 + location * (VMdim(1)/2 + 10);
-end
+% Force bar settings
+%   use horizontal force bar
+L   = ex.forceBarPos(2);    % half the length of the force bar
+W   = ex.forceBarWidth;     % bar width
+FBy = VMy + VMdim(2)/2 + W/2 + 50; % y-position of force bar, 50 below VM
+lTh = 4;                    % line thickness of force bar rect outline
+lW  = 5;                    % line width for rungs of effort level ladder
+tlW = 7;                    % width of target line for current effort level
 
 % Reward and effort information
 % .........................................................................
@@ -300,7 +295,7 @@ if rewardIx > 0, rewardLevel = ex.rewardLevel(rewardIx); end
 
 % Get effort level from index in variable force
 if iscell(effortIx)
-    % ugly trick to treat effort as direct force value instead of an index
+    % trick to treat effort as direct force value instead of an index
     effortIx = effortIx{1};
     force = effortIx;
 else
@@ -317,33 +312,9 @@ end
 
 % Draw stimuli
 % -------------------------------------------------------------------------
-% Draw force levels indicator. Make it have an open top side
-Screen('FillRect', scr.w, ex.darkgrey, [BP(1)-W/2 y0-BP(2) BP(1)+W/2 y0+BP(2)], lTh);
-Screen('Drawlines', scr.w, [-W/2 W/2 ; BP(2) BP(2)], lTh, ex.fgColour, [BP(1) y0], 0);
-Screen('Drawlines', scr.w, [-W/2 -W/2 ; BP(2) -BP(2)], lTh, ex.fgColour, [BP(1) y0], 0);
-Screen('Drawlines', scr.w, [ W/2 W/2 ; BP(2) -BP(2)], lTh, ex.fgColour, [BP(1) y0], 0);
-
-% Draw rungs of ladder at each effortLevel
-if ~ex.fatiguingExercise
-    for ix = 1:length(ex.effortLevel) 
-        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*ydist BP(2)-ex.effortLevel(ix)*ydist ], lW, ex.silver, [BP(1) y0], 0);
-    end
-end
-
-% Show current trial's force level as a wider rung at the relevant height
-if ex.fatiguingExercise
-    % NB: Fixed force level set to 0.7 (always plot the target yellow bar 
-    %     at this location)
-    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], tlW, ex.yellow, [BP(1) y0], 0);
-else
-    Screen('Drawlines',scr.w, [ -W/2-ex.extraWidth W/2+ex.extraWidth  ; BP(2)-force*ydist BP(2)-force*ydist ], tlW, ex.yellow, [BP(1) y0], 0);
-end
-
 % Draw vending machine image with correct food items according to
 % caloriesIx and rewardLevel
 if ~ex.fatiguingExercise
-    assert(~(location==0), 'location of force bar must not be in the middle when also presenting the vending machine. Set location to -1 or 1.');
-    
     % Get correct image for reward stimulus based on reward magnitude and 
     % calories. If no reward, show empty vending machine
     if rewardIx > 0
@@ -355,7 +326,29 @@ if ~ex.fatiguingExercise
     
     % Draw image
     Screen('DrawTexture', scr.w, imageTexture,[], ...
-        [ VMxpos-VMdim(1)/2  y0-VMdim(2)/2  VMxpos+VMdim(1)/2  y0+VMdim(2)/2 ]);
+        [x0-VMdim(1)/2  VMy-VMdim(2)/2  x0+VMdim(1)/2  VMy+VMdim(2)/2]);
+end
+
+% Draw force bar. Make it have an open side
+Screen('FillRect', scr.w, ex.darkgrey, [x0-L FBy-W/2 x0+L FBy+W/2], lTh);
+Screen('Drawlines', scr.w, [-L -L; -W/2 W/2], lTh, ex.fgColour, [x0 FBy], 0);
+Screen('Drawlines', scr.w, [-L L; -W/2 -W/2], lTh, ex.fgColour, [x0 FBy], 0);
+Screen('Drawlines', scr.w, [-L L; W/2 W/2], lTh, ex.fgColour, [x0 FBy], 0);
+
+% Draw rungs of ladder at each effortLevel
+if ~ex.fatiguingExercise
+    for ix = 1:length(ex.effortLevel) 
+        Screen('Drawlines',scr.w, [ex.effortLevel(ix)*(L*2) ex.effortLevel(ix)*(L*2) ; -W/2  W/2], lW, ex.silver, [x0-L FBy], 0);
+    end
+end
+
+% Show current trial's force level as a wider rung at the relevant height
+if ex.fatiguingExercise
+    % NB: Fixed force level set to 0.7 (always plot the target yellow bar 
+    %     at this location)
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], tlW, ex.yellow, [BP(1) y0], 0);
+else
+    Screen('Drawlines',scr.w, [force*(L*2) force*(L*2) ; -W/2-ex.extraWidth  W/2+ex.extraWidth], lW, ex.yellow, [x0-L FBy], 0);
 end
 
 % Display reward and effort level in text
@@ -402,7 +395,7 @@ if ex.fatiguingExercise
     % but we don't want to exceed the trunk, so limit height
     height = min(1.0,height);
 end
-Screen('FillRect', scr.w, clr, [BP(1)-W/2 y0+BP(2)-height*ydist BP(1)+W/2 y0+BP(2)]);
+Screen('FillRect', scr.w, clr, [x0-L FBy-W/2 (x0-L)+height*(L*2) FBy+W/2]);
 
 % Wrapping up
 % -------------------------------------------------------------------------
@@ -482,6 +475,12 @@ end
 %% Start of block:
 % this also controls calibration and practice at the start of the experiment
 function [ex, tr] = blockfn(scr, el, ex, tr)
+% [ex, tr] = blockfn(scr, el, ex, tr)
+%
+% DESCRIPTION
+% Function to handle the presentation of the appropriate instructions,
+% depending on experiment stage and block number.
+%
 global totalReward
 EXIT = 0;
 
@@ -1124,14 +1123,18 @@ switch stage
             % Determine whether successful
             %   Trial successful if force stayed above effort level for
             %   pa.minimumAcceptableSqueezeTime
-            %   Add winnings to total apples in basket
             tr.timeAboveTarget = sum(tr.data >= tr.effortLevel*MVC );
             if tr.timeAboveTarget >= pa.minimumAcceptableSqueezeTime
                 tr.success = true;   % success!
             else
                 tr.success = false;  % failure!
             end
-            totalReward = totalReward + tr.success * tr.rewardLevel;
+            
+            % Add the winnings to the totalReward obtained (only on real
+            % experiment trials, not practice)
+            if tr.block > 0
+                totalReward = totalReward + tr.success * tr.rewardLevel;
+            end
             
             % Display reward feedback
             if ~ex.fatiguingExercise
@@ -1158,14 +1161,14 @@ switch stage
             % No reward on this trial
             tr.success = NaN;
             
-            % Display "offer declined" text
+            % Draw stimulus and display "offer declined" text
             if strcmp(ex.language,'NL'), txt='Aanbod afgewezen'; else, txt='Offer declined'; end
-            drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
             switch ex.TaskVersion
                 case 'apple'
                     drawTree(scr,ex, 0, tr.rewardIx, tr.effortIx, 0, false, [], true);
+                    drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
                 case 'food'
-                    drawVM(scr,ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, [], true);
+                    drawVM(scr,ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, txt, true);
             end
             % Log decline feedback onset time
             tr = LogEvent(ex,el,tr,'feedbackOnset');
