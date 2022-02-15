@@ -711,7 +711,9 @@ switch stage
         % Get effort level
         if pa.practiceAscending
             % Gives 1,1,1,..,2,2,2,..,3,3,3,.. etc
-            tr.effortIx = 1 + floor((famTrIndex-1)/numTrLvl);
+            %   Repeat highest effort level if more familiarize trials than
+            %   a whole multiple of effort levels is requested
+            tr.effortIx = min(1 + floor((famTrIndex-1)/numTrLvl), numel(ex.trialVariables.effortIx));
             
             % Determine whether this was the last practice trial for this
             % effort level and we should ask for a VAS score after this
