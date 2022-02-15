@@ -173,22 +173,6 @@ end
 % Draw trunk brown
 Screen('FillRect', scr.w, ex.brown,  [x0-W/2 y0-BP(2) x0+W/2 y0+BP(2)]);
 
-% Draw rungs of ladder at each effortLevel
-if ~ex.fatiguingExercise
-    for ix = 1:length(ex.effortLevel)
-        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*S BP(2)-ex.effortLevel(ix)*S ], lW, ex.silver, [x0 y0], 0);
-    end
-end
-
-% Show current trial's force level as a wider rung at the relevant height
-if ex.fatiguingExercise
-    % NB: Fixed force level set to 0.7 (always plot the target yellow bar 
-    %     at this location)
-    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], tlW, ex.yellow, [x0 y0], 0);
-else
-    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-force*S BP(2)-force*S ], tlW, ex.yellow, [x0 y0], 0);
-end
-
 % Draw apples in tree image according to reward level
 if ~ex.fatiguingExercise
     
@@ -204,6 +188,22 @@ if ~ex.fatiguingExercise
     % Draw image
     Screen('DrawTexture', scr.w, scr.imageTexture(imageIx),[], ...
         [ (x0-3*W) (y0 + BP(2) - ex.effortLevel(end)*S - numel(ex.effortLevel)*W) (x0 + 3*W) (y0 + BP(2) - ex.effortLevel(end)*S) ]);
+end
+
+% Draw rungs of ladder at each effortLevel
+if ~ex.fatiguingExercise
+    for ix = 1:length(ex.effortLevel)
+        Screen('Drawlines',scr.w, [ -W/2  W/2 ; BP(2)-ex.effortLevel(ix)*S BP(2)-ex.effortLevel(ix)*S ], lW, ex.silver, [x0 y0], 0);
+    end
+end
+
+% Show current trial's force level as a wider rung at the relevant height
+if ex.fatiguingExercise
+    % NB: Fixed force level set to 0.7 (always plot the target yellow bar 
+    %     at this location)
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-0.7*S BP(2)-0.7*S ], tlW, ex.yellow, [x0 y0], 0);
+else
+    Screen('Drawlines',scr.w,[ -W/2-ex.extraWidth W/2+ex.extraWidth ; BP(2)-force*S BP(2)-force*S ], tlW, ex.yellow, [x0 y0], 0);
 end
 
 % Display reward and effort level in text
@@ -723,6 +723,13 @@ switch stage
             else 
                 getVAS = false;
             end
+            % For the last effort level only getVAS if it is also the last
+            % trial of the whole familiarise stage
+            if tr.effortIx == numel(ex.trialVariables.effortIx) && famTrIndex < ex.numFamiliarise
+                getVAS = false;
+            elseif famTrIndex == ex.numFamiliarise
+                getVAS = true;
+            end
         else
             % Gives 1,2,3,4,5,  1,2,3,4,5  effort levels.
             tr.effortIx = 1 + mod(famTrIndex - 1, numel(ex.trialVariables.effortIx));
@@ -730,12 +737,7 @@ switch stage
             % Determine whether this was the last practice trial for this
             % effort level and we should ask for a VAS score after this
             % trial (if ex.effortVAS is true)
-            if numTrLvl > 1
-                lastEffortPrac = famTrIndex > numel(ex.trialVariables.effortIx) && floor(famTrIndex/numel(ex.trialVariables.effortIx)) >= numTrLvl-1;
-            else
-                lastEffortPrac = floor(famTrIndex/numel(ex.trialVariables.effortIx)) >= numTrLvl-1;
-            end
-            if ex.effortVAS && lastEffortPrac
+            if famTrIndex >= ex.numFamiliarise - numel(ex.trialVariables.effortIx) + 1
                 getVAS = true;
             else
                 getVAS = false;
