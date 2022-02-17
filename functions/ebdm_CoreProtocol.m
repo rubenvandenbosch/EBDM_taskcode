@@ -937,8 +937,8 @@ switch stage
         deadline = GetSecs + ex.maxRT;
         if ex.useBitsiBB,  ex.BitsiBB.clearResponses(); end % empty input buffer
         while GetSecs < deadline
+            tr.key = [];
             if ex.useBitsiBB
-                tr.key = [];
                 while 1
                     [resp, respTime] = ex.BitsiBB.getResponse(0.1, true);
                     if resp > 0
@@ -973,11 +973,10 @@ switch stage
                 end
                 if strcmp(ex.language,'NL'), txt='Gebruik de linker en rechter toets/knop'; else, txt='Use the Left and Right keys'; end
                 drawTextCentred(scr, txt, ex.forceColour, scr.centre + [0, -300])
-                drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [tr.yeslocation 200]);
-                drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation 200]);
+                drawTextCentred(scr, yestxt, ex.fgColour, scr.centre + [tr.yeslocation respYoffset]);
+                drawTextCentred(scr, notxt, ex.fgColour, scr.centre + [-tr.yeslocation respYoffset]);
                 Screen('Flip',scr.w);
             end
-            tr.key = [];
         end
         
         % Process response
@@ -1026,12 +1025,18 @@ switch stage
             end
         end
         
-        % Log response onset and calculate response time
+        % Log response onset, response button, and calculate response time
         %   If no response, set to NaN
         if isempty(tr.key)
             tr = LogEvent(ex,el,tr,'responseOnset', nan);
+            tr.responseButton = '';
         else
             tr = LogEvent(ex,el,tr,'responseOnset', respTime);
+            if tr.key == pa.leftKey
+                tr.pressedButton = 'left';
+            elseif tr.key == pa.rightKey
+                tr.pressedButton = 'right';
+            end
         end
         tr.timings.responseTime = tr.timings.responseOnset - tr.timings.choiceOnset;
         
