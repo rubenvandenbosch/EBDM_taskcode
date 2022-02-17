@@ -183,10 +183,10 @@ if ~ex.fatiguingExercise
     else
         imageName = 'tree';
     end
-    imageIx   = contains(imageName,scr.imageName);
+    imageTexture  = scr.imageTexture(contains(scr.imageName,imageName));
     
     % Draw image
-    Screen('DrawTexture', scr.w, scr.imageTexture(imageIx),[], ...
+    Screen('DrawTexture', scr.w, imageTexture,[], ...
         [ (x0-3*W) (y0 + BP(2) - ex.effortLevel(end)*S - numel(ex.effortLevel)*W) (x0 + 3*W) (y0 + BP(2) - ex.effortLevel(end)*S) ]);
 end
 
@@ -322,7 +322,7 @@ if ~ex.fatiguingExercise
     else
         imageName = 'vending_machine';
     end
-    imageTexture   = scr.imageTexture(contains(scr.imageName,imageName));
+    imageTexture  = scr.imageTexture(contains(scr.imageName,imageName));
     
     % Draw image
     Screen('DrawTexture', scr.w, imageTexture,[], ...
