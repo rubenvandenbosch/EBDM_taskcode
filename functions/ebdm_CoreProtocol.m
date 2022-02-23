@@ -633,15 +633,15 @@ switch stage
         % Prepare final instruction and target force setting
         if strcmp(ex.language,'NL')
             calibrationInstructions = {
-                'Knijp zo hard mogelijk!'  , 1.0,[0 0 0]
-                'Probeer boven de gele lijn te komen!'    , 1.1,[255 255 0]
-                'Probeer boven de gele lijn te komen!'    , 1.05,[255 255 0]
+                'Knijp zo hard mogelijk!',              1.0,  [0 0 0]
+                'Probeer boven de gele lijn te komen!', 1.1,  [255 255 0]
+                'Probeer boven de gele lijn te komen!', 1.05, [255 255 0]
                 };
         else
             calibrationInstructions = {
-                'Squeeze as hard are you can!'  , 1.0,[0 0 0]
-                'Get above the yellow line!'    , 1.1,[255 255 0]
-                'Get above the yellow line!'    , 1.05,[255 255 0]
+                'Squeeze as hard are you can!', 1.0,  [0 0 0]
+                'Get above the yellow line!',   1.1,  [255 255 0]
+                'Get above the yellow line!',   1.05, [255 255 0]
                 };
         end
         % Use the trial index to select one of the above three
@@ -665,17 +665,20 @@ switch stage
         tr = LogEvent(ex,el,tr,'squeezeStart');
         [data] = waitForForceData(ex,tr.startSqueezyAcquisition, ex.calibrationDuration, inf, 6, fbfunc);
         tr = LogEvent(ex,el,tr,'squeezeEnd');
-        tr.maximumForce = max(data(:,pa.channel));
         
-        % Process during blank screen
-        Screen('Flip', scr.w);
-        WaitSecs(0.5);           % Blank screen for 0.5 seconds
-        tr.R = 1;                % report success
+        % Take the mean from the highest 10% of values of the force data
+        tmpdata = sort(data(:,pa.channel));
+        tr.meanForce = mean(tmpdata(ceil(.9*length(tmpdata)):end));
         
         % Which is larger, the current trial's force, or the current MVC?
         %   update the MVC on calibration trials.
-        MVC = max(tr.maximumForce, MVC);
+        MVC = max(tr.meanForce, MVC);
         
+        % Blank screen before feedback
+        Screen('Flip', scr.w);
+        WaitSecs(0.5);           % Blank screen for 0.5 seconds
+        tr.R = 1;                % report success
+                
         % Display 'end of calibration' instruction
         if pa.trialIndex == ex.numCalibration
             if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
