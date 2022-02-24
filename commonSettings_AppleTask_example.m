@@ -47,7 +47,7 @@ ex.dirs.venv.path  = fullfile(ex.dirs.rootDir,'..','venv_EBDM');
 ex.dirs.venv.conda = false;
 
 % Directory containing image files with instructions
-ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions');
+ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions',lower(ex.TaskVersion));
 
 % Stimulus image files
 %   first one must be the no-reward image of an empty tree/vending machine!
