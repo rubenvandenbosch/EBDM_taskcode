@@ -166,7 +166,7 @@ switch ex.stage
         % Number of blocks and trials per block
         %   NB: with a 4x4 design, a block length of 16 or 32 allows for 
         %       equal number of occurance per trial type within a block
-        ex.blocks               = 5;   % Number of blocks
+        ex.blocks               = 6;   % Number of blocks
         ex.blockLen             = 16;  % number of  trials within each block
         ex.blockBreakTime       = 10;  % Rest time betwen blocks (seconds)
 
