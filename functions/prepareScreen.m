@@ -71,8 +71,8 @@ if isfield(ex,'imageFiles')         % load images if requested
         fn=ex.imageFiles{i};        % get file name
         [~,Nm,ext] = fileparts(fn); % get extension (last 3 chars)
         ext(1) = [];                % remove dot to get imformat from ext
-        if isempty(type)            % if no extension, assume gif format
-            type='gif';
+        if isempty(ext)             % if no extension, assume gif format
+            ext='gif';
         end
         
         % load image from file - the pixel data and the colour map.
