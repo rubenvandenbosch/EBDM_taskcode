@@ -66,17 +66,17 @@ if(isfield(ex,'xhairSize'))       % calculate crosshair coordinates if needed
                                  repmat(scr.centre-ex.targetPos,1,2)+xh([2 1 4 3]) ]; %left
     end
 end
-if isfield(ex,'imageFiles')        % load images if requested
-    for i=1:length(ex.imageFiles)  % for each image
-        fn=ex.imageFiles{i};       % get file name
+if isfield(ex,'imageFiles')         % load images if requested
+    for i=1:length(ex.imageFiles)   % for each image
+        fn=ex.imageFiles{i};        % get file name
         [~,Nm,ext] = fileparts(fn); % get extension (last 3 chars)
-        type = erase(ext,'.');     % remove dot to get imformat from ext
-        if isempty(type)           % if no extension, assume gif format
+        ext(1) = [];                % remove dot to get imformat from ext
+        if isempty(type)            % if no extension, assume gif format
             type='gif';
         end
         
         % load image from file - the pixel data and the colour map.
-        [scr.imageData{i},scr.imageMap{i}] = imread(ex.imageFiles{i},type);
+        [scr.imageData{i},scr.imageMap{i}] = imread(ex.imageFiles{i},ext);
         
         % Store image name in same order as image files
         scr.imageName{i} = Nm;
