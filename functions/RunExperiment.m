@@ -616,6 +616,10 @@ try
                     fprintf('Block %d Trial %d will be repeated at end\n',b,t);
                 end
                 
+                % Save the newly added trial info and flags to trial struct
+                [trials, tr] = ensureStructsAssignable(trials,tr);
+                trials(b,t)  = tr;
+                
                 % If there was an error, exit
                 if tr.R==ex.R_ERROR || tr.R==ex.R_ESCAPE
                     fatal_error=1; break;
