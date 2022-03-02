@@ -183,7 +183,7 @@ if ~ex.fatiguingExercise
     else
         imageName = 'tree';
     end
-    imageTexture  = scr.imageTexture(contains(scr.imageName,imageName));
+    imageTexture  = scr.imageTexture(strcmp(scr.imageName,imageName));
     
     % Draw image
     Screen('DrawTexture', scr.w, imageTexture,[], ...
@@ -322,7 +322,7 @@ if ~ex.fatiguingExercise
     else
         imageName = 'vending_machine';
     end
-    imageTexture  = scr.imageTexture(contains(scr.imageName,imageName));
+    imageTexture  = scr.imageTexture(strcmp(scr.imageName,imageName));
     
     % Draw image
     Screen('DrawTexture', scr.w, imageTexture,[], ...

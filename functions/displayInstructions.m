@@ -45,7 +45,7 @@ end
 list = dir(fullfile(instructionsDir,sprintf('instructions_%s_%s_*.*', ex.language,stage)));
 imgfiles = cell(numel(list),1);
 for ifile = 1:numel(list)
-    imgfiles{ifile} = fullfile(list(ifile).folder,list(ifile).name);
+    imgfiles{ifile} = fullfile(instructionsDir,list(ifile).name);
 end
 imgfiles = sort(imgfiles);
 
