@@ -705,7 +705,7 @@ switch stage
             if strcmp(ex.language,'NL'), txt='Goed gedaan!'; else, txt='Well done!'; end
             drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -200]);
             if ~ex.calibOnly
-                if strcmp(ex.language,'NL'), txt='De onderzoeker zal nu het spel aan u gaan uitleggen'; else, txt='The researcher will now explain the game to you.'; end
+                if strcmp(ex.language,'NL'), txt='U kunt nu verder naar de rest van de uitleg'; else, txt='You can now continue to the rest of the explanation'; end
                 drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -100]);
             else
                 if strcmp(ex.language,'NL'), txt='Einde calibratie deel'; else, txt='End of MVC calibration part'; end
