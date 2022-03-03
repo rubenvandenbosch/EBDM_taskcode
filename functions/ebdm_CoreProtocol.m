@@ -455,15 +455,28 @@ switch lower(timepoint)
                 switch ex.TaskVersion
                     case 'apple'
                         if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+                        drawTextCentred(scr, sprintf('%s: %d',txt, totalReward), ex.fgColour, scr.centre + [0,-100])
                     case 'food'
                         if strcmp(ex.language,'NL'), txt='Totaal verzamelde pakjes'; else, txt='Total food items gathered'; end
+                        yval = -100;
+                        drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0,yval] )
+
+                        % Show total reward per calories level
+                        for calIx = 1:numel(ex.caloriesLevel)
+                            yval = yval + 50;  % add space between text lines
+                            txt = sprintf('%s: %d',ex.foodStimNames.(ex.language){calIx}, totalReward(calIx));
+                            drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0, yval] )
+                        end
                 end
-                drawTextCentred(scr, sprintf('%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100])
                 WaitSecs(1);
             end
         else
             % Reset totalReward
-            totalReward = 0;
+            if strcmpi(ex.TaskVersion,'food')
+                totalReward = zeros(1,numel(ex.caloriesLevel));
+            else
+                totalReward = 0;
+            end
             
             % Display welcome screen
             displayInstructions(ex, ex.dirs.instructions, 'welcome');
@@ -563,11 +576,19 @@ else  % starting a new block of the main experiment
             case 'apple'
                 if strcmp(ex.language,'NL'), txt = sprintf('Totaal verzamelde appels: %d',totalReward);
                 else, txt = sprintf('Total apples gathered: %d',totalReward); end
+                drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0, 150]);
             case 'food'
-                if strcmp(ex.language,'NL'), txt = sprintf('Totaal verzamelde pakjes: %d',totalReward);
-                else, txt = sprintf('Total food items gathered: %d',totalReward); end
+                if strcmp(ex.language,'NL'), txt='Totaal verzamelde pakjes'; else, txt='Total food items gathered'; end
+                yval = 150;
+                drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0,yval] )
+
+                % Show total reward per calories level
+                for calIx = 1:numel(ex.caloriesLevel)
+                    yval = yval + 50;  % add space between text lines
+                    txt = sprintf('%s: %d',ex.foodStimNames.(ex.language){calIx}, totalReward(calIx));
+                    drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0, yval] )
+                end
         end
-        drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, 150]);
     end
     
     % Show text and wait
@@ -1145,7 +1166,12 @@ switch stage
             % Add the winnings to the totalReward obtained (only on real
             % experiment trials, not practice)
             if tr.block > 0
-                totalReward = totalReward + tr.success * tr.rewardLevel;
+                switch ex.TaskVersion
+                    case 'apple'
+                        totalReward = totalReward + tr.success * tr.rewardLevel;
+                    case 'food'
+                        totalReward(tr.caloriesIx) = totalReward(tr.caloriesIx) + tr.success * tr.rewardLevel;
+                end
             end
             
             % Display reward feedback
@@ -1154,7 +1180,9 @@ switch stage
                     case 'apple'
                         if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
                     case 'food'
-                        if strcmp(ex.language,'NL'), txt='Verzamelde pakjes'; else, txt='Items gathered'; end
+                        if strcmp(ex.language,'NL'), txt=sprintf('Verzamelde pakjes %s',ex.foodStimNames.(ex.language){tr.caloriesIx}); 
+                        else, txt=sprintf('Packets of %s gathered', ex.foodStimNames.(ex.language){tr.caloriesIx}); 
+                        end
                 end
                 if tr.success, wins = tr.rewardLevel; else, wins = 0; end
                 drawTextCentred(scr, sprintf('%s: %d', txt, wins), pa.fgColour, scr.centre + [0,-100])
@@ -1197,22 +1225,44 @@ switch stage
         % Log end of trial
         tr = LogEvent(ex,el,tr,'trialEnd');
         
-        % Store total reward in tr struct
-        tr.totalReward = totalReward;
+        % Store totalReward info in tr struct
+        switch ex.TaskVersion
+            case 'apple'
+                tr.totalReward = totalReward;
+            case 'food'
+                for calIx = 1:numel(ex.caloriesLevel)
+                    tr.(sprintf('totalReward_cal_%s', ex.caloriesLevel{calIx})) = totalReward(calIx);
+                end
+        end
         
         % Present total reward feedback after the last perform trial
         if pa.allTrialIndex >= ex.blocks*ex.blockLen && ~ex.fatiguingExercise
+            % End task message
             if strcmp(ex.language,'NL'), txt='Einde van dit taakgedeelte'; else, txt='End of this task stage'; end
-            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
+            yval = -200;    % y-coordinate to display this top row of text
+            drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 yval]);
+            
+            % Show reward earned
             switch ex.TaskVersion
                 case 'apple'
                     if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
+                    yval = yval + 100;  % add space between text lines
+                    drawTextCentred( scr, sprintf( '%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100] )
                 case 'food'
                     if strcmp(ex.language,'NL'), txt='Totaal verzamelde pakjes'; else, txt='Total food items gathered'; end
+                    yval = yval + 100;  % add space between text lines
+                    drawTextCentred( scr, txt, pa.fgColour, scr.centre + [0,yval] )
+                    
+                    % Show total reward per calories level
+                    for calIx = 1:numel(ex.caloriesLevel)
+                        yval = yval + 50;  % add space between text lines
+                        txt = sprintf('%s: %d',ex.foodStimNames.(ex.language){calIx}, totalReward(calIx));
+                        drawTextCentred( scr, txt, pa.fgColour, scr.centre + [0, yval] )
+                    end
             end
-            drawTextCentred( scr, sprintf( '%s: %d',txt, totalReward), pa.fgColour, scr.centre + [0,-100] )
             if strcmp(ex.language,'NL'), txt='Druk op een knop om door te gaan'; else, txt='Press a button to continue'; end
-            drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0,-200] )
+            drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0, yval+100] )
+            
             Screen('Flip', scr.w);
             tr = LogEvent(ex,el,tr,'totalRewardOnset');  % Log onset of total reward feedback
             waitForKeypress(ex); % wait for a key to be pressed (defined at end of this script)

@@ -84,14 +84,19 @@ if init
             % Create header
             switch ex.TaskVersion
                 case 'apple'
-                    header = ['subject session stage MVC block trialNr trialNr_block ' ...
+                    header = ['subject session taskVersion stage MVC block trialNr trialNr_block ' ...
                         'trialOnset stimOnset choiceOnset responseOnset responseTime squeezeStart squeezeEnd feedbackOnset trialEnd trialDuration ' ...
-                        'rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft pressedButton'];
+                        'rewardIx rewardLevel effortIx effortLevel yesIsLeft pressedButton accept didAccept success totalReward'];
                 case 'food'
-                    % Include extra columns for calories Level
-                    header = ['subject session stage MVC block trialNr trialNr_block ' ...
+                    % Include extra columns for trial info on calories and
+                    % sweet/savory task version
+                    header = ['subject session taskVersion foodType stage MVC block trialNr trialNr_block ' ...
                         'trialOnset stimOnset choiceOnset responseOnset responseTime squeezeStart squeezeEnd feedbackOnset trialEnd trialDuration ' ...
-                        'rewardIx rewardLevel caloriesIx caloriesLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft pressedButton'];
+                        'rewardIx rewardLevel caloriesIx caloriesLevel effortIx effortLevel yesIsLeft pressedButton accept didAccept success'];
+                    % Add totalReward info per calories level
+                    for calIx = 1:numel(ex.caloriesLevel)
+                        header = sprintf('%s totalReward_cal_%s', header, ex.caloriesLevel{calIx});
+                    end
             end
             
             % Write header
@@ -168,9 +173,12 @@ output.trialDuration = output.trialEnd - output.trialOnset;
 % Trial info and response output
 switch ex.TaskVersion
     case 'apple'
-        vars = {'rewardIx','rewardLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesIsLeft','pressedButton'};
+        vars = {'rewardIx','rewardLevel','effortIx','effortLevel','yesIsLeft','pressedButton','accept','didAccept','success','totalReward'};
     case 'food'
-        vars = {'rewardIx','rewardLevel','caloriesIx','caloriesLevel','effortIx','effortLevel','accept','didAccept','success','totalReward','yesIsLeft','pressedButton'};
+        vars = {'rewardIx','rewardLevel','caloriesIx','caloriesLevel','effortIx','effortLevel','yesIsLeft','pressedButton','accept','didAccept','success'};
+        for calIx = 1:numel(ex.caloriesLevel)
+            vars{end+1} = sprintf('totalReward_cal_%s', ex.caloriesLevel{calIx}); %#ok
+        end
 end
 for ivar = 1:numel(vars)
     if isfield(tr,vars{ivar}) % Retrieve var from tr struct
@@ -195,16 +203,17 @@ for ifile = 1:numel(fields)
     switch ex.TaskVersion
         case 'apple'
             %   Header:
-            %   subject session stage MVC block trialNr trialNr_block ...
+            %   subject session taskVersion stage MVC block trialNr trialNr_block ...
             %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
-            %   rewardIx rewardLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft pressedButton
-            pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %d %d %d %d %d %s\n';
+            %   rewardIx rewardLevel effortIx effortLevel yesIsLeft pressedButton accept didAccept success totalReward
+            pattern = '%d %d %s %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %f %d %s %d %d %d %d\n';
         case 'food'
             %   Header:
-            %   subject session stage MVC block trialNr trialNr_block ...
+            %   subject session taskVersion foodType stage MVC block trialNr trialNr_block ...
             %   trialOnset stimOnset choiceOnset responseOnset responseTime feedbackOnset trialEnd trialDuration ...
-            %   rewardIx rewardLevel caloriesIx caloriesLevel effortIx effortLevel accept didAccept success totalReward yesIsLeft pressedButton
-            pattern = '%d %d %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %s %d %f %d %d %d %d %d %s\n';
+            %   rewardIx rewardLevel caloriesIx caloriesLevel effortIx effortLevel yesIsLeft pressedButton accept didAccept success totalReward_cal_*
+            pattern = ['%d %d %s %s %s %f %d %d %d %f %f %f %f %f %f %f %f %f %f %d %d %d %s %d %f %d %s %d %d %d ' repmat('%d ',1,numel(ex.caloriesLevel))];
+            pattern = [pattern(1:end-1) '\n'];
     end
     
     % Write data line
@@ -213,14 +222,20 @@ for ifile = 1:numel(fields)
     switch ex.TaskVersion
         case 'apple'
             fprintf(ex.fids.(fields{ifile}), pattern, ...
-                ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
+                ex.subject, ex.session, ex.TaskVersion, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
                 output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
-                output.rewardIx, output.rewardLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesIsLeft, output.pressedButton);
+                output.rewardIx, output.rewardLevel, output.effortIx, output.effortLevel, output.yesIsLeft, output.pressedButton, output.accept, output.didAccept, output.success, output.totalReward);
         case 'food'
-            fprintf(ex.fids.(fields{ifile}), pattern, ...
-                ex.subject, ex.session, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ...
-                output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, ...
-                output.rewardIx, output.rewardLevel, output.caloriesIx, output.caloriesLevel, output.effortIx, output.effortLevel, output.accept, output.didAccept, output.success, output.totalReward, output.yesIsLeft, output.pressedButton);
+            % Construct write command
+            printVars = ['ex.subject, ex.session, ex.TaskVersion, ex.FoodType, tr.sub_stage, tr.MVC, tr.block, tr.allTrialIndex, tr.trialIndex, ' ...
+                'output.trialOnset, output.stimOnset, output.choiceOnset, output.responseOnset, output.responseTime, output.squeezeStart, output.squeezeEnd, output.feedbackOnset, output.trialEnd, output.trialDuration, '...
+                'output.rewardIx, output.rewardLevel, output.caloriesIx, output.caloriesLevel, output.effortIx, output.effortLevel, output.yesIsLeft, output.pressedButton, output.accept, output.didAccept, output.success'];
+            for calIx = 1:numel(ex.caloriesLevel)
+                printVars = sprintf('%s, output.totalReward_cal_%s', printVars,ex.caloriesLevel{calIx});
+            end
+            cmd = sprintf('fprintf(ex.fids.(fields{ifile}), pattern, %s)', printVars);
+            % Write data line
+            eval(cmd);
     end
 end
 end
