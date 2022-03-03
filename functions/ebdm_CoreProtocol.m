@@ -1047,22 +1047,20 @@ switch stage
                         tr.R=ex.R_NEEDS_REPEATING_LATER;
                     end
             end
-        end
-        
-        % Log response onset, response button, and calculate response time
-        %   If no response, set to NaN
-        if isempty(tr.key)
-            tr = LogEvent(ex,el,tr,'responseOnset', nan);
-            tr.responseButton = '';
-        else
-            tr = LogEvent(ex,el,tr,'responseOnset', respTime);
-            if tr.key == pa.leftKey
-                tr.pressedButton = 'left';
-            elseif tr.key == pa.rightKey
-                tr.pressedButton = 'right';
+            
+            % Log response onset, pressedButton, and calculate response
+            % time 
+            %   only for valid responses
+            if ~(tr.Yestrial==2)
+                tr = LogEvent(ex,el,tr,'responseOnset', respTime);
+                if tr.key == pa.leftKey
+                    tr.pressedButton = 'left';
+                elseif tr.key == pa.rightKey
+                    tr.pressedButton = 'right';
+                end
+                tr.timings.responseTime = tr.timings.responseOnset - tr.timings.choiceOnset;
             end
         end
-        tr.timings.responseTime = tr.timings.responseOnset - tr.timings.choiceOnset;
         
         % Draw feedback
         drawTextCentred(scr, message, msgcolour, msgloc)
