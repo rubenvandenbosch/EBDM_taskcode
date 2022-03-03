@@ -460,20 +460,6 @@ try
     % If only MVC calibration or stage is 'practice', we skip all this
     if ~ex.calibOnly && ~strcmp(ex.stage,'practice')
         
-        % Display "Start of experiment" and wait for key press to start
-        if ~(isfield(ex,'practiceTrials') && ex.practiceTrials>0 && prod(last)==1) && ~ex.restoredSession && ~fatal_error
-            if ex.useScreen
-                Screen(scr.w, 'FillRect',ex.bgColour, scr.sszrect);
-                if strcmp(ex.language,'NL'), txt='De taak begint nu'; else, txt='The task starts now'; end
-                drawTextCentred(scr, txt, ex.fgColour);
-                Screen('Flip', scr.w);
-            else
-                disp('Start of experiment - press a key');
-            end
-            myKbWait(ex); % press a key to start the experiment
-            WaitSecs(1);
-        end
-        
         % Loop over blocks
         %   Continue from last block
         for b = last(1):ex.blocks
