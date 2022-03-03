@@ -15,7 +15,7 @@ ex.TaskVersion = 'food';
 % If doing the food-related EBDM scenario, choose whether to use sweet or
 % savory food rewards
 if strcmpi(ex.TaskVersion,'food')
-    ex.FoodVersion = 'sweet';
+    ex.FoodType = 'sweet';
 end
 
 % Description of protocol to save in results struct
@@ -56,7 +56,7 @@ switch ex.TaskVersion
         ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.jpg'};
     case 'food'
         % Image files and names of food stimuli
-        if strcmpi(ex.FoodVersion,'sweet')
+        if strcmpi(ex.FoodType,'sweet')
             ex.imageFiles = {'vending_machine.jpg','1blueberry.jpg','1m&m.jpg','4blueberry.jpg','4m&m.jpg','fixationcross.jpg'};
             
             % Store food stimuli names (list in increasing calories)
@@ -64,7 +64,7 @@ switch ex.TaskVersion
             ex.foodStimNames.EN = {'blueberry','m&m'};
             ex.foodStimNames.NL = {'blauwe bes','m&m'};
             
-        elseif strcmpi(ex.FoodVersion,'savory')
+        elseif strcmpi(ex.FoodType,'savory')
             ex.imageFiles = {'vending_machine.jpg','1cucumber.jpg','1pringle.jpg','4cucumber.jpg','4pringle.jpg','fixationcross.jpg'};
             
             % Store food stimuli names (list in increasing calories)
@@ -168,7 +168,7 @@ switch ex.stage
         %       equal number of occurance per trial type within a block
         ex.blocks               = 6;   % Number of blocks
         ex.blockLen             = 16;  % number of  trials within each block
-        ex.blockBreakTime       = 10;  % Rest time betwen blocks (seconds)
+        ex.blockBreakTime       = 20;  % Rest time betwen blocks (seconds)
 
         % Include this number of practice choice trials at the beginning?
         ex.practiceTrials       = 4;
