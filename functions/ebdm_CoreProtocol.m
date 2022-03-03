@@ -778,19 +778,6 @@ switch stage
         % Log trial onset time
         tr = LogEvent(ex,el,tr,'trialOnset');
         
-        % On first practice trial, display instructions
-        if famTrIndex == 0
-            if strcmp(ex.language,'NL')
-                txt='Knijp boven de lijn totdat de balk geel wordt, houd dit 2 seconden vol!';
-            else
-                txt='Squeeze above the line until the bar turns yellow. Hold for 2 seconds';
-            end
-            drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0, -100])
-            Screen('Flip',scr.w);
-            EXIT = EXIT || waitForKeypress(ex); % wait for a key to be pressed before starting
-            WaitSecs(1);
-        end
-        
         % Function to draw stimuli without reward and the correct target 
         % effort rung, with "RESPOND NOW". 
         %   Location 0 means centre of screen.
