@@ -12,12 +12,6 @@ function ex = commonSettings(ex)
 %             vending machine stimulus.
 ex.TaskVersion = 'food';
 
-% If doing the food-related EBDM scenario, choose whether to use sweet or
-% savory food rewards
-if strcmpi(ex.TaskVersion,'food')
-    ex.FoodType = 'sweet';
-end
-
 % Description of protocol to save in results struct
 ex.description = 'Food-related effort-based decision making task';
 
@@ -46,32 +40,25 @@ ex.dirs.venv.conda = false;
 ex.dirs.instructions = fullfile(ex.dirs.rootDir,'instructions',lower(ex.TaskVersion));
 
 % Stimulus image files
-%   first one must be the no-reward image of an empty tree/vending machine!
-%   last one must be fixationcross!
-% 
-%   Only file names (files are looked for in the stimuli directory)
-%   file name pattern: '<number><itemName>.jpg', e.g. '3apple.jpg'
+%   - first one must be the no-reward image of empty tree/vending machine!
+%   - last one must be fixationcross!
+%   - Only file names (files are looked for in the stimuli directory)
+%   - file name pattern: '<number><itemName>.jpg', e.g. '3apple.jpg'
 switch ex.TaskVersion
     case 'apple'
         ex.imageFiles = {'tree.jpg','1apple.jpg','3apple.jpg', '6apple.jpg', '9apple.jpg', '12apple.jpg','fixationcross.jpg'};
     case 'food'
-        % Image files and names of food stimuli
-        if strcmpi(ex.FoodType,'sweet')
-            ex.imageFiles = {'vending_machine.jpg','1blueberry.jpg','1m&m.jpg','4blueberry.jpg','4m&m.jpg','fixationcross.jpg'};
-            
-            % Store food stimuli names (list in increasing calories)
-            %   English name must match name in image file name
-            ex.foodStimNames.EN = {'blueberry','m&m'};
-            ex.foodStimNames.NL = {'blauwe bes','m&m'};
-            
-        elseif strcmpi(ex.FoodType,'savory')
-            ex.imageFiles = {'vending_machine.jpg','1cucumber.jpg','1pringle.jpg','4cucumber.jpg','4pringle.jpg','fixationcross.jpg'};
-            
-            % Store food stimuli names (list in increasing calories)
-            %   English name must match name in image file name
-            ex.foodStimNames.EN = {'cucumber','pringle'};
-            ex.foodStimNames.NL = {'komkommer','pringle'};
-        end
+        ex.imageFiles = {'vending_machine.jpg', ...
+                         '1blueberry.jpg','1m&m.jpg','4blueberry.jpg','4m&m.jpg', ...       % sweet
+                         '1cucumber.jpg','1pringle.jpg','4cucumber.jpg','4pringle.jpg', ... % savory
+                         'fixationcross.jpg'};
+
+        % Store food stimuli names (list in increasing calories)
+        %   English name must match name in image file name
+        ex.foodStimNames.sweet.EN = {'blueberry','m&m'};
+        ex.foodStimNames.sweet.NL = {'blauwe bes','m&m'};
+        ex.foodStimNames.savory.EN = {'cucumber','pringle'};
+        ex.foodStimNames.savory.NL = {'komkommer','pringle'};
 end
 
 % Trial structure settings

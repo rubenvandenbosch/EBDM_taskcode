@@ -134,26 +134,41 @@ else    % Define session info for new session
 
     % Output file of the current session (visit) and experiment stage
     % ex.files.output_session_stage = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_task-EBDM_stage-%s.tsv', ex.subject,ex.session,ex.stage));
+end
 
-    % Display session information and ask for confirmation
-    % .....................................................................
-    % Check for existing output .mat file for this subject-session-stage, 
-    % and ask whether to abort in case of existing output file
+% Load common settings
+%   Also initializes bitsi for MRI and buttonbox, if applicable
+% -------------------------------------------------------------------------
+ex = commonSettings(ex);
+
+% If doing the food-related EBDM scenario, ask whether to use sweet or
+% savory food rewards
+if ~restore && strcmpi(ex.TaskVersion,'food')
+    foodtype = lower(input('Use sweet (1) or savory (2) food rewards?: ','s'));
+    assert(ismember(foodtype,{'1','2','sweet','savory'}), 'Invalid input. Check spelling? Valid inputs are: 1, 2, sweet, savory');
+    if ismember(foodtype,{'1','sweet'}), ex.FoodType = 'sweet'; else, ex.FoodType = 'savory'; end
+end
+
+% Display session information and ask for confirmation or abort
+% -------------------------------------------------------------------------
+if ~restore
+    fprintf('\nSubject: %.3d \nSession: %d \nExperiment stage: %s\n',ex.subject,ex.session,ex.stage);
+    if strcmpi(ex.TaskVersion,'food'), fprintf('Food rewards: %s\n', ex.FoodType); end
+    
+    % Check for existing output .mat file for this subject-session-stage
     matfile = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_task-EBDM_stage-%s.mat', ex.subject,ex.session,ex.stage));
     if exist(matfile,'file') == 2
-        warning('An output file for this participant and experiment stage already exists! Check whether your session info input is correct.\n  %s',  ...
-            matfile)
+        warning('Output file for this participant and experiment stage already exists! Check whether your session info input is correct.\n  %s', matfile)
     end
-
-    % Display session information and ask for confirmation or abort
-    fprintf('\nSubject: %.3d \nSession: %d \nExperiment stage: %s\n',ex.subject,ex.session,ex.stage);
-    if ~(exist(matfile,'file') == 2)      % if new session
+    
+    % Ask for confirmation
+    if ~(exist(matfile,'file') == 2)        % if new session
         accept = input('Is this correct (yes/no)? ', 's');
         accept = strtrim(accept);
         if ~ismember(lower(accept),{'y', 'yes', 'ja', 'j'})
             error('\nExperiment settings not accepted. Run %s again to specify different settings.', mfilename);
         end
-    else                                % if existing output file
+    else                                    % if existing output file
         cont = input('\nContinue anyway?\n    The results of this run will be appended to existing output files.\n(yes/no) ', 's');
         cont = strtrim(cont);
         if ~ismember(lower(cont),{'y', 'yes', 'ja', 'j'})
@@ -161,11 +176,6 @@ else    % Define session info for new session
         end
     end
 end
-
-% Load common settings
-%   Also initializes bitsi for MRI and buttonbox, if applicable
-% -------------------------------------------------------------------------
-ex = commonSettings(ex);
 
 % Start grip force recording, if applicable
 % -------------------------------------------------------------------------
