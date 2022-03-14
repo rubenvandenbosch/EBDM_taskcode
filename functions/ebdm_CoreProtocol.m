@@ -1420,8 +1420,8 @@ end
 % When finished, say thanks and wait for buttonpress to continue
 if strcmp(ex.language,'NL'), txt = 'Bedankt!'; else, txt = 'Thank you!'; end
 drawTextCentred(scr, txt, ex.fgColour)
-if strcmp(ex.language,'NL'), txt = 'Druk op een knop om verder te gaan.'; 
-else, txt = 'Press a button to continue'; end
+if strcmp(ex.language,'NL'), txt = 'Druk op de spatiebalk om verder te gaan.'; 
+else, txt = 'Press spacebar to continue'; end
 drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 200])
 Screen('Flip', scr.w);
 waitForKeypress(ex);
