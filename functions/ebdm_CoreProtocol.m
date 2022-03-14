@@ -318,7 +318,7 @@ if ~ex.fatiguingExercise
     % Get correct image for reward stimulus based on reward magnitude and 
     % calories. If no reward, show empty vending machine
     if rewardIx > 0
-        imageName = sprintf('%d%s', rewardLevel,ex.foodStimNames.EN{caloriesIx});
+        imageName = sprintf('%d%s', rewardLevel,ex.foodStimNames.(ex.FoodType).EN{caloriesIx});
     else
         imageName = 'vending_machine';
     end
@@ -358,15 +358,15 @@ if rewardIx > 0
         switch ex.language
             case 'EN'
                 if rewardLevel == 1
-                    formatstring = sprintf('%s: %d piece', ex.foodStimNames.EN{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d piece', ex.foodStimNames.(ex.FoodType).EN{caloriesIx},rewardLevel);
                 else
-                    formatstring = sprintf('%s: %d pieces', ex.foodStimNames.EN{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d pieces', ex.foodStimNames.(ex.FoodType).EN{caloriesIx},rewardLevel);
                 end
             case 'NL'
                 if rewardLevel == 1
-                    formatstring = sprintf('%s: %d stuk', ex.foodStimNames.NL{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d stuk', ex.foodStimNames.(ex.FoodType).NL{caloriesIx},rewardLevel);
                 else
-                    formatstring = sprintf('%s: %d stuks', ex.foodStimNames.NL{caloriesIx},rewardLevel);
+                    formatstring = sprintf('%s: %d stuks', ex.foodStimNames.(ex.FoodType).NL{caloriesIx},rewardLevel);
                 end
         end
         drawTextCentred(scr, formatstring, ex.fgColour, scr.centre + [0 350]);
@@ -464,7 +464,7 @@ switch lower(timepoint)
                         % Show total reward per calories level
                         for calIx = 1:numel(ex.caloriesLevel)
                             yval = yval + 50;  % add space between text lines
-                            txt = sprintf('%s: %d',ex.foodStimNames.(ex.language){calIx}, totalReward(calIx));
+                            txt = sprintf('%s: %d',ex.foodStimNames.(ex.FoodType).(ex.language){calIx}, totalReward(calIx));
                             drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0, yval] )
                         end
                 end
@@ -585,7 +585,7 @@ else  % starting a new block of the main experiment
                 % Show total reward per calories level
                 for calIx = 1:numel(ex.caloriesLevel)
                     yval = yval + 50;  % add space between text lines
-                    txt = sprintf('%s: %d',ex.foodStimNames.(ex.language){calIx}, totalReward(calIx));
+                    txt = sprintf('%s: %d',ex.foodStimNames.(ex.FoodType).(ex.language){calIx}, totalReward(calIx));
                     drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0, yval] )
                 end
         end
@@ -1165,8 +1165,8 @@ switch stage
                     case 'apple'
                         if strcmp(ex.language,'NL'), txt='Verzamelde appels'; else, txt='Apples gathered'; end
                     case 'food'
-                        if strcmp(ex.language,'NL'), txt=sprintf('Verzamelde pakjes %s',ex.foodStimNames.(ex.language){tr.caloriesIx}); 
-                        else, txt=sprintf('Packets of %s gathered', ex.foodStimNames.(ex.language){tr.caloriesIx}); 
+                        if strcmp(ex.language,'NL'), txt=sprintf('Verzamelde pakjes %s',ex.foodStimNames.(ex.FoodType).(ex.language){tr.caloriesIx}); 
+                        else, txt=sprintf('Packets of %s gathered', ex.foodStimNames.(ex.FoodType).(ex.language){tr.caloriesIx}); 
                         end
                 end
                 if tr.success, wins = tr.rewardLevel; else, wins = 0; end
@@ -1241,11 +1241,11 @@ switch stage
                     % Show total reward per calories level
                     for calIx = 1:numel(ex.caloriesLevel)
                         yval = yval + 50;  % add space between text lines
-                        txt = sprintf('%s: %d',ex.foodStimNames.(ex.language){calIx}, totalReward(calIx));
+                        txt = sprintf('%s: %d',ex.foodStimNames.(ex.FoodType).(ex.language){calIx}, totalReward(calIx));
                         drawTextCentred( scr, txt, pa.fgColour, scr.centre + [0, yval] )
                     end
             end
-            if strcmp(ex.language,'NL'), txt='Druk op een knop om door te gaan'; else, txt='Press a button to continue'; end
+            if strcmp(ex.language,'NL'), txt='Druk op de spatiebalk om door te gaan'; else, txt='Press spacebar to continue'; end
             drawTextCentred( scr, sprintf(txt), pa.fgColour, scr.centre + [0, yval+100] )
             
             Screen('Flip', scr.w);
