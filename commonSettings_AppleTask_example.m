@@ -127,9 +127,6 @@ switch ex.stage
         % Number of practice decisions about X effort for X reward
         ex.practiceTrials       = 6;
         
-        % Random order of practice trials?
-        ex.shufflePracticeTrials = true;
-        
         % Set total number of trials based on the above
         ex.blockLen   = ex.numCalibration + ex.numFamiliarise + ex.practiceTrials;
         ex.last_trial = [];
@@ -157,9 +154,6 @@ switch ex.stage
 
         % Include this number of practice choice trials at the beginning?
         ex.practiceTrials       = 4;
-        
-        % Random order of practice trials?
-        ex.shufflePracticeTrials = true;
         
         % How many retries are allowed (>=0 or Inf for endless retries)
         ex.maxNumRepeatedTrials = Inf;
@@ -189,9 +183,6 @@ switch ex.stage
         % Practice a number of trials with different effort levels without
         % reward?
         ex.practiceTrials       = 3;
-        
-        % Random order of practice trials?
-        ex.shufflePracticeTrials = true;
         
         % Block number from which people are to actually perform gripforce 
         % effort. Set to 1, as that's all we do at this stage
