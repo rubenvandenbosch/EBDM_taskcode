@@ -1,5 +1,5 @@
-function result = RunExperiment ( doTrial, ex, params, blockStart )
-% result = RunExperiment ( @doTrial, ex, params [, @blockStart] )
+function result = RunExperiment ( doTrial, ex, params, blockStart, exptStartEnd )
+% result = RunExperiment ( @doTrial, ex, params, @blockStart, @exptStartEnd )
 % The body of the experiment.
 % Sanjay Manohar 2008
 %

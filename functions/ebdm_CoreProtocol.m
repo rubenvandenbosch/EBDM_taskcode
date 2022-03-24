@@ -56,28 +56,75 @@ if ~exist('params','var') || isempty(params)
     % params should be empty struct
     params = struct([]);
     
-    % Get subject's MVC from previous calibration, or set to arbitrary 
-    % number before calibration
-    % ---------------------------------------------------------------------
-    if ~ex.calibNeeded
-        % Get MVC from output mat file of the practice stage
-        filename = strrep(outfile_mat,sprintf('stage-%s',ex.stage),'stage-practice');
-        assert(exist(filename,'file')==2, 'Practice stage file that includes MVC is missing');
+    % Load the practice stage data, if choice or perform stage
+    % .....................................................................
+    %   Necessary to get MVC calibration data
+    %   In food version of task, also used to automatically select
+    %   sweet/savory food rewards
+    if ismember(ex.stage,{'choice','perform'})
+        pracfile = strrep(outfile_mat,sprintf('stage-%s',ex.stage),'stage-practice');
+        
+        if exist(pracfile,'file')==2
+            % Load the 'result' variable from practice stage output file
+            %   Grab MVC
+            %   If food version, grab FoodType 
+            %   clear tmp variable
+            tmp = load(pracfile,'result');
+            MVC = tmp.result.MVC;
+            if strcmp(ex.TaskVersion,'food'), ex.FoodType = tmp.result.params.FoodType; end
+            clear tmp;
+        else
+            % If the practice stage file with MVC calibration is not found:
+            %   - in choice stage, we don't actually need the MVC, so ask
+            %     experimenter whether to continue without or quit the 
+            %     experiment to fix the issue.
+            %   - in perform stage we do need the MVC, so throw error
+            %     unless a new calibration is planned
+            if strcmp(ex.stage,'choice')
+                % Inform experimenter
+                disp(' ');
+                warning('Practice stage output file that includes MVC is missing');
+                disp('The practice results are needed to retrieve MVC and append choice results to the text output file.');
+                if strcmp(ex.TaskVersion,'food'), disp('The practice output is also needed to automatically select sweet or savory food rewards.'); end
+                disp('You are urged to quit the experiment and find the missing .mat and .tsv output files,');
+                disp('but it is possible to continue the choice task without.');
 
-        % Load the 'result' variable from the file.
-        tmp = load(filename,'result');
-        % Grab MVC
-        MVC = tmp.result.MVC;
-        % Clear tmp variable
-        clear tmp
+                % Ask to quit now or continue
+                %   If continue: set MVC to NaN and manually set food type
+                quit = lower(input('Quit experiment (y/n)? ','s'));
+                if ismember(quit,{'y','yes'}), return;
+                elseif ismember(quit,{'n','no'})
+                    MVC = nan;
+                    if strcmp(ex.TaskVersion,'food')
+                        foodtype = '';
+                        while ~ismember(foodtype,{'1','2','sweet','savory'})
+                            foodtype = lower(input('Use sweet (1) or savory (2) food rewards?: ','s'));
+                            if ismember(foodtype,{'1','sweet'}), ex.FoodType = 'sweet'; else, ex.FoodType = 'savory'; end
+                        end
+                    end
+                end
+                
+            elseif strcmp(ex.stage,'perform')
+                % Cannot continue without MVC value, so error unless a new 
+                % calibration is planned
+                if ex.calibNeeded
+                    % Arbitrary MVC value that is overwritten after first calibration
+                    MVC = 3;
+                else
+                    error('Practice stage output file that includes MVC is missing');
+                end
+            end
+        end
     else
+        % Practice stage must start with a calibration of MVC
+        assert(ex.calibNeeded,'Practice stage must start with a calibration of MVC');
         % Arbitrary MVC value that is overwritten after first calibration
         MVC = 3;
     end
 
     % For the perform stage, load subject's choices from the choice stage
     % to check that there are enough choices to start the perform stage
-    % ---------------------------------------------------------------------
+    % .....................................................................
     if strcmp(ex.stage,'perform')
         % Get choices output mat file and assert it exists
         ex.choices_file = strrep(outfile_mat,'stage-perform','stage-choice');
@@ -89,12 +136,8 @@ if ~exist('params','var') || isempty(params)
         nChoices = numel(choices.result.data);
         assert(ex.blocks * ex.blockLen <= nChoices || ex.DEBUG, ...
             'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, nChoices);
-        clear choices;  % Clear previous results from memory hear
+        clear choices;  % Clear previous results from memory
     end
-    
-    % Add function handle for experiment start/end function to ex struct
-    % ---------------------------------------------------------------------
-    ex.exptStartEnd = @exptStartEnd;
     
 else    % Restored session
     % Restore globals from previous experiment
@@ -107,7 +150,7 @@ end
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
 % start experiment
-result = RunExperiment(@doTrial, ex, params, @blockfn);
+result = RunExperiment(@doTrial, ex, params, @blockfn, @exptStartEnd);
 
 % Save the final result struct in mat file
 save(outfile_mat, 'result');

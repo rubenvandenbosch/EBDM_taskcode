@@ -76,13 +76,18 @@ if nargin == 3
 elseif nargin == 0
     ex.subject   = input('Subject number: ');
     ex.session   = input('Session number: ');
-    ex.stage     = lower(input('Experiment stage: ','s'));
+    ex.stage     = lower(input('Experiment stage; (1) practice, (2) choice, (3) perform: ','s'));
 elseif nargin == 1
     if strcmpi(varargin{1},'restore')
         restore = true;
     else
         error('If providing 1 input argument, it must be: restore.  Check spelling?');
     end
+end
+% Get experiment stage as char string if it was provided with a number
+if strcmp(ex.stage,'1'), ex.stage = 'practice';
+elseif strcmp(ex.stage,'2'), ex.stage = 'choice';
+elseif strcmp(ex.stage,'3'), ex.stage = 'perform';
 end
 
 % Restore session OR define session info
@@ -108,12 +113,12 @@ else    % Define session info for new session
     % Constrain possible strings for experiment stage (to prevent 
     % irregularities in output file names)
     stages = {'practice', 'choice', 'perform'};
-    while ~ismember(lower(ex.stage),stages)
+    while ~ismember(ex.stage,stages)
         try
-            assert(ismember(lower(ex.stage),stages), '\nUnknown experiment stage. Check spelling?\n Possible stages: practice, choice, perform.\n', false)
+            assert(ismember(ex.stage,stages), '\nUnknown experiment stage. Check spelling?\n Possible stages: practice, choice, perform.\n', false)
         catch ME
             disp(ME.message)
-            ex.stage = input('Experiment stage: ','s');
+            ex.stage = lower(input('Experiment stage: ','s'));
         end
     end
 
@@ -141,9 +146,9 @@ end
 % -------------------------------------------------------------------------
 ex = commonSettings(ex);
 
-% If doing the food-related EBDM scenario, ask whether to use sweet or
-% savory food rewards
-if ~restore && strcmpi(ex.TaskVersion,'food')
+% If starting practice stage in the food-related EBDM scenario, ask whether
+% to use sweet or savory food rewards 
+if ~restore && strcmpi(ex.TaskVersion,'food') && strcmp(ex.stage,'practice')
     foodtype = lower(input('Use sweet (1) or savory (2) food rewards?: ','s'));
     assert(ismember(foodtype,{'1','2','sweet','savory'}), 'Invalid input. Check spelling? Valid inputs are: 1, 2, sweet, savory');
     if ismember(foodtype,{'1','sweet'}), ex.FoodType = 'sweet'; else, ex.FoodType = 'savory'; end
@@ -153,7 +158,7 @@ end
 % -------------------------------------------------------------------------
 if ~restore
     fprintf('\nSubject: %.3d \nSession: %d \nExperiment stage: %s\n',ex.subject,ex.session,ex.stage);
-    if strcmpi(ex.TaskVersion,'food'), fprintf('Food rewards: %s\n', ex.FoodType); end
+    if strcmpi(ex.TaskVersion,'food') && strcmp(ex.stage,'practice'), fprintf('Food rewards: %s\n', ex.FoodType); end
     
     % Check for existing output .mat file for this subject-session-stage
     matfile = fullfile(ex.dirs.output,sprintf('subject-%.3d_ses-%d_task-EBDM_stage-%s.mat', ex.subject,ex.session,ex.stage));
