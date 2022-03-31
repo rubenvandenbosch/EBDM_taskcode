@@ -1132,6 +1132,42 @@ switch stage
             tr.stake = 1;
         end
         
+        % Find out if trial was a Yes response
+        if ~ex.fatiguingExercise
+            Yestrial = tr.Yestrial;
+        else
+            Yestrial = 1;
+        end
+        
+        % Draw fixation cross, and log trial onset time
+        Screen('DrawTexture', ex.scr.w, scr.imageTexture(end),[]);
+        Screen('Flip', ex.scr.w);
+        tr = LogEvent(ex,el,tr,'trialOnset');
+        
+        % Inter Trial Interval (ITI) at beginning of each trial
+        Tdelay = pa.methodITI;
+        if ischar(pa.methodITI)
+            switch pa.methodITI
+                case 'randUniform'
+                    % Uniform random sample
+                    Tdelay = (ex.minITI + rand*(ex.maxITI-ex.minITI));
+                case 'randNormal'
+                    assert(ex.minITI < ex.meanITI && ex.meanITI < ex.maxITI, 'Mean choice delay falls outside min to max range. Check settings');
+                    
+                    % Get sigma
+                    if isfield(ex,'sigmaITI'), sigma = ex.sigmaITI;
+                    else, sigma = (1/ex.meanITI)*(ex.maxITI-ex.minITI); end
+                    
+                    % Create truncated normal distribution
+                    d = makedist('normal',ex.meanITI,sigma);
+                    d = truncate(d,ex.minITI,ex.maxITI);
+                    
+                    % Random draw
+                    Tdelay = random(d,1);
+            end
+        end
+        tr = waitOrBreak(ex, tr, Tdelay);
+        
         % Draw tree with reward/effort indication of previous choice.
         switch ex.TaskVersion
             case 'apple'
@@ -1141,13 +1177,6 @@ switch stage
         end
         tr = LogEvent(ex,el,tr,'stimOnset');
         WaitSecs(0.5);
-        
-        % Find out if trial was a Yes response
-        if ~ex.fatiguingExercise
-            Yestrial = tr.Yestrial;
-        else
-            Yestrial = 1;
-        end
         
         % Run trial
         if Yestrial == 1   % Accepted Performance trials
@@ -1234,8 +1263,7 @@ switch stage
             if strcmp(ex.language,'NL'), txt='Aanbod afgewezen'; else, txt='Offer declined'; end
             switch ex.TaskVersion
                 case 'apple'
-                    drawTree(scr,ex, 0, tr.rewardIx, tr.effortIx, 0, false, [], true);
-                    drawTextCentred(scr, txt, ex.fgColour, scr.centre + [0 -300]);
+                    drawTree(scr,ex, location, tr.rewardIx ,tr.effortIx, 0, false, txt, true);
                 case 'food'
                     drawVM(scr,ex, tr.VMlocation, tr.rewardIx, tr.caloriesIx, tr.effortIx, 0, false, txt, true);
             end

@@ -224,9 +224,8 @@ ex.fatiguingExerciseSTartEffortLevel = 0.3;
 % .........................................................................
 ex.calibrationDuration  = 5;   % Time for calibration squeeze
 
-% Choice phase
-% .........................................................................
 % Intertrial interval (ITI)
+% .........................................................................
 %   set ex.methodITI to a number to have fixed ITIs (in secs)
 %   set ex.methodITI to 'randUniform' to have random ITIs between
 %       ex.minITI and ex.maxITI

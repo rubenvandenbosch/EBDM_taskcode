@@ -73,10 +73,10 @@ end
 
 % Levels of reward magnitude
 %   Make sure the numbers in the names of jpgs of apple tree match this.
-ex.rewardLevel = [1 3 6 9]; % [1 3 6 9 12];
+ex.rewardLevel = [1 3 6 9 12];
 
 % Effort levels: proportions of maximum voluntary contraction (MVC)
-ex.effortLevel = [0.1 0.33 0.56 0.8]; % [0.16 0.32 0.48 0.64 0.80];
+ex.effortLevel = [0.16 0.32 0.48 0.64 0.80];
 
 % Order of familiarizing with force levels.
 % true = use force levels 1 1 2 2 3 3 etc, false = 1...6,1...6
@@ -222,9 +222,8 @@ ex.fatiguingExerciseSTartEffortLevel = 0.3;
 % .........................................................................
 ex.calibrationDuration  = 5;   % Time for calibration squeeze
 
-% Choice phase
-% .........................................................................
 % Intertrial interval (ITI)
+% .........................................................................
 %   set ex.methodITI to a number to have fixed ITIs (in secs)
 %   set ex.methodITI to 'randUniform' to have random ITIs between
 %       ex.minITI and ex.maxITI
