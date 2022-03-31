@@ -172,8 +172,11 @@ last = [1 1];
 % params
 if exist('params','var') && ~isempty(params)
     
-    % Combine ex and params in struct ex, overwriting existing fields in ex
-    ex = combineStruct(ex, params);
+    % Get parameters from previous experiment session
+    %   they're stored in params.params
+    %   Combine ex and params.params in struct ex, overwriting existing 
+    %   fields in ex
+    ex = combineStruct(ex, params.params);
     
     % go straight to the last-executed trial
     % keep old trial structure and randomisation
@@ -269,7 +272,11 @@ try
     
     % Initialise screen (scr struct)
     if ex.useScreen
-        if ~isfield(ex,'scr') || ex.restoredSession
+        % In a restored session, remove scr info to force re-initialization
+        % of scr and prevent errors later
+        if ex.restoredSession, ex = rmfield(ex,'scr'); end
+        
+        if ~isfield(ex,'scr')
             scr = prepareScreen(ex);
             ex.scr = scr;
             ex.screenSize = scr.ssz;

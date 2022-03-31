@@ -490,7 +490,10 @@ switch lower(timepoint)
         
         % Show either a welcome screen OR a session restore info screen
         if ex.restoredSession
-            displayInstructions(ex, ex.dirs.instructions, 'restore');
+            if strcmp(ex.language,'NL'), txt='Experiment sessie herstellen...'; else, txt='Restoring experiment session...'; end
+            drawTextCentred(ex.scr, txt, ex.fgColour, ex.scr.centre);
+            Screen('Flip', ex.scr.w);
+            WaitSecs(3);
             
             % Display total reward before continuing a restored session in
             % the perform stage
@@ -498,20 +501,23 @@ switch lower(timepoint)
                 switch ex.TaskVersion
                     case 'apple'
                         if strcmp(ex.language,'NL'), txt='Totaal verzamelde appels'; else, txt='Total apples gathered'; end
-                        drawTextCentred(scr, sprintf('%s: %d',txt, totalReward), ex.fgColour, scr.centre + [0,-100])
+                        drawTextCentred(ex.scr, sprintf('%s: %d',txt, totalReward), ex.fgColour, ex.scr.centre + [0,-100]);
+                        Screen('Flip', ex.scr.w);
                     case 'food'
                         if strcmp(ex.language,'NL'), txt='Totaal verzamelde pakjes'; else, txt='Total food items gathered'; end
                         yval = -100;
-                        drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0,yval] )
+                        drawTextCentred(ex.scr, txt, ex.fgColour, ex.scr.centre + [0,yval] );
+                        Screen('Flip', ex.scr.w);
 
                         % Show total reward per calories level
                         for calIx = 1:numel(ex.caloriesLevel)
                             yval = yval + 50;  % add space between text lines
                             txt = sprintf('%s: %d',ex.foodStimNames.(ex.FoodType).(ex.language){calIx}, totalReward(calIx));
-                            drawTextCentred( scr, txt, ex.fgColour, scr.centre + [0, yval] )
+                            drawTextCentred(ex.scr, txt, ex.fgColour, ex.scr.centre + [0, yval] );
+                            Screen('Flip', ex.scr.w);
                         end
                 end
-                WaitSecs(1);
+                WaitSecs(3);
             end
         else
             % Reset totalReward

@@ -95,8 +95,7 @@ if restore
     %   settings will be used by later code.
     params = load(ex.files.recovery,'result');
     params = params.result;
-    ex     = params.params;
-
+    
 else    % Define session info for new session
     
     % Get experiment stage as char string if it was provided with a number
