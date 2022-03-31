@@ -84,11 +84,6 @@ elseif nargin == 1
         error('If providing 1 input argument, it must be: restore.  Check spelling?');
     end
 end
-% Get experiment stage as char string if it was provided with a number
-if strcmp(ex.stage,'1'), ex.stage = 'practice';
-elseif strcmp(ex.stage,'2'), ex.stage = 'choice';
-elseif strcmp(ex.stage,'3'), ex.stage = 'perform';
-end
 
 % Restore session OR define session info
 % -------------------------------------------------------------------------
@@ -103,6 +98,12 @@ if restore
     ex     = params.params;
 
 else    % Define session info for new session
+    
+    % Get experiment stage as char string if it was provided with a number
+    if strcmp(ex.stage,'1'), ex.stage = 'practice';
+    elseif strcmp(ex.stage,'2'), ex.stage = 'choice';
+    elseif strcmp(ex.stage,'3'), ex.stage = 'perform';
+    end
     
     % Use empty params when starting new session
     params = [];
