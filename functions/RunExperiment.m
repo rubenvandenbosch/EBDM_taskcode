@@ -173,9 +173,14 @@ last = [1 1];
 if exist('params','var') && ~isempty(params)
     
     % Get parameters from previous experiment session
-    %   they're stored in params.params
-    %   Combine ex and params.params in struct ex, overwriting existing 
-    %   fields in ex
+    %   - they're stored in params.params
+    %   - Combine ex and params.params in struct ex, overwriting existing 
+    %     fields in ex
+    %   - Don't use the old fids for output files, use the new ones
+    fields = fieldnames(ex.fids);
+    for id = 1:numel(fields)
+        params.params.fids.(fields{id}) = ex.fids.(fields{id});
+    end
     ex = combineStruct(ex, params.params);
     
     % go straight to the last-executed trial
