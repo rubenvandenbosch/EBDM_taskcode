@@ -706,15 +706,15 @@ try
                 end
             end
         end
-        
-        % END OF EXPERIMENT
-        %   Call experiment end function, if provided
-        if exist('exptStartEnd','var') && ~fatal_error
-            exptStartEnd(ex,'end');
-        end
     else
         % If only running calibration, remove non-used variables
         result = rmfield(result,'trials');
+    end
+    
+    % END OF EXPERIMENT
+    %   Call experiment end function, if provided
+    if exist('exptStartEnd','var') && ~fatal_error
+        exptStartEnd(ex,'end');
     end
     
 catch e                                  % in case of an error
