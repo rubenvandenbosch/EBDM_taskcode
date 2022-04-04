@@ -741,8 +741,9 @@ switch stage
         tr.meanForce = mean(tmpdata(ceil(.9*length(tmpdata)):end));
         
         % Which is larger, the current trial's force, or the current MVC?
-        %   update the MVC on calibration trials.
+        %   store in global MVC value, and in tr struct
         MVC = max(tr.meanForce, MVC);
+        tr.MVC = MVC;
         
         % Blank screen before feedback
         Screen('Flip', scr.w);
@@ -759,16 +760,11 @@ switch stage
                 end
                 drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 -100]);
             else
-                if strcmp(ex.language,'NL'), txt='Einde calibratie deel'; else, txt='End of MVC calibration part'; end
+                if strcmp(ex.language,'NL'), txt='Einde van calibratie'; else, txt='End of calibration'; end
                 drawTextCentred(scr, txt, ex.fgColour, scr.centre +[0 0]);
             end
             Screen('Flip', scr.w);
             EXIT = EXIT || waitForKeypress(ex);
-            tr.MVC = MVC; % Save MVC to trial only on last calibration
-        else
-            % If not last calibration, the MVC is not yet calibrated well, 
-            % so do not save a value to the trial data
-            tr.MVC = NaN;
         end
         tr = LogEvent(ex,el,tr,'trialEnd');
         
