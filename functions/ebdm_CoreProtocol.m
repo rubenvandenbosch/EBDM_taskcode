@@ -60,7 +60,7 @@ if ~exist('params','var') || isempty(params)
     % .....................................................................
     %   Necessary to get MVC calibration data
     %   In food version of task, also used to automatically select
-    %   sweet/savory food rewards
+    %   sweet/savory food rewards for choice stage
     if ismember(ex.stage,{'choice','perform'})
         pracfile = strrep(outfile_mat,sprintf('stage-%s',ex.stage),'stage-practice');
         
@@ -71,7 +71,9 @@ if ~exist('params','var') || isempty(params)
             %   clear tmp variable
             tmp = load(pracfile,'result');
             MVC = tmp.result.MVC;
-            if strcmp(ex.TaskVersion,'food'), ex.FoodType = tmp.result.params.FoodType; end
+            if strcmp(ex.TaskVersion,'food') && strcmp(ex.stage,'choice')
+                ex.FoodType = tmp.result.params.FoodType; 
+            end
             clear tmp;
         else
             % If the practice stage file with MVC calibration is not found:
@@ -124,6 +126,7 @@ if ~exist('params','var') || isempty(params)
 
     % For the perform stage, load subject's choices from the choice stage
     % to check that there are enough choices to start the perform stage
+    %   - In food version: also retrieve foodtype from choice data
     % .....................................................................
     if strcmp(ex.stage,'perform')
         % Get choices output mat file and assert it exists
@@ -136,7 +139,12 @@ if ~exist('params','var') || isempty(params)
         nChoices = numel(choices.result.data);
         assert(ex.blocks * ex.blockLen <= nChoices || ex.DEBUG, ...
             'There are more trials to perform effort for (%d) than the number of decisions made in the choice stage (%d)', ex.blocks * ex.blockLen, nChoices);
-        clear choices;  % Clear previous results from memory
+        
+        % Retrieve food type from choice data
+        if strcmp(ex.TaskVersion,'food'), ex.FoodType = choices.result.params.FoodType; end
+        
+        % Clear previous results from memory
+        clear choices;
     end
     
 else    % Restored session
