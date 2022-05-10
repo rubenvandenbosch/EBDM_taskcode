@@ -100,9 +100,11 @@ if restore
 else    % Define session info for new session
     
     % Get experiment stage as char string if it was provided with a number
-    if strcmp(ex.stage,'1'), ex.stage = 'practice';
-    elseif strcmp(ex.stage,'2'), ex.stage = 'choice';
-    elseif strcmp(ex.stage,'3'), ex.stage = 'perform';
+    if isnumeric(ex.stage)
+        if ex.stage == 1, ex.stage = 'practice';
+        elseif ex.stage == 2, ex.stage = 'choice';
+        elseif ex.stage == 3, ex.stage = 'perform';
+        end
     end
     
     % Use empty params when starting new session
@@ -148,7 +150,7 @@ end
 ex = commonSettings(ex);
 
 % If starting practice stage in the food-related EBDM scenario, ask whether
-% to use sweet or savory food rewards 
+% to use sweet or savory food rewards
 if ~restore && strcmpi(ex.TaskVersion,'food') && strcmp(ex.stage,'practice')
     foodtype = lower(input('Use sweet (1) or savory (2) food rewards?: ','s'));
     assert(ismember(foodtype,{'1','2','sweet','savory'}), 'Invalid input. Check spelling? Valid inputs are: 1, 2, sweet, savory');
