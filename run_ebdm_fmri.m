@@ -100,11 +100,9 @@ if restore
 else    % Define session info for new session
     
     % Get experiment stage as char string if it was provided with a number
-    if isnumeric(ex.stage)
-        if ex.stage == 1, ex.stage = 'practice';
-        elseif ex.stage == 2, ex.stage = 'choice';
-        elseif ex.stage == 3, ex.stage = 'perform';
-        end
+    if strcmp(ex.stage,'1'), ex.stage = 'practice';
+    elseif strcmp(ex.stage,'2'), ex.stage = 'choice';
+    elseif strcmp(ex.stage,'3'), ex.stage = 'perform';
     end
     
     % Use empty params when starting new session
