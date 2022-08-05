@@ -1404,10 +1404,10 @@ barcol      = [255 200 0];
 slider      = [0 0 10 50];
 
 % VAS scale position settings
-xaxis       = [0.1*wdw 0.9*wdw; 0.7*wdh 0.7*wdh];
-yleft       = [0.1*wdw 0.1*wdw; 0.65*wdh 0.75*wdh];
+xaxis       = [0.2*wdw 0.8*wdw; 0.7*wdh 0.7*wdh];
+yleft       = [0.2*wdw 0.2*wdw; 0.65*wdh 0.75*wdh];
 ymid        = [0.5*wdw 0.5*wdw; 0.65*wdh 0.75*wdh];
-yright      = [0.9*wdw 0.9*wdw; 0.65*wdh 0.75*wdh];
+yright      = [0.8*wdw 0.8*wdw; 0.65*wdh 0.75*wdh];
 
 % Text position settings
 xyInstr     = scr.centre + [0,-100]; % instruction text position
