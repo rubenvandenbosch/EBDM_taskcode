@@ -1,4 +1,4 @@
-function result = RunExperiment ( doTrial, ex, params, blockStart, exptStartEnd )
+function [result,e] = RunExperiment ( doTrial, ex, params, blockStart, exptStartEnd )
 % result = RunExperiment ( @doTrial, ex, params, @blockStart, @exptStartEnd )
 % The body of the experiment.
 % Sanjay Manohar 2008
@@ -140,7 +140,13 @@ function result = RunExperiment ( doTrial, ex, params, blockStart, exptStartEnd 
 %                     used as the 'params' input to RunTrials.
 %  date             = date/time string of start of experiment.
 %
+% OUTPUT
+% result : structure containing experiment parameters and results data
+% e      : variable to carry error information, so the errors can be
+%          rethrown in top-level call for easier debugging.
+% -------------------------------------------------------------------------
 % Sanjay Manohar 2008
+% Adapted by Ruben van den Bosch 2022
 
 
 % Setup parameters
@@ -718,13 +724,15 @@ try
     end
     
 catch e                                  % in case of an error
+    % Actual error can be rethrown by returning the variable e to calling
+    % functions
     fprintf('Error : %s\n', e.message);  % display error message
     for ix=1:length(e.stack)
         disp(e.stack(ix));
-        save 'errordump';
-        if exist('result','var')
-            result.data=result; % and still give back the data so far
-        end
+    end
+    save 'errordump';
+    if exist('result','var')
+        result.data=result; % and still give back the data so far
     end
 end
 
@@ -764,11 +772,4 @@ if fatal_error && exist('tr','var')
         fprintf('If this was unintentional, you might be able to resume the experiment by re-running it\n');
         fprintf('and using the result (e.g. ans or result from LastExperiment.mat) as the input parameter.\n');
     end
-end
-
-% rethrow errors? if enabled, this will require any user code after the
-% experiment to catch the error if finalisation is required. this allows
-% debugging directly into the location of the problem.
-if isfield(ex,'rethrowErrors') && ex.rethrowErrors
-    if ~isempty(e), rethrow(e); end
 end

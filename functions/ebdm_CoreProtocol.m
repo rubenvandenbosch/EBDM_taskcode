@@ -158,13 +158,19 @@ end
 % RUN EXPERIMENT
 % -------------------------------------------------------------------------
 % start experiment
-result = RunExperiment(@doTrial, ex, params, @blockfn, @exptStartEnd);
+[result,e] = RunExperiment(@doTrial, ex, params, @blockfn, @exptStartEnd);
 
 % Save the final result struct in mat file
 save(outfile_mat, 'result');
 
 % Close all open (output) files
 fclose('all');
+
+% Rethrow errors in case there were any (if rethrowing is enabled)
+%   This allows debugging directly into the location of the problem.
+if isfield(ex,'rethrowErrors') && ex.rethrowErrors
+    if ~isempty(e), rethrow(e); end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
