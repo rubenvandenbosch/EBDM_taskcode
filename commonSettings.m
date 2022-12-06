@@ -337,6 +337,10 @@ end
 % -------------------------------------------------------------------------
 ex.skipScreenCheck   = 1;               % should be 0, but set to 1 if you get monitor warnings (use 0/1 double, not logical)
 ex.displayNumber     = 0;               % 1 for multiple monitors
+ex.screenSize        = [0 0 1921 1080]; % Screen size in pixels. Since update to win10 on lab pc's automatic detection 
+										% breaks proper display of the stimuli. Work-around is to deviate one pixel from the 
+										% true screen size. Better to add one pixel than subtract to prevent appearance of 
+										% a thin bar on the side of the screen.
 
 ex.bgColour          = [0 0 0];         % background
 ex.fgColour          = [255 255 255];   % text colour, white

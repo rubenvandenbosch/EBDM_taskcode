@@ -44,13 +44,16 @@ if isfield(ex,'skipScreenCheck')
 end
 % use display 0 if none specified.
 if ~isfield(ex,'displayNumber'), ex.displayNumber=0; end
+
 % Open the window
 % if ex.DEBUG
 %    [scr.w, scr.sszrect] = Screen('OpenWindow', ex.displayNumber, ex.bgColour, [10 10 1200 900]);
 % else
 %    [scr.w, scr.sszrect] = Screen('OpenWindow', ex.displayNumber, ex.bgColour);
 % end
-[scr.w, scr.sszrect] = Screen('OpenWindow', ex.displayNumber, ex.bgColour);     % RB 2021
+
+% [scr.w, scr.sszrect] = Screen('OpenWindow', ex.displayNumber, ex.bgColour);     % RB 2021
+[scr.w, scr.sszrect] = Screen('OpenWindow', ex.displayNumber, ex.bgColour, ex.screenSize);     % RB 2021
 
 Screen('Flip',scr.w);            % blank screen
 scr.ssz=scr.sszrect(:,3:4);      % get screen dimensions in px
