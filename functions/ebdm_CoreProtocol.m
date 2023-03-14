@@ -1101,9 +1101,9 @@ switch stage
             %   only for valid responses
             if ~(tr.Yestrial==2)
                 tr = LogEvent(ex,el,tr,'responseOnset', respTime);
-                if tr.key == pa.leftKey
+                if ismember(tr.key,pa.leftKey)
                     tr.pressedButton = 'left';
-                elseif tr.key == pa.rightKey
+                elseif ismember(tr.key,pa.rightKey)
                     tr.pressedButton = 'right';
                 end
                 tr.timings.responseTime = tr.timings.responseOnset - tr.timings.choiceOnset;
