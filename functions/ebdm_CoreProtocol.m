@@ -1436,14 +1436,9 @@ end
 % Loop over questions to ask
 for iQ = 1:numel(Qs)
     
-    % Starting position slider
-    xpos         = ymid(1,1);
-    bottomslider = CenterRectOnPoint(slider,xpos,xaxis(2,1));
-    
     % Draw instruction text, question and slider
     drawTextCentred(scr, Qs{iQ}, ex.fgColour, xyInstr)
     drawTextCentred(scr, instructionTxt, ex.fgColour, xyQ)
-    Screen('FillRect', scr.w, barcol, bottomslider);
     
     % Draw response options
     drawTextCentred(scr, Rs{iQ,1}, barcol, [xaxis(1,1),yR])
@@ -1481,14 +1476,9 @@ for iQ = 1:numel(Qs)
         if keyCode(ex.exitkey), EXIT = true; return; end   % check for ESCAPE
     end
     
-    % Calculate new position slider
+    % Calculate position of slider
     xpos = x;
     bottomslider = CenterRectOnPoint(slider,xpos,xaxis(2,1));
-    
-    % Draw instruction text, question and slider
-    drawTextCentred(scr, Qs{iQ}, ex.fgColour, xyInstr)
-    drawTextCentred(scr, instructionTxt, ex.fgColour, xyQ)
-    Screen('FillRect', scr.w, barcol, bottomslider);
     
     % Draw response options
     drawTextCentred(scr, Rs{iQ,1}, barcol, [xaxis(1,1),yR])
@@ -1501,6 +1491,11 @@ for iQ = 1:numel(Qs)
     Screen('Drawlines',scr.w,ymid,2,scalecol);
     Screen('Drawlines',scr.w,yright,2,scalecol);
     
+    % Draw instruction text, question and slider
+    drawTextCentred(scr, Qs{iQ}, ex.fgColour, xyInstr)
+    drawTextCentred(scr, instructionTxt, ex.fgColour, xyQ)
+    Screen('FillRect', scr.w, barcol, bottomslider);
+
     % Present screen and wait 1 sec
     Screen('Flip', scr.w);
     WaitSecs(1);
