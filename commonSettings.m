@@ -124,7 +124,7 @@ switch ex.stage
         % Ask participants to indicate subjective effort experience on a
         % VAS scale for each effort level? Appears after the final
         % familiarize trial of each effort level
-        ex.effortVAS            = false;
+        ex.effortVAS            = true;
         
         % Number of practice decisions about X effort for X reward
         ex.practiceTrials       = 6;
@@ -363,7 +363,7 @@ end
 % Gripforce options
 % -------------------------------------------------------------------------
 % Only for the practice and perform stages
-ex.COMportGripforce = 'COM5';
+ex.COMportGripforce = 'COM3';
 switch ex.stage
     case {'practice','perform'}
         ex.useGripforce      = true;   % Change to 1 to use GripForce device (manufactured by TSG department, Radboud University)
